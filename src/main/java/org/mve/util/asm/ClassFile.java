@@ -1,8 +1,10 @@
 package org.mve.util.asm;
 
+import com.sun.istack.internal.NotNull;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.util.LinkedList;
+import java.util.Objects;
 
 public class ClassFile
 {
@@ -60,16 +62,16 @@ public class ClassFile
 	 * the ACC_FINAL, ACC_SUPER, and ACC_ENUM
 	 * flags set must not be set.
 	 */
-	private final short accessFlag;
-	private final short thisClassIndex;
-	private final short interfaceCount;
-	private final short[] interfaces;
-	private final short fieldCount;
-//	private final LinkedList<FieldParser> fields;
-//	private final short methodCount;
-//	private final LinkedList<MethodParser> methods;
-//	private final short attributeCount;
-	private final LinkedList<Attribute> attributes = new LinkedList<>();
+	private short accessFlag;
+	private short thisClassIndex;
+	private short interfaceCount;
+	private short[] interfaces;
+	private short fieldCount;
+	private ClassField[] fields = new ClassField[0];
+	private short methodCount;
+	private ClassMethod[] methods = new ClassMethod[0];
+	private short attributeCount;
+	private Attribute[] attributes = new Attribute[0];
 
 	public ClassFile(byte[] code)
 	{
@@ -92,7 +94,7 @@ public class ClassFile
 					{
 						short length = datain.readShort();
 						byte[] bytes = new byte[length];
-						datain.read(bytes);
+						if (length != datain.read(bytes)) throw new ClassFormatError();
 						this.constantPool.addConstantPoolElement(new ConstantUTF8(length, new String(bytes)));
 						break;
 					}
@@ -201,7 +203,40 @@ public class ClassFile
 			short[] shorts = new short[interfaceCount];
 			for (int i = 0; i < this.interfaceCount; i++) shorts[i] = datain.readShort();
 			this.interfaces = shorts;
-			this.fieldCount = datain.readShort();
+			int count = datain.readShort() & 0XFFFF;
+			for (int i = 0; i < count; i++)
+			{
+				ClassField field = new ClassField();
+				field.setAccessFlag(datain.readShort());
+				field.setNameIndex(datain.readShort());
+				field.setDescriptorIndex(datain.readShort());
+				int c = datain.readShort() & 0XFFFF;
+				for (int j = 0; j < c; j++)
+				{
+					field.addAttribute(AttributeReader.read(this, datain));
+				}
+				this.addField(field);
+			}
+			count = datain.readShort() & 0XFFFF;
+			for (int i = 0; i < count; i++)
+			{
+				ClassMethod method = new ClassMethod();
+				method.setAccessFlag(datain.readShort());
+				method.setNameIndex(datain.readShort());
+				method.setDescriptorIndex(datain.readShort());
+				int c = datain.readShort() & 0XFFFF;
+				for (int j = 0; j < c; j++)
+				{
+					method.addAttribute(AttributeReader.read(this, datain));
+				}
+				this.addMethod(method);
+			}
+			count = datain.readShort() & 0XFFFF;
+			for (int i = 0; i < count; i++)
+			{
+				this.addAttribute(AttributeReader.read(this, datain));
+			}
+			datain.close();
 		}
 		catch (Exception e)
 		{
@@ -220,8 +255,139 @@ public class ClassFile
 		}
 	}
 
+	public int getHeader()
+	{
+		return header;
+	}
+
+	public short getMinorVersion()
+	{
+		return minorVersion;
+	}
+
+	public short getMajorVersion()
+	{
+		return majorVersion;
+	}
+
 	public ConstantPool getConstantPool()
 	{
 		return constantPool;
+	}
+
+	public short getAccessFlag()
+	{
+		return accessFlag;
+	}
+
+	public void setAccessFlag(short accessFlag)
+	{
+		this.accessFlag = accessFlag;
+	}
+
+	public short getThisClassIndex()
+	{
+		return thisClassIndex;
+	}
+
+	public void setThisClassIndex(short thisClassIndex)
+	{
+		this.thisClassIndex = thisClassIndex;
+	}
+
+	public short getInterfaceCount()
+	{
+		return interfaceCount;
+	}
+
+	public void addInterface(short cpIndex)
+	{
+		short[] arr = new short[this.interfaceCount+1];
+		System.arraycopy(this.interfaces, 0, arr, 0, this.interfaceCount);
+		arr[this.interfaceCount] = cpIndex;
+		this.interfaces = arr;
+		this.interfaceCount++;
+	}
+
+	public void setInterface(int index, short cpIndex)
+	{
+		this.interfaces[index] = cpIndex;
+	}
+
+	public short getInterface(int index)
+	{
+		return this.interfaces[index];
+	}
+
+	public short getFieldCount()
+	{
+		return 	this.fieldCount;
+	}
+
+	public void addField(ClassField field)
+	{
+		ClassField[] arr = new ClassField[this.fieldCount+1];
+		System.arraycopy(this.fields, 0, arr, 0, this.fieldCount);
+		arr[this.fieldCount] = Objects.requireNonNull(field);
+		this.fields = arr;
+		this.fieldCount++;
+	}
+
+	public void setField(int index, ClassField field)
+	{
+		this.fields[index] = Objects.requireNonNull(field);
+	}
+
+	public ClassField getField(int index)
+	{
+		return this.fields[index];
+	}
+
+	public short getMethodCount()
+	{
+		return methodCount;
+	}
+
+	public void addMethod(ClassMethod method)
+	{
+		ClassMethod[] arr = new ClassMethod[this.methodCount];
+		System.arraycopy(this.methods, 0, arr, 0, this.methodCount);
+		arr[this.methodCount] = Objects.requireNonNull(method);
+		this.methods = arr;
+		this.methodCount++;
+	}
+
+	public void setMethod(int index, ClassMethod method)
+	{
+		this.methods[index] = Objects.requireNonNull(method);
+	}
+
+	public ClassMethod getMethod(int index)
+	{
+		return this.methods[index];
+	}
+
+	public short getAttributeCount()
+	{
+		return attributeCount;
+	}
+
+	public Attribute getAttribute(int index)
+	{
+		return this.attributes[index];
+	}
+
+	public void setAttribute(int index, @NotNull Attribute attribute)
+	{
+		this.attributes[index] = Objects.requireNonNull(attribute);
+	}
+
+	public void addAttribute(Attribute attribute)
+	{
+		Attribute[] arr = new Attribute[this.attributeCount+1];
+		System.arraycopy(this.attributes, 0, arr, 0, this.attributeCount);
+		arr[this.attributeCount] = Objects.requireNonNull(attribute);
+		this.attributes = arr;
+		this.attributeCount++;
 	}
 }

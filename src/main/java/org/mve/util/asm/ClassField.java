@@ -49,17 +49,12 @@ public class ClassField
 		return attributeCount;
 	}
 
-	public void setAttributeCount(short attributeCount)
-	{
-		this.attributeCount = attributeCount;
-	}
-
 	public Attribute getAttribute(int index)
 	{
 		return this.attributes[index];
 	}
 
-	public void setAttribute(int index,@NotNull Attribute attribute)
+	public void setAttribute(int index, @NotNull Attribute attribute)
 	{
 		this.attributes[index] = Objects.requireNonNull(attribute);
 	}

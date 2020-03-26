@@ -2,30 +2,30 @@ package org.mve.util.asm;
 
 public class TypeAnnotationTargetTypeArgument extends TypeAnnotationTarget
 {
-	private byte offset;
-	private short typeArgumentIndex;
+	private short offset;
+	private byte typeArgumentIndex;
 
 	public TypeAnnotationTargetTypeArgument(byte targetType)
 	{
 		super(targetType);
 	}
 
-	public byte getOffset()
+	public short getOffset()
 	{
 		return offset;
 	}
 
-	public void setOffset(byte offset)
+	public void setOffset(short offset)
 	{
 		this.offset = offset;
 	}
 
-	public short getTypeArgumentIndex()
+	public byte getTypeArgumentIndex()
 	{
 		return typeArgumentIndex;
 	}
 
-	public void setTypeArgumentIndex(short typeArgumentIndex)
+	public void setTypeArgumentIndex(byte typeArgumentIndex)
 	{
 		this.typeArgumentIndex = typeArgumentIndex;
 	}
