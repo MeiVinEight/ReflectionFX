@@ -184,6 +184,13 @@ public class AttributeReader
 		else if (type == AttributeType.RUNTIME_VISIBLE_ANNOTATIONS)
 		{
 			AttributeRuntimeVisibleAnnotations attr = new AttributeRuntimeVisibleAnnotations(nameIndex);
+			short count = datain.readShort();
+			for (int i = 0; i < count; i++)
+			{
+				attr.addAnnotation(AnnotationReader.read(file, in));
+			}
+			datain.close();
+			return attr;
 		}
 	}
 }
