@@ -171,6 +171,7 @@ public class ClassFile
 			in = new ByteArrayInputStream(code);
 			DataInputStream datain = new DataInputStream(in);
 			this.header = datain.readInt();
+			if (this.header != 0XCAFEBABE) throw new ClassFormatError("Invalid file head magic value "+this.header);
 			this.minorVersion = datain.readShort();
 			this.majorVersion = datain.readShort();
 			short constantPoolSize = datain.readShort();

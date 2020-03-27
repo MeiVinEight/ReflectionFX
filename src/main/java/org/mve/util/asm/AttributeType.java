@@ -51,7 +51,7 @@ public enum AttributeType
 		else if (name.equals("Code")) return CODE;
 		else if (name.equals("ConstantValue")) return CONSTANT_VALUE;
 		else if (name.equals("Deprecated")) return DEPRECATED;
-		else if (name.equals("EnclosingMethods")) return ENCLOSING_METHOD;
+		else if (name.equals("EnclosingMethod")) return ENCLOSING_METHOD;
 		else if (name.equals("Exceptions")) return EXCEPTIONS;
 		else if (name.equals("InnerClasses")) return INNER_CLASSES;
 		else if (name.equals("LineNumberTable")) return LINE_NUMBER_TABLE;
