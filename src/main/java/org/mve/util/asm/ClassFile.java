@@ -1,21 +1,110 @@
 package org.mve.util.asm;
 
-import com.sun.istack.internal.NotNull;
-
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.util.Objects;
 
+/**
+ * A class file consists of a stream of 8-bit bytes.
+ * 16-bit and 32-bit quantities are constructed by
+ * reading in two and four consecutive 8-bit bytes,
+ * respectively. Multibyte data items are always stored
+ * in big-endian order, where the high bytes come first.
+ * This chapter defines the data types u1, u2, and u4 to
+ * represent an unsigned one-, two-, or four-byte quantity,
+ * respectively.
+ *
+ * In the Java SE Platform API, the class file format is
+ * supported by interfaces java.io.DataInput and java.io.DataOutput
+ * and classes such as java.io.DataInputStream and java.io.DataOutputStream.
+ * For example, values of the types u1, u2, and u4 may be
+ * read by methods such as readUnsignedByte, readUnsignedShort,
+ * and readInt of the interface java.io.DataInput.
+ *
+ * This chapter presents the class file format using
+ * pseudostructures written in a C-like structure notation.
+ * To avoid confusion with the fields of classes and class
+ * instances, etc., the contents of the structures describing
+ * the class file format are referred to as items. Successive
+ * items are stored in the class file sequentially, without
+ * padding or alignment.
+ *
+ * Tables, consisting of zero or more variable-sized items,
+ * are used in several class file structures. Although we
+ * use C-like array syntax to refer to table items, the fact
+ * that tables are streams of varying-sized structures means
+ * that it is not possible to translate a table index directly
+ * to a byte offset into the table.
+ *
+ * Where we refer to a data structure as an array, it consists
+ * of zero or more contiguous fixed-sized items and can be indexed like an array.
+ *
+ * Reference to an ASCII character in this chapter should be
+ * interpreted to mean the Unicode code point corresponding to the ASCII character.
+ */
 public class ClassFile
 {
 	/**
-	 * 4 bytes magic value in file head
-	 * always is 0xCAFEBABE
+	 * The magic item supplies the magic number identifying
+	 * the class file format; it has the value 0xCAFEBABE.
 	 */
 	private final int header;
 
 	/**
-	 * minor version of this class's compiler
+	 * The values of the minor_version and major_version items
+	 * are the minor and major version numbers of this class file.
+	 * Together, a major and a minor version number determine the
+	 * version of the class file format. If a class file has major
+	 * version number M and minor version number m, we denote the
+	 * version of its class file format as M.m.
+	 *
+	 * A Java Virtual Machine implementation which conforms to Java
+	 * SE N must support exactly the major versions of the class file
+	 * format specified in the third column of <a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.1-200-B.2">Table 4.1-A<a/>, "Supported
+	 * major versions". The notation A .. B means major versions A
+	 * through B, inclusive of both A and B. The second column,
+	 * "Corresponding major version", shows the major version introduced
+	 * by each Java SE release, that is, the first release that could have
+	 * accepted a class file containing that major_version item. For very
+	 * early releases, the JDK version is shown instead of the Java SE release.
+	 *
+	 *
+	 * 				Table 4.1-A. class file format major versions
+	 *
+	 * 	Java SE			Corresponding major version			Supported major versions
+	 * 	1.0.2						45								45
+	 * 	1.1							45								45
+	 * 	1.2							46								45..46
+	 * 	1.3							47								45..47
+	 * 	1.4							48								45..48
+	 * 	5.0							49								45..49
+	 * 	6							50								45..50
+	 * 	7							51								45..51
+	 * 	8							52								45..52
+	 * 	9							53								45..53
+	 * 	10							54								45..54
+	 * 	11							55								45..55
+	 * 	12							56								45..56
+	 * 	13							57								45..57
+	 * 	14							58								45..58
+	 *
+	 * 	For a class file whose major_version is 56 or above, the minor_version must be 0 or 65535.
+	 *
+	 * 	For a class file whose major_version is between 45 and 55 inclusive, the minor_version may be any value.
+	 *
+	 * 	A historical perspective is warranted on JDK support for class file format
+	 * 	versions. JDK 1.0.2 supported versions 45.0 through 45.3 inclusive. JDK 1.1
+	 * 	supported versions 45.0 through 45.65535 inclusive. When JDK 1.2 introduced
+	 * 	support for major version 46, the only minor version supported under that
+	 * 	major version was 0. Later JDKs continued the practice of introducing support
+	 * 	for a new major version (47, 48, etc) but supporting only a minor version of
+	 * 	0 under the new major version. Finally, the introduction of preview features
+	 * 	in Java SE 12 (see below) motivated a standard role for the minor version of
+	 * 	the class file format, so JDK 12 supported minor versions of 0 and 65535 under
+	 * 	major version 56. Subsequent JDKs introduce support for N.0 and N.65535 where
+	 * 	N is the corresponding major version of the implemented Java SE Platform.
+	 * 	For example, JDK 13 supports 57.0 and 57.65535.
+	 *
 	 */
 	private final short minorVersion;
 
@@ -64,6 +153,7 @@ public class ClassFile
 	 */
 	private short accessFlag;
 	private short thisClassIndex;
+	private short superClassIndex;
 	private short interfaceCount;
 	private short[] interfaces;
 	private short fieldCount;
@@ -112,14 +202,18 @@ public class ClassFile
 					}
 					case 5:
 					{
+						i++;
 						long value = datain.readLong();
 						this.constantPool.addConstantPoolElement(new ConstantLong(value));
+						this.constantPool.addConstantPoolElement(new ConstantNull());
 						break;
 					}
 					case 6:
 					{
+						i++;
 						double value = datain.readDouble();
 						this.constantPool.addConstantPoolElement(new ConstantDouble(value));
+						this.constantPool.addConstantPoolElement(new ConstantNull());
 						break;
 					}
 					case 7:
@@ -194,11 +288,12 @@ public class ClassFile
 						this.constantPool.addConstantPoolElement(new ConstantPackage(index));
 						break;
 					}
-					default: break;
+					default: throw new ClassFormatError("Unknown constant tag "+type);
 				}
 			}
 			this.accessFlag = datain.readShort();
 			this.thisClassIndex = datain.readShort();
+			this.superClassIndex = datain.readShort();
 			this.interfaceCount = datain.readShort();
 			short[] shorts = new short[interfaceCount];
 			for (int i = 0; i < this.interfaceCount; i++) shorts[i] = datain.readShort();
@@ -295,6 +390,16 @@ public class ClassFile
 		this.thisClassIndex = thisClassIndex;
 	}
 
+	public short getSuperClassIndex()
+	{
+		return superClassIndex;
+	}
+
+	public void setSuperClassIndex(short superClassIndex)
+	{
+		this.superClassIndex = superClassIndex;
+	}
+
 	public short getInterfaceCount()
 	{
 		return interfaceCount;
@@ -350,7 +455,7 @@ public class ClassFile
 
 	public void addMethod(ClassMethod method)
 	{
-		ClassMethod[] arr = new ClassMethod[this.methodCount];
+		ClassMethod[] arr = new ClassMethod[this.methodCount+1];
 		System.arraycopy(this.methods, 0, arr, 0, this.methodCount);
 		arr[this.methodCount] = Objects.requireNonNull(method);
 		this.methods = arr;
@@ -377,7 +482,7 @@ public class ClassFile
 		return this.attributes[index];
 	}
 
-	public void setAttribute(int index, @NotNull Attribute attribute)
+	public void setAttribute(int index, Attribute attribute)
 	{
 		this.attributes[index] = Objects.requireNonNull(attribute);
 	}

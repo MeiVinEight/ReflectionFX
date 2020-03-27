@@ -10,7 +10,8 @@ public class StackMapFrameReader
 	{
 		DataInputStream in = new DataInputStream(input);
 		byte tag = in.readByte();
-		StackMapFrameType type = StackMapFrameType.getType(tag);
+		int unsignedTag = tag & 0XFF;
+		StackMapFrameType type = StackMapFrameType.getType(unsignedTag);
 		if (type == StackMapFrameType.STACK_MAP_SAME_FRAME)
 		{
 			return new StackMapSameFrame(tag);

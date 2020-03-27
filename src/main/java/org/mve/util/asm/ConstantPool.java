@@ -1,7 +1,5 @@
 package org.mve.util.asm;
 
-import com.sun.istack.internal.NotNull;
-
 import java.util.Objects;
 
 public class ConstantPool
@@ -32,12 +30,12 @@ public class ConstantPool
 		return elements[index];
 	}
 
-	public void setConstantPoolElement(short index,@NotNull ConstantPoolElement element)
+	public void setConstantPoolElement(short index, ConstantPoolElement element)
 	{
 		elements[index] = Objects.requireNonNull(element);
 	}
 
-	public void addConstantPoolElement(@NotNull ConstantPoolElement element)
+	public void addConstantPoolElement(ConstantPoolElement element)
 	{
 		ConstantPoolElement[] arr = new ConstantPoolElement[this.constantPoolSize+1];
 		System.arraycopy(this.elements, 0, arr, 0, this.constantPoolSize);

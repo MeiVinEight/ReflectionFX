@@ -1,9 +1,5 @@
 package org.mve.util.asm;
 
-import com.sun.istack.internal.NotNull;
-
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
 
 public class ClassField
@@ -54,7 +50,7 @@ public class ClassField
 		return this.attributes[index];
 	}
 
-	public void setAttribute(int index, @NotNull Attribute attribute)
+	public void setAttribute(int index, Attribute attribute)
 	{
 		this.attributes[index] = Objects.requireNonNull(attribute);
 	}

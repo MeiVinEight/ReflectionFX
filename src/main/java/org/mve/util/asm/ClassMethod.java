@@ -1,7 +1,5 @@
 package org.mve.util.asm;
 
-import com.sun.istack.internal.NotNull;
-
 import java.util.Objects;
 
 public class ClassMethod
@@ -57,7 +55,7 @@ public class ClassMethod
 		return this.attributes[index];
 	}
 
-	public void setAttribute(int index,@NotNull Attribute attribute)
+	public void setAttribute(int index, Attribute attribute)
 	{
 		this.attributes[index] = Objects.requireNonNull(attribute);
 	}
