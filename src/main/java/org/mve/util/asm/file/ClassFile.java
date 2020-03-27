@@ -1,7 +1,11 @@
 package org.mve.util.asm.file;
 
+import org.mve.util.Binary;
+
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.util.Objects;
 
 /**
@@ -42,7 +46,7 @@ import java.util.Objects;
  * Reference to an ASCII character in this chapter should be
  * interpreted to mean the Unicode code point corresponding to the ASCII character.
  */
-public class ClassFile
+public class ClassFile implements Binary
 {
 	/**
 	 * The magic item supplies the magic number identifying
@@ -544,5 +548,13 @@ public class ClassFile
 		arr[this.attributeCount] = Objects.requireNonNull(attribute);
 		this.attributes = arr;
 		this.attributeCount++;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		ByteArrayOutputStream bout = new ByteArrayOutputStream();
+		DataOutputStream out = new DataOutputStream(bout);
+		return null;
 	}
 }
