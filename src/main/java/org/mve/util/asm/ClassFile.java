@@ -116,7 +116,43 @@ public class ClassFile
 	private final short majorVersion;
 
 	/**
-	 * The constant pool of the class file
+	 * Java Virtual Machine instructions do not rely on the run-time layout of classes,
+	 * interfaces, class instances, or arrays. Instead, instructions refer to symbolic
+	 * information in the constant_pool table.
+	 *
+	 * All constant_pool table entries have the following general format:
+	 * 			cp_info {
+	 * 				u1 tag;
+	 * 				u1 info[];
+	 * 			}
+	 *
+	 * Each entry in the constant_pool table must begin with a 1-byte tag indicating
+	 * the kind of constant denoted by the entry. There are 17 kinds of constant, listed
+	 * in <a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4-140">Table 4.4-A<a/> with their corresponding tags, and ordered by their section number
+	 * in this chapter. Each tag byte must be followed by two or more bytes giving information
+	 * about the specific constant. The format of the additional information depends on the tag
+	 * byte, that is, the content of the info array varies with the value of tag.
+	 *
+	 *
+	 * 				Table 4.4-A. Constant pool tags (by section)
+	 * 			Constant Kind				Tag 			Section
+	 * 			CONSTANT_Class 				7				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.1">§4.4.1<a/>
+	 * 			CONSTANT_Fieldref 			9				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.2">§4.4.2<a/>
+	 * 			CONSTANT_Methodref 			10				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.2">§4.4.2<a/>
+	 * 			CONSTANT_InterfaceMethodref 11				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.2">§4.4.2<a/>
+	 * 			CONSTANT_String 			8				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.3">§4.4.3<a/>
+	 * 			CONSTANT_Integer 			3				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.4">§4.4.4<a/>
+	 * 			CONSTANT_Float				4				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.4">§4.4.4<a/>
+	 * 			CONSTANT_Long				5				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.5">§4.4.5<a/>
+	 * 			CONSTANT_Double				6				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.5">§4.4.5<a/>
+	 * 			CONSTANT_NameAndType		12				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.6">§4.4.6<a/>
+	 * 			CONSTANT_Utf8				1				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.7">§4.4.7<a/>
+	 * 			CONSTANT_MethodHandle		15				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.8">§4.4.8<a/>
+	 * 			CONSTANT_MethodType			16				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.9">§4.4.9<a/>
+	 * 			CONSTANT_Dynamic			17				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.10">§4.4.10<a/>
+	 * 			CONSTANT_InvokeDynamic		18				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.10">§4.4.10<a/>
+	 * 			CONSTANT_Module				19				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.11">§4.4.11<a/>
+	 * 			CONSTANT_Package			20				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.12">§4.4.12<a/>
 	 */
 	private final ConstantPool constantPool;
 
