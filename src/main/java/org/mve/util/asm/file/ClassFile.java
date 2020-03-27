@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -553,8 +554,19 @@ public class ClassFile implements Binary
 	@Override
 	public byte[] toByteArray()
 	{
-		ByteArrayOutputStream bout = new ByteArrayOutputStream();
-		DataOutputStream out = new DataOutputStream(bout);
-		return null;
+		try
+		{
+			ByteArrayOutputStream bout = new ByteArrayOutputStream();
+			DataOutputStream out = new DataOutputStream(bout);
+			out.writeInt(this.header);
+			out.writeShort(this.minorVersion);
+			out.writeShort(this.majorVersion);
+			out.writeShort(this.constantPool.getConstantPoolSize());
+			return bout.toByteArray();
+		}
+		catch (IOException e)
+		{
+			throw new ClassSerializeException("Can not serialize class", e);
+		}
 	}
 }

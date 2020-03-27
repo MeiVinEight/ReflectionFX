@@ -26,4 +26,16 @@ public class ConstantUTF8 extends ConstantPoolElement
 	{
 		return ConstantPoolElementType.CONSTANT_UTF8;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.length + 3;
+		byte[] b = new byte[len];
+		b[0] = this.getType().getCode();
+		b[1] = (byte) ((this.length >>> 8) & 0XFF);
+		b[2] = (byte) (this.length & 0XFF);
+		System.arraycopy(this.utf8.getBytes(), 0, b, 3, this.length);
+		return b;
+	}
 }
