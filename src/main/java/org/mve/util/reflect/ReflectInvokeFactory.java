@@ -4,6 +4,11 @@ import org.jetbrains.org.objectweb.asm.ClassWriter;
 import org.jetbrains.org.objectweb.asm.MethodVisitor;
 import org.jetbrains.org.objectweb.asm.Opcodes;
 import org.mve.util.IO;
+import org.mve.util.asm.file.AccessFlag;
+import org.mve.util.asm.file.ClassFile;
+import org.mve.util.asm.file.ClassMethod;
+import org.mve.util.asm.file.ConstantPool;
+import org.mve.util.asm.file.ConstantUTF8;
 import sun.misc.Unsafe;
 
 import java.io.FileOutputStream;
@@ -16,6 +21,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.security.ProtectionDomain;
+import java.util.Objects;
 
 public class ReflectInvokeFactory
 {
@@ -36,12 +43,18 @@ public class ReflectInvokeFactory
 	 */
 	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException
 	{
-		// class name
-		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		// find method and throw NoSuchMethodException
 		Method method = clazz.getDeclaredMethod(methodName, params);
 		// assignment the if the method is static or not
 		final boolean isStatic = (method.getModifiers() & Modifier.STATIC) != 0;
+
+		return generic(clazz, methodName, isStatic, returnType, params);
+	}
+
+	private static ReflectInvoker generic(Class<?> clazz, String methodName, boolean isStatic, Class<?> returnType, Class<?>... params) throws ReflectionGenericException
+	{
+		// class name
+		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		// description of the method
 		StringBuilder desc = new StringBuilder("(");
 		for (Class<?> param : params) desc.append(getDescription(param));
@@ -87,7 +100,7 @@ public class ReflectInvokeFactory
 			}
 		}
 		if (isStatic) mv.visitMethodInsn(Opcodes.INVOKESTATIC, owner, methodName, desc.toString(), false);
-		else mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, owner, methodName, desc.toString(), false);
+		else mv.visitMethodInsn(methodName.equals("<init>") ? Opcodes.INVOKESPECIAL : Opcodes.INVOKEVIRTUAL, owner, methodName, desc.toString(), false);
 		if (returnType == void.class) mv.visitInsn(Opcodes.RETURN);
 		else
 		{
@@ -106,6 +119,19 @@ public class ReflectInvokeFactory
 		mv.visitEnd();
 		cw.visitEnd();
 		byte[] code = cw.toByteArray();
+
+		try
+		{
+			FileOutputStream out = new FileOutputStream("ReflectInvokerImpl0.class");
+			out.write(code);
+			out.flush();
+			out.close();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
 		// load the class's byte code
 		try
 		{
@@ -123,19 +149,30 @@ public class ReflectInvokeFactory
 		Class<?> checkClass = Class.forName(className, false, classLoader);
 		URL url = classLoader.getResource(className.replace('.', '/').concat(".class"));
 		if (url == null) throw new ClassNotFoundException(className);
-		try
+		ClassMethod method;
+		TRY:
 		{
-			InputStream in = url.openStream();
-			byte[] code = IO.toByteArray(in);
-			in.close();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
+			try
+			{
+				InputStream in = url.openStream();
+				byte[] code = IO.toByteArray(in);
+				in.close();
+				ClassFile file = new ClassFile(code);
+				ConstantPool pool = file.getConstantPool();
+				for (int i = 0; i < file.getMethodCount(); i++)
+				{
+					method = file.getMethod(i);
+					if (Objects.requireNonNull(methodName).equals(((ConstantUTF8)pool.getConstantPoolElement(method.getNameIndex())).getUTF8())) break TRY;
+				}
+				throw new NoSuchMethodException(methodName);
+			}
+			catch (IOException e)
+			{
+				throw new ReflectionGenericException("Can not check method name", e);
+			}
 		}
 
-		// FIXME
-		return null;
+		return generic(checkClass, methodName, (method.getAccessFlag() & AccessFlag.ACC_STATIC) != 0, returnType, params);
 	}
 
 	private static String getDescription(Class<?> clazz)
@@ -165,15 +202,18 @@ public class ReflectInvokeFactory
 		String superClass = null;
 		try
 		{
-			InputStream in = ReflectInvokeFactory.class.getClassLoader().getResource("org/mve/util/reflect/ReflectInvokeFactory.class").openStream();
+			URL url = ReflectInvokeFactory.class.getClassLoader().getResource("org/mve/util/reflect/ReflectInvokeFactory.class");
+			if (url == null) throw new NullPointerException();
+			InputStream in = url.openStream();
 			byte[] code = IO.toByteArray(in);
 			in.close();
 
+			Field field = Unsafe.class.getDeclaredField("theUnsafe");
+			field.setAccessible(true);
+			Unsafe usf = (Unsafe) field.get(null);
+
 			if (code[7] > 0X34)
 			{
-				Field field = Unsafe.class.getDeclaredField("theUnsafe");
-				field.setAccessible(true);
-				Unsafe usf = (Unsafe) field.get(null);
 				Class<?> clazz = Class.forName("jdk.internal.module.IllegalAccessLogger");
 				Field loggerField = clazz.getDeclaredField("logger");
 				long offset = usf.staticFieldOffset(loggerField);
@@ -185,10 +225,16 @@ public class ReflectInvokeFactory
 
 			String loaderClassName = code[7] <= 0X34 ? "sun.reflect.DelegatingClassLoader" : "jdk.internal.reflect.DelegatingClassLoader";
 			Class<?> clazz = Class.forName(loaderClassName);
-			Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+			field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
 			field.setAccessible(true);
 			MethodHandles.Lookup lookup = (MethodHandles.Lookup) field.get(null);
 			handle = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class)).bindTo(lookup.findConstructor(clazz, MethodType.methodType(void.class, ClassLoader.class)).invoke(ClassLoader.getSystemClassLoader()));
+//			handle = lookup.findVirtual(Unsafe.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)).bindTo(usf);
+//			url = ReflectInvokeFactory.class.getClassLoader().getResource("org/mve/util/reflect/ReflectInvoker.class");
+//			if (url == null) throw new NullPointerException();
+//			in = url.openStream();
+//			code = IO.toByteArray(in);
+//			handle.invoke(null, code, 0, code.length, null, null);
 		}
 		catch (Throwable t)
 		{

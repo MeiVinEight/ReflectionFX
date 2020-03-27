@@ -12,6 +12,7 @@ public class Main
 
 	public static void main(String[] args)
 	{
+
 		try
 		{
 			Main m = new Main(0);
