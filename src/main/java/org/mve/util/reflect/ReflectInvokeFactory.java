@@ -11,7 +11,6 @@ import org.mve.util.asm.file.ConstantPool;
 import org.mve.util.asm.file.ConstantUTF8;
 import sun.misc.Unsafe;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
@@ -21,7 +20,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
-import java.security.ProtectionDomain;
 import java.util.Objects;
 
 public class ReflectInvokeFactory
