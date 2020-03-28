@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public abstract class TypeAnnotationTarget
+import org.mve.util.Binary;
+
+public abstract class TypeAnnotationTarget implements Binary
 {
 	private final byte targetType;
 

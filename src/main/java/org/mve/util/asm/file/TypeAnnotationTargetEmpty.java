@@ -12,4 +12,10 @@ public class TypeAnnotationTargetEmpty extends TypeAnnotationTarget
 	{
 		return 0;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[0];
+	}
 }

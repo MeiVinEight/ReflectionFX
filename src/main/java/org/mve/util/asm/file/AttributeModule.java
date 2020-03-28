@@ -182,10 +182,70 @@ public class AttributeModule extends Attribute
 	@Override
 	public int getLength()
 	{
-		int len = 16 + (2 * this.useCount) + (6 * this.requireCount);
+		int len = 22 + (2 * this.useCount) + (6 * this.requireCount);
 		for (StructModuleExport s : this.exports) len += s.getLength();
 		for (StructModuleOpen s : this.opens) len += s.getLength();
 		for (StructModuleProvide s : this.provides) len += s.getLength();
 		return len;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		int index = 0;
+		b[index++] = (byte) ((this.getAttributeNameIndex() >>> 8) & 0XFF);
+		b[index++] = (byte) (this.getAttributeNameIndex() & 0XFF);
+		len -= 6;
+		b[index++] = (byte) ((len >>> 24) & 0XFF);
+		b[index++] = (byte) ((len >>> 16) & 0XFF);
+		b[index++] = (byte) ((len >>> 8) & 0XFF);
+		b[index++] = (byte) (len & 0XFF);
+		b[index++] = (byte) ((this.moduleNameIndex >>> 8) & 0XFF);
+		b[index++] = (byte) (this.moduleNameIndex & 0XFF);
+		b[index++] = (byte) ((this.moduleFlags >>> 8) & 0XFF);
+		b[index++] = (byte) (this.moduleFlags & 0XFF);
+		b[index++] = (byte) ((this.moduleVersionIndex >>> 8) & 0XFF);
+		b[index++] = (byte) (this.moduleVersionIndex & 0XFF);
+		b[index++] = (byte) ((this.requireCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.requireCount & 0XFF);
+		for (StructModuleRequire s : this.requires)
+		{
+			System.arraycopy(s.toByteArray(), 0, b, index, 6);
+			index+=6;
+		}
+		b[index++] = (byte) ((this.exportCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.exportCount & 0XFF);
+		for (StructModuleExport s : this.exports)
+		{
+			int l = s.getLength();
+			System.arraycopy(s.toByteArray(), 0, b, index, l);
+			index+=l;
+		}
+		b[index++] = (byte) ((this.openCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.openCount & 0XFF);
+		for (StructModuleOpen s : this.opens)
+		{
+			int l = s.getLength();
+			System.arraycopy(s.toByteArray(), 0, b, index, l);
+			index += l;
+		}
+		b[index++] = (byte) ((this.useCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.useCount & 0XFF);
+		for (short s : this.uses)
+		{
+			b[index++] = (byte) ((s >>> 8) & 0XFF);
+			b[index++] = (byte) (s & 0XFF);
+		}
+		b[index++] = (byte) ((this.provideCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.provideCount & 0XFF);
+		for (StructModuleProvide s : this.provides)
+		{
+			int l = s.getLength();
+			System.arraycopy(s.toByteArray(), 0, b, index, l);
+			index+=l;
+		}
+		return b;
 	}
 }

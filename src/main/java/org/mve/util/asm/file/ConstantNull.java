@@ -7,4 +7,10 @@ public class ConstantNull extends ConstantPoolElement
 	{
 		return ConstantPoolElementType.CONSTANT_NULL;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return null;
+	}
 }

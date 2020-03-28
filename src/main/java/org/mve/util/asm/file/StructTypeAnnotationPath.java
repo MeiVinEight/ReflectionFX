@@ -1,8 +1,10 @@
 package org.mve.util.asm.file;
 
+import org.mve.util.Binary;
+
 import java.util.Objects;
 
-public class StructTypeAnnotationPath
+public class StructTypeAnnotationPath implements Binary
 {
 	private byte pathLength;
 	private StructPath[] paths = new StructPath[0];
@@ -34,5 +36,20 @@ public class StructTypeAnnotationPath
 	public int getLength()
 	{
 		return 1 + (2 * this.pathLength);
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		b[0] = this.pathLength;
+		int index = 1;
+		for (StructPath s : this.paths)
+		{
+			System.arraycopy(s.toByteArray(), 0, b, index, 2);
+			index+=2;
+		}
+		return b;
 	}
 }

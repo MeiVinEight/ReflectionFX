@@ -24,4 +24,10 @@ public class TypeAnnotationTargetOffset extends TypeAnnotationTarget
 	{
 		return 2;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{(byte) ((this.offset >>> 8) & 0XFF), (byte) (this.offset & 0XFF)};
+	}
 }

@@ -46,6 +46,29 @@ public class AttributeInnerClasses extends Attribute
 	@Override
 	public int getLength()
 	{
-		return 2 + (8 * this.innerClassCount);
+		return 8 + (8 * this.innerClassCount);
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		int index = 0;
+		b[index++] = (byte) ((this.getAttributeNameIndex() >>> 8) & 0XFF);
+		b[index++] = (byte) (this.getAttributeNameIndex() & 0XFF);
+		len -= 6;
+		b[index++] = (byte) ((len >>> 24) & 0XFF);
+		b[index++] = (byte) ((len >>> 16) & 0XFF);
+		b[index++] = (byte) ((len >>> 8) & 0XFF);
+		b[index++] = (byte) (len & 0XFF);
+		b[index++] = (byte) ((this.innerClassCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.innerClassCount & 0XFF);
+		for (StructInnerClass s : this.innerClasses)
+		{
+			System.arraycopy(s.toByteArray(), 0, b, index, 8);
+			index+=8;
+		}
+		return b;
 	}
 }

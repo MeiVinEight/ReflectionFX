@@ -19,4 +19,10 @@ public class VerificationUninitializedVariable extends Verification
 	{
 		return VerificationType.ITEM_UNINITIALIZED;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{8, (byte) ((this.offset >>> 8) & 0XFF), (byte) (this.offset & 0XFF)};
+	}
 }

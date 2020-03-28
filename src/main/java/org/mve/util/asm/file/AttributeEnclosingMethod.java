@@ -39,6 +39,24 @@ public class AttributeEnclosingMethod extends Attribute
 	@Override
 	public int getLength()
 	{
-		return 4;
+		return 10;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		byte[] b = new byte[10];
+		int index = 0;
+		b[index++] = (byte) ((this.getAttributeNameIndex() >>> 8) & 0XFF);
+		b[index++] = (byte) (this.getAttributeNameIndex() & 0XFF);
+		b[index++] = 0;
+		b[index++] = 0;
+		b[index++] = 0;
+		b[index++] = 4;
+		b[index++] = (byte) ((this.classIndex >>> 8) & 0XFF);
+		b[index++] = (byte) (this.classIndex & 0XFF);
+		b[index++] = (byte) ((this.methodIndex >>> 8) & 0XFF);
+		b[index] = (byte) (this.methodIndex & 0XFF);
+		return b;
 	}
 }

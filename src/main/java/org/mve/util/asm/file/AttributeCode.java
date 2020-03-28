@@ -107,9 +107,50 @@ public class AttributeCode extends Attribute
 	@Override
 	public int getLength()
 	{
-		int len = 12 + this.codeLength + (8 * this.exceptionTableLength);
+		int len = 18 + this.codeLength + (8 * this.exceptionTableLength);
 		len += (this.attributes.length * 6);
 		for (Attribute a : this.attributes) len += a.getLength();
 		return len;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		int index = 0;
+		byte[] b = new byte[len];
+		b[index++] = (byte) ((this.getAttributeNameIndex() >>> 8) & 0XFF);
+		b[index++] = (byte) (this.getAttributeNameIndex() & 0XFF);
+		len -= 6;
+		b[index++] = (byte) ((len >>> 24) & 0XFF);
+		b[index++] = (byte) ((len >>> 16) & 0XFF);
+		b[index++] = (byte) ((len >>> 8) & 0XFF);
+		b[index++] = (byte) (len & 0XFF);
+		b[index++] = (byte) ((this.maxStack >>> 8) & 0XFF);
+		b[index++] = (byte) (this.maxStack & 0XFF);
+		b[index++] = (byte) ((this.maxLocals >>> 8) & 0XFF);
+		b[index++] = (byte) (this.maxLocals & 0XFF);
+		b[index++] = (byte) ((this.codeLength >>> 24) & 0XFF);
+		b[index++] = (byte) ((this.codeLength >>> 16) & 0XFF);
+		b[index++] = (byte) ((this.codeLength >>> 8) & 0XFF);
+		b[index++] = (byte) (this.codeLength & 0XFF);
+		System.arraycopy(this.code, 0, b, index, this.codeLength);
+		index+=this.codeLength;
+		b[index++] = (byte) ((this.exceptionTableLength >>> 8) & 0XFF);
+		b[index++] = (byte) (this.exceptionTableLength & 0XFF);
+		for (StructExceptionTable s : this.exceptionTable)
+		{
+			System.arraycopy(s.toByteArray(), 0, b, index, 8);
+			index+=8;
+		}
+		b[index++] = (byte) ((this.attributesCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.attributesCount & 0XFF);
+		for (Attribute a : this.attributes)
+		{
+			int l = a.getLength();
+			System.arraycopy(a.toByteArray(), 0, b, index, l);
+			index+=l;
+		}
+		return b;
 	}
 }

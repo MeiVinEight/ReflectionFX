@@ -51,6 +51,37 @@ public class ReflectInvokeFactory
 		return generic(clazz, methodName, isStatic, returnType, params);
 	}
 
+	public static ReflectInvoker getReflectInvoker(ClassLoader classLoader, String className, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException, ClassNotFoundException
+	{
+		Class<?> checkClass = Class.forName(className, false, classLoader);
+		URL url = classLoader.getResource(className.replace('.', '/').concat(".class"));
+		if (url == null) throw new ClassNotFoundException(className);
+		ClassMethod method;
+		TRY:
+		{
+			try
+			{
+				InputStream in = url.openStream();
+				byte[] code = IO.toByteArray(in);
+				in.close();
+				ClassFile file = new ClassFile(code);
+				ConstantPool pool = file.getConstantPool();
+				for (int i = 0; i < file.getMethodCount(); i++)
+				{
+					method = file.getMethod(i);
+					if (Objects.requireNonNull(methodName).equals(((ConstantUTF8)pool.getConstantPoolElement(method.getNameIndex())).getUTF8())) break TRY;
+				}
+				throw new NoSuchMethodException(methodName);
+			}
+			catch (IOException e)
+			{
+				throw new ReflectionGenericException("Can not check method name", e);
+			}
+		}
+
+		return generic(checkClass, methodName, (method.getAccessFlag() & AccessFlag.ACC_STATIC) != 0, returnType, params);
+	}
+
 	private static ReflectInvoker generic(Class<?> clazz, String methodName, boolean isStatic, Class<?> returnType, Class<?>... params) throws ReflectionGenericException
 	{
 		// class name
@@ -120,18 +151,6 @@ public class ReflectInvokeFactory
 		cw.visitEnd();
 		byte[] code = cw.toByteArray();
 
-		try
-		{
-			FileOutputStream out = new FileOutputStream("ReflectInvokerImpl0.class");
-			out.write(code);
-			out.flush();
-			out.close();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-
 		// load the class's byte code
 		try
 		{
@@ -142,37 +161,6 @@ public class ReflectInvokeFactory
 		{
 			throw new ReflectionGenericException("Can not define class", throwable);
 		}
-	}
-
-	public static ReflectInvoker getReflectInvoker(ClassLoader classLoader, String className, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException, ClassNotFoundException
-	{
-		Class<?> checkClass = Class.forName(className, false, classLoader);
-		URL url = classLoader.getResource(className.replace('.', '/').concat(".class"));
-		if (url == null) throw new ClassNotFoundException(className);
-		ClassMethod method;
-		TRY:
-		{
-			try
-			{
-				InputStream in = url.openStream();
-				byte[] code = IO.toByteArray(in);
-				in.close();
-				ClassFile file = new ClassFile(code);
-				ConstantPool pool = file.getConstantPool();
-				for (int i = 0; i < file.getMethodCount(); i++)
-				{
-					method = file.getMethod(i);
-					if (Objects.requireNonNull(methodName).equals(((ConstantUTF8)pool.getConstantPoolElement(method.getNameIndex())).getUTF8())) break TRY;
-				}
-				throw new NoSuchMethodException(methodName);
-			}
-			catch (IOException e)
-			{
-				throw new ReflectionGenericException("Can not check method name", e);
-			}
-		}
-
-		return generic(checkClass, methodName, (method.getAccessFlag() & AccessFlag.ACC_STATIC) != 0, returnType, params);
 	}
 
 	private static String getDescription(Class<?> clazz)

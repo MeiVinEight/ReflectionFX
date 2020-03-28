@@ -31,4 +31,22 @@ public class ElementValueArray extends ElementValue
 		for (ElementValue e : this.values) len += e.getLength();
 		return len;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		int index = 0;
+		byte[] b = new byte[len];
+		b[index++] = this.getType();
+		b[index++] = (byte) ((this.valueCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.valueCount & 0XFF);
+		for (ElementValue value : this.values)
+		{
+			int l = value.getLength();
+			System.arraycopy(value.toByteArray(), 0, b, index, l);
+			index+=l;
+		}
+		return b;
+	}
 }

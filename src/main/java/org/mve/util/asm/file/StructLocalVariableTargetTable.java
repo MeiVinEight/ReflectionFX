@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public class StructLocalVariableTargetTable
+import org.mve.util.Binary;
+
+public class StructLocalVariableTargetTable implements Binary
 {
 	private short startPc;
 	private short length;
@@ -34,5 +36,19 @@ public class StructLocalVariableTargetTable
 	public void setIndex(short index)
 	{
 		this.index = index;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]
+		{
+			(byte) ((this.startPc >>> 8) & 0XFF),
+			(byte) (this.startPc & 0XFF),
+			(byte) ((this.length >>> 8) & 0XFF),
+			(byte) (this.length & 0XFF),
+			(byte) ((this.index >>> 8) & 0XFF),
+			(byte) (this.index & 0XFF)
+		};
 	}
 }

@@ -45,6 +45,28 @@ public class AttributeMethodParameters extends Attribute
 	@Override
 	public int getLength()
 	{
-		return 1 + (this.parameterCount * 4);
+		return 7 + (this.parameterCount * 4);
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		int index = 0;
+		b[index++] = (byte) ((this.getAttributeNameIndex() >>> 8) & 0XFF);
+		b[index++] = (byte) (this.getAttributeNameIndex() & 0XFF);
+		len -= 6;
+		b[index++] = (byte) ((len >>> 24) & 0XFF);
+		b[index++] = (byte) ((len >>> 16) & 0XFF);
+		b[index++] = (byte) ((len >>> 8) & 0XFF);
+		b[index++] = (byte) (len & 0XFF);
+		b[index++] = this.parameterCount;
+		for (StructMethodParameter s : this.parameters)
+		{
+			System.arraycopy(s.toByteArray(), 0, b, index, 4);
+			index+=4;
+		}
+		return b;
 	}
 }

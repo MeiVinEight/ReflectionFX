@@ -28,6 +28,23 @@ public class AttributeSourceDebugExtension extends Attribute
 	@Override
 	public int getLength()
 	{
-		return this.extension.length;
+		return this.extension.length+6;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		int index = 0;
+		b[index++] = (byte) ((this.getAttributeNameIndex() >>> 8) & 0XFF);
+		b[index++] = (byte) (this.getAttributeNameIndex() & 0XFF);
+		len -= 6;
+		b[index++] = (byte) ((len >>> 24) & 0XFF);
+		b[index++] = (byte) ((len >>> 16) & 0XFF);
+		b[index++] = (byte) ((len >>> 8) & 0XFF);
+		b[index++] = (byte) (len & 0XFF);
+		System.arraycopy(this.extension, 0, b, index, this.extension.length);
+		return b;
 	}
 }

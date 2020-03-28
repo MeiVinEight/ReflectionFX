@@ -19,4 +19,10 @@ public class VerificationObjectVariable extends Verification
 	{
 		return VerificationType.ITEM_OBJECT;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{7, (byte) ((this.constantPoolIndex >>> 8) & 0XFF), (byte) (this.constantPoolIndex & 0XFF)};
+	}
 }

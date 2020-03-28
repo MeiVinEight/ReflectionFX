@@ -83,4 +83,32 @@ public class StackMapFullFrame extends StackMapFrame
 		for (Verification v : stackItems) len += v.getType().getLength();
 		return len;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		int index = 0;
+		byte[] b = new byte[len];
+		b[index++] = this.getFrameType();
+		b[index++] = (byte) ((this.offsetDelta >>> 8) & 0XFF);
+		b[index++] = (byte) (this.offsetDelta & 0XFF);
+		b[index++] = (byte) ((this.localCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.localCount & 0XFF);
+		for (Verification v : this.locals)
+		{
+			int l = v.getType().getLength();
+			System.arraycopy(v.toByteArray(), 0, b, index, l);
+			index+=l;
+		}
+		b[index++] = (byte) ((this.stackItemCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.stackItemCount & 0XFF);
+		for (Verification v : this.stackItems)
+		{
+			int l = v.getType().getLength();
+			System.arraycopy(v.toByteArray(), 0, b, index, l);
+			index+=l;
+		}
+		return b;
+	}
 }

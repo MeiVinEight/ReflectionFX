@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public class StructPath
+import org.mve.util.Binary;
+
+public class StructPath implements Binary
 {
 	private byte typePathKind;
 	private byte typeArgumentIndex;
@@ -23,5 +25,11 @@ public class StructPath
 	public void setTypeArgumentIndex(byte typeArgumentIndex)
 	{
 		this.typeArgumentIndex = typeArgumentIndex;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{typePathKind, typeArgumentIndex};
 	}
 }

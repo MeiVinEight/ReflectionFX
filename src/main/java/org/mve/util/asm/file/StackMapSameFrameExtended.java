@@ -30,4 +30,10 @@ public class StackMapSameFrameExtended extends StackMapFrame
 	{
 		return 3;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{this.getFrameType(), (byte) ((this.offsetDelta >>> 8) & 0XFF), (byte) (this.offsetDelta & 0XFF)};
+	}
 }

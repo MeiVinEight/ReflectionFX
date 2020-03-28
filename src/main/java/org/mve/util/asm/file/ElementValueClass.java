@@ -24,4 +24,10 @@ public class ElementValueClass extends ElementValue
 	{
 		return 3;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{this.getType(), (byte) ((this.classIndex >>> 8) & 0XFF), (byte) (this.classIndex & 0XFF)};
+	}
 }

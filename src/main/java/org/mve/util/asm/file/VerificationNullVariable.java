@@ -7,4 +7,10 @@ public class VerificationNullVariable extends Verification
 	{
 		return VerificationType.ITEM_NULL;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{5};
+	}
 }

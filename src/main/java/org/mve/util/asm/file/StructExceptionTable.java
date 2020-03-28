@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public class StructExceptionTable
+import org.mve.util.Binary;
+
+public class StructExceptionTable implements Binary
 {
 	private short startPc;
 	private short endPc;
@@ -45,5 +47,20 @@ public class StructExceptionTable
 	public short getCatchPc()
 	{
 		return catchPc;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		byte[] b = new byte[8];
+		b[0] = (byte) ((this.startPc >>> 8) & 0XFF);
+		b[1] = (byte) (this.startPc & 0XFF);
+		b[2] = (byte) ((this.endPc >>> 8) & 0XFF);
+		b[3] = (byte) (this.endPc & 0XFF);
+		b[4] = (byte) ((this.handlerPc >>> 8) & 0XFF);
+		b[5] = (byte) (this.handlerPc & 0XFF);
+		b[6] = (byte) ((this.catchPc >>> 8) & 0XFF);
+		b[7] = (byte) (this.catchPc & 0XFF);
+		return b;
 	}
 }

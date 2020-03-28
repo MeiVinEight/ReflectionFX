@@ -35,4 +35,10 @@ public class TypeAnnotationTargetTypeParameterBound extends TypeAnnotationTarget
 	{
 		return 2;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{this.typeParameterIndex, this.boundIndex};
+	}
 }

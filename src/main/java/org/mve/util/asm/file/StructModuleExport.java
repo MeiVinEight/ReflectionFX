@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public class StructModuleExport
+import org.mve.util.Binary;
+
+public class StructModuleExport implements Binary
 {
 	private short exportIndex;
 	private short exportFlags;
@@ -54,5 +56,25 @@ public class StructModuleExport
 	public int getLength()
 	{
 		return 6 + (2 * this.exportToCount);
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		b[0] = (byte) ((this.exportIndex >>> 8) & 0XFF);
+		b[1] = (byte) (this.exportIndex & 0XFF);
+		b[2] = (byte) ((this.exportFlags >>> 8) & 0XFF);
+		b[3] = (byte) (this.exportFlags & 0XFF);
+		b[4] = (byte) ((this.exportToCount >>> 8) & 0XFF);
+		b[5] = (byte) (this.exportToCount & 0XFF);
+		int index = 6;
+		for (short s : this.exportTo)
+		{
+			b[index++] = (byte) ((s >>> 8) & 0XFF);
+			b[index++] = (byte) (s & 0XFF);
+		}
+		return b;
 	}
 }

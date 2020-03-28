@@ -42,8 +42,32 @@ public class AttributeStackMapTable extends Attribute
 	@Override
 	public int getLength()
 	{
-		int len = 2;
+		int len = 8;
 		for (StackMapFrame frame : this.entries) len += frame.getLength();
 		return len;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		int index = 0;
+		b[index++] = (byte) ((this.getAttributeNameIndex() >>> 8) & 0XFF);
+		b[index++] = (byte) (this.getAttributeNameIndex() & 0XFF);
+		len -= 6;
+		b[index++] = (byte) ((len >>> 24) & 0XFF);
+		b[index++] = (byte) ((len >>> 16) & 0XFF);
+		b[index++] = (byte) ((len >>> 8) & 0XFF);
+		b[index++] = (byte) (len & 0XFF);
+		b[index++] = (byte) ((this.numberOfEntries >>> 8) & 0XFF);
+		b[index++] = (byte) (this.numberOfEntries & 0XFF);
+		for (StackMapFrame s : this.entries)
+		{
+			int l = s.getLength();
+			System.arraycopy(s.toByteArray(), 0, b, index, l);
+			index+=l;
+		}
+		return b;
 	}
 }

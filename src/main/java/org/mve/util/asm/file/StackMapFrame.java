@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public abstract class StackMapFrame
+import org.mve.util.Binary;
+
+public abstract class StackMapFrame implements Binary
 {
 	private final byte frameType;
 
@@ -13,7 +15,7 @@ public abstract class StackMapFrame
 
 	public abstract int getLength();
 
-	public byte getFrameType()
+	public final byte getFrameType()
 	{
 		return this.frameType;
 	}

@@ -24,4 +24,10 @@ public class TypeAnnotationTargetCatch extends TypeAnnotationTarget
 	{
 		return 2;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{(byte) ((this.exceptionTableIndex >>> 8) & 0XFF), (byte) (this.exceptionTableIndex & 0XFF)};
+	}
 }

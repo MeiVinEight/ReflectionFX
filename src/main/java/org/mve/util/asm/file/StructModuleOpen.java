@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public class StructModuleOpen
+import org.mve.util.Binary;
+
+public class StructModuleOpen implements Binary
 {
 	private short openIndex;
 	private short openFlags;
@@ -54,5 +56,25 @@ public class StructModuleOpen
 	public int getLength()
 	{
 		return 6 + (2 * this.openToCount);
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		int index = 0;
+		byte[] b = new byte[len];
+		b[index++] = (byte) ((this.openIndex >>> 8) & 0XFF);
+		b[index++] = (byte) (this.openIndex & 0XFF);
+		b[index++] = (byte) ((this.openFlags >>> 8) & 0XFF);
+		b[index++] = (byte) (this.openFlags & 0XFF);
+		b[index++] = (byte) ((this.openToCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.openToCount & 0XFF);
+		for (short s : this.openTo)
+		{
+			b[index++] = (byte) ((s >>> 8) & 0XFF);
+			b[index++] = (byte) (s & 0XFF);
+		}
+		return b;
 	}
 }

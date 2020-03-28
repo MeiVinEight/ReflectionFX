@@ -7,4 +7,10 @@ public class VerificationIntegerVariable extends Verification
 	{
 		return VerificationType.ITEM_INTEGER;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{1};
+	}
 }

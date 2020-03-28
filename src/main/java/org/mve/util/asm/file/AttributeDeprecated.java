@@ -16,6 +16,15 @@ public class AttributeDeprecated extends Attribute
 	@Override
 	public int getLength()
 	{
-		return 0;
+		return 6;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		byte[] b = new byte[6];
+		b[0] = (byte) ((this.getAttributeNameIndex() >>> 8) & 0XFF);
+		b[1] = (byte) (this.getAttributeNameIndex() & 0XFF);
+		return b;
 	}
 }

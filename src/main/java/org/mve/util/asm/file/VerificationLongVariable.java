@@ -7,4 +7,10 @@ public class VerificationLongVariable extends Verification
 	{
 		return VerificationType.ITEM_LONG;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{4};
+	}
 }

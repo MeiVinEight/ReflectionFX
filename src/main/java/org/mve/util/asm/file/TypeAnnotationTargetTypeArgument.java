@@ -35,4 +35,10 @@ public class TypeAnnotationTargetTypeArgument extends TypeAnnotationTarget
 	{
 		return 3;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{(byte) ((this.offset >>> 8) & 0XFF), (byte) (this.offset & 0XFF), this.typeArgumentIndex};
+	}
 }

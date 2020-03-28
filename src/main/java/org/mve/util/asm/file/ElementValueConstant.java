@@ -24,4 +24,10 @@ public class ElementValueConstant extends ElementValue
 	{
 		return 3;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{this.getType(), (byte) ((this.constantValueIndex >>> 8) & 0XFF), (byte) (this.constantValueIndex & 0XFF)};
+	}
 }

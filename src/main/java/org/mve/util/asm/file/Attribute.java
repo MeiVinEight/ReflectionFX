@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public abstract class Attribute
+import org.mve.util.Binary;
+
+public abstract class Attribute implements Binary
 {
 	private final short attributeNameIndex;
 

@@ -1,8 +1,10 @@
 package org.mve.util.asm.file;
 
+import org.mve.util.Binary;
+
 import java.util.Objects;
 
-public class ClassField
+public class ClassField implements Binary
 {
 	private short accessFlag;
 	private short nameIndex;
@@ -62,5 +64,34 @@ public class ClassField
 		arr[this.attributeCount] = Objects.requireNonNull(attribute);
 		this.attributes = arr;
 		this.attributeCount++;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = 8;
+		for (Attribute a : this.attributes) len += a.getLength();
+		byte[] b = new byte[len];
+		int index = 0;
+		b[index++] = (byte) ((this.accessFlag >>> 8) & 0XFF);
+		b[index++] = (byte) (this.accessFlag & 0XFF);
+		b[index++] = (byte) ((this.nameIndex >>> 8) & 0XFF);
+		b[index++] = (byte) (this.nameIndex & 0XFF);
+		b[index++] = (byte) ((this.descriptorIndex >>> 8) & 0XFF);
+		b[index++] = (byte) (this.descriptorIndex & 0XFF);
+		b[index++] = (byte) ((this.attributeCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.attributeCount & 0XFF);
+		for (Attribute a : this.attributes)
+		{
+			short nameIndex = a.getAttributeNameIndex();
+			b[index++] = (byte) ((nameIndex >>> 8) & 0XFF);
+			b[index++] = (byte) (nameIndex & 0XFF);
+			int l = a.getLength();
+			b[index++] = (byte) ((l >>> 24) & 0XFF);
+			b[index++] = (byte) ((l >>> 16) & 0XFF);
+			b[index++] = (byte) ((l >>> 8) & 0XFF);
+			b[index++] = (byte) (l & 0XFF);
+		}
+		return b;
 	}
 }

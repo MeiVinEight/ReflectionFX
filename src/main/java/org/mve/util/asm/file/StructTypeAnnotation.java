@@ -1,8 +1,10 @@
 package org.mve.util.asm.file;
 
+import org.mve.util.Binary;
+
 import java.util.Objects;
 
-public class StructTypeAnnotation
+public class StructTypeAnnotation implements Binary
 {
 	private byte targetType;
 	private TypeAnnotationTarget target;
@@ -76,5 +78,31 @@ public class StructTypeAnnotation
 		int len = 5 + target.getLength() + targetPath.getLength();
 		for (StructElementValuePairs s : this.elementValuePairs) len += s.getLength();
 		return len;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		int index = 0;
+		byte[] b = new byte[len];
+		b[index++] = this.targetType;
+		int l = this.target.getLength();
+		System.arraycopy(this.target.toByteArray(), 0, b, index, l);
+		index += l;
+		l = this.targetPath.getLength();
+		System.arraycopy(this.targetPath.toByteArray(), 0, b, index, l);
+		index+=l;
+		b[index++] = (byte) ((this.typeIndex >>> 8) & 0XFF);
+		b[index++] = (byte) (this.typeIndex & 0XFF);
+		b[index++] = (byte) ((this.elementValuePairsCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.elementValuePairsCount & 0XFF);
+		for (StructElementValuePairs s : this.elementValuePairs)
+		{
+			l = s.getLength();
+			System.arraycopy(s.toByteArray(), 0, b, index, l);
+			index+=l;
+		}
+		return b;
 	}
 }

@@ -44,4 +44,22 @@ public class StackMapAppendFrame extends StackMapFrame
 		for (Verification verification : verifications) len += verification.getType().getLength();
 		return len;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		int index = 0;
+		b[index++] = this.getFrameType();
+		b[index++] = (byte) ((this.offsetDelta >>> 8) & 0XFF);
+		b[index++] = (byte) (this.offsetDelta & 0XFF);
+		for (Verification v : this.verifications)
+		{
+			int l = v.getType().getLength();
+			System.arraycopy(v.toByteArray(), 0, b, index, l);
+			index+=l;
+		}
+		return b;
+	}
 }

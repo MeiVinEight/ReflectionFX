@@ -18,4 +18,10 @@ public class StackMapSameFrame extends StackMapFrame
 	{
 		return 1;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{this.getFrameType()};
+	}
 }

@@ -35,4 +35,17 @@ public class ElementValueEnum extends ElementValue
 	{
 		return 5;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]
+		{
+			this.getType(),
+			(byte) ((this.typeNameIndex >>> 8) & 0XFF),
+			(byte) (this.typeNameIndex & 0XFF),
+			(byte) ((this.constNameIndex >>> 8) & 0XFF),
+			(byte) (this.constNameIndex & 0XFF)
+		};
+	}
 }

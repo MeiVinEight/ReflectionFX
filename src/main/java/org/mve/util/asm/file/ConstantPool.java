@@ -25,7 +25,7 @@ public class ConstantPool
 	 */
 	private ConstantPoolElement[] elements = new ConstantPoolElement[1];
 
-	public ConstantPoolElement getConstantPoolElement(short index)
+	public ConstantPoolElement getConstantPoolElement(int index)
 	{
 		return elements[index];
 	}

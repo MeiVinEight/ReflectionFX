@@ -41,4 +41,15 @@ public class StackMapSameLocals1StackItemFrameExtended extends StackMapFrame
 	{
 		return 3 + this.verification.getType().getLength();
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		byte[] b = new byte[this.getLength()];
+		b[0] = this.getFrameType();
+		b[1] = (byte) ((this.offsetDelta >>> 8) & 0XFF);
+		b[2] = (byte) (this.offsetDelta & 0XFF);
+		System.arraycopy(this.verification.toByteArray(), 0, b, 3, this.verification.getType().getLength());
+		return b;
+	}
 }

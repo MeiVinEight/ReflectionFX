@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public abstract class ElementValue
+import org.mve.util.Binary;
+
+public abstract class ElementValue implements Binary
 {
 	private final byte type;
 

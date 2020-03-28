@@ -7,4 +7,10 @@ public class VerificationUninitializedThisVariable extends Verification
 	{
 		return VerificationType.ITEM_UNINITIALIZED_THIS;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{6};
+	}
 }

@@ -45,8 +45,32 @@ public class AttributeRuntimeVisibleTypeAnnotations extends Attribute
 	@Override
 	public int getLength()
 	{
-		int len = 2;
+		int len = 8;
 		for (StructTypeAnnotation s : this.annotations) len += s.getLength();
 		return len;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		int index = 0;
+		b[index++] = (byte) ((this.getAttributeNameIndex() >>> 8) & 0XFF);
+		b[index++] = (byte) (this.getAttributeNameIndex() & 0XFF);
+		len -= 6;
+		b[index++] = (byte) ((len >>> 24) & 0XFF);
+		b[index++] = (byte) ((len >>> 16) & 0XFF);
+		b[index++] = (byte) ((len >>> 8) & 0XFF);
+		b[index++] = (byte) (len & 0XFF);
+		b[index++] = (byte) ((this.annotationCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.annotationCount & 0XFF);
+		for (StructTypeAnnotation s : this.annotations)
+		{
+			int l = s.getLength();
+			System.arraycopy(s.toByteArray(), 0, b, index, l);
+			index+=l;
+		}
+		return b;
 	}
 }

@@ -24,4 +24,14 @@ public class ElementValueAnnotation extends ElementValue
 	{
 		return 1 + this.annotation.getLength();
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		b[0] = this.getType();
+		System.arraycopy(this.annotation.toByteArray(), 0, b, 1, len-1);
+		return b;
+	}
 }

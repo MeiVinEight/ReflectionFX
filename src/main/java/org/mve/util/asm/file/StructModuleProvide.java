@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public class StructModuleProvide
+import org.mve.util.Binary;
+
+public class StructModuleProvide implements Binary
 {
 	private short provideIndex;
 	private short provideWithCount;
@@ -43,5 +45,23 @@ public class StructModuleProvide
 	public int getLength()
 	{
 		return 4 + (2 * this.provideWithCount);
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		int index = 0;
+		byte[] b = new byte[len];
+		b[index++] = (byte) ((this.provideIndex >>> 8) & 0XFF);
+		b[index++] = (byte) (this.provideIndex & 0XFF);
+		b[index++] = (byte) ((this.provideWithCount >>> 8) & 0XFF);
+		b[index++] = (byte) (this.provideWithCount & 0XFF);
+		for (short s : this.provideWith)
+		{
+			b[index++] = (byte) ((s >>> 8) & 0XFF);
+			b[index++] = (byte) (s & 0XFF);
+		}
+		return b;
 	}
 }

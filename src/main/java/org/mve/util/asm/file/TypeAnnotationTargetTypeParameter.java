@@ -24,4 +24,10 @@ public class TypeAnnotationTargetTypeParameter extends TypeAnnotationTarget
 	{
 		return 1;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{this.typeParameterIndex};
+	}
 }

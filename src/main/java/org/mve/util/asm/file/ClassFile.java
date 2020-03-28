@@ -562,6 +562,22 @@ public class ClassFile implements Binary
 			out.writeShort(this.minorVersion);
 			out.writeShort(this.majorVersion);
 			out.writeShort(this.constantPool.getConstantPoolSize());
+			for (int i = 1; i < this.constantPool.getConstantPoolSize(); i++)
+			{
+				ConstantPoolElement element = this.constantPool.getConstantPoolElement(i);
+				if (element.getType() == ConstantPoolElementType.CONSTANT_NULL) continue;
+				out.write(element.toByteArray());
+			}
+			out.writeShort(this.thisClassIndex);
+			out.writeShort(this.superClassIndex);
+			out.writeShort(this.interfaceCount);
+			for (int i = 0; i < this.interfaceCount; i++) out.writeShort(this.interfaces[i]);
+			out.writeShort(this.fieldCount);
+			for (ClassField field : this.fields) out.write(field.toByteArray());
+			out.writeShort(this.methodCount);
+			for (ClassMethod method : this.methods) out.write(method.toByteArray());
+			out.writeShort(this.attributeCount);
+			for (Attribute a : this.attributes) out.write(a.toByteArray());
 			return bout.toByteArray();
 		}
 		catch (IOException e)

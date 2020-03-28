@@ -24,4 +24,10 @@ public class TypeAnnotationTargetThrows extends TypeAnnotationTarget
 	{
 		return 2;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{(byte) ((this.throwsTypeIndex >>> 8) & 0XFF), (byte) (this.throwsTypeIndex & 0XFF)};
+	}
 }

@@ -41,4 +41,20 @@ public class TypeAnnotationTargetLocalVariable extends TypeAnnotationTarget
 	{
 		return 2 + (6 * this.tableLength);
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		int index = 0;
+		b[index++] = (byte) ((this.tableLength >>> 8) & 0XFF);
+		b[index++] = (byte) (this.tableLength & 0XFF);
+		for (StructLocalVariableTargetTable s : this.tables)
+		{
+			System.arraycopy(s.toByteArray(), 0, b, index, 6);
+			index+=6;
+		}
+		return b;
+	}
 }

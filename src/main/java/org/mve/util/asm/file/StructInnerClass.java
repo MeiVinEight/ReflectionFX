@@ -1,6 +1,8 @@
 package org.mve.util.asm.file;
 
-public class StructInnerClass
+import org.mve.util.Binary;
+
+public class StructInnerClass implements Binary
 {
 	private short innerClassInfoIndex;
 	private short outerClassInfoIndex;
@@ -45,5 +47,20 @@ public class StructInnerClass
 	public short getInnerClassAccessFlag()
 	{
 		return innerClassAccessFlag;
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		byte[] b = new byte[8];
+		b[0] = (byte) ((this.innerClassInfoIndex >>> 8) & 0XFF);
+		b[1] = (byte) (this.innerClassInfoIndex & 0XFF);
+		b[2] = (byte) ((this.outerClassInfoIndex >>> 8) & 0XFF);
+		b[3] = (byte) (this.outerClassInfoIndex & 0XFF);
+		b[4] = (byte) ((this.innerNameIndex >>> 8) & 0XFF);
+		b[5] = (byte) (this.innerNameIndex & 0XFF);
+		b[6] = (byte) ((this.innerClassAccessFlag >>> 8) & 0XFF);
+		b[7] = (byte) (this.innerClassAccessFlag & 0XFF);
+		return b;
 	}
 }

@@ -7,4 +7,10 @@ public class VerificationTopVariable extends Verification
 	{
 		return VerificationType.ITEM_TOP;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{0};
+	}
 }

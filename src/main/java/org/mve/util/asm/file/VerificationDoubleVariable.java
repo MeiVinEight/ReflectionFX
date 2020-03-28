@@ -7,4 +7,10 @@ public class VerificationDoubleVariable extends Verification
 	{
 		return VerificationType.ITEM_DOUBLE;
 	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		return new byte[]{3};
+	}
 }

@@ -44,6 +44,29 @@ public class AttributeLocalVariableTable extends Attribute
 	@Override
 	public int getLength()
 	{
-		return 2 + (10 * this.localVariableTableLength);
+		return 8 + (10 * this.localVariableTableLength);
+	}
+
+	@Override
+	public byte[] toByteArray()
+	{
+		int len = this.getLength();
+		byte[] b = new byte[len];
+		int index = 0;
+		b[index++] = (byte) ((this.getAttributeNameIndex() >>> 8) & 0XFF);
+		b[index++] = (byte) (this.getAttributeNameIndex() & 0XFF);
+		len -= 6;
+		b[index++] = (byte) ((len >>> 24) & 0XFF);
+		b[index++] = (byte) ((len >>> 16) & 0XFF);
+		b[index++] = (byte) ((len >>> 8) & 0XFF);
+		b[index++] = (byte) (len & 0XFF);
+		b[index++] = (byte) ((this.localVariableTableLength >>> 8) & 0XFF);
+		b[index++] = (byte) (this.localVariableTableLength & 0XFF);
+		for (StructLocalVariableTable s : this.localVariableTables)
+		{
+			System.arraycopy(s.toByteArray(), 0, b, index, 10);
+			index+=10;
+		}
+		return b;
 	}
 }
