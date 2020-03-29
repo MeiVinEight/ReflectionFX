@@ -11,6 +11,7 @@ import org.mve.util.asm.file.ConstantPool;
 import org.mve.util.asm.file.ConstantUTF8;
 import sun.misc.Unsafe;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
@@ -188,17 +189,19 @@ public class ReflectInvokeFactory
 		String superClass = null;
 		try
 		{
-			URL url = ReflectInvokeFactory.class.getClassLoader().getResource("org/mve/util/reflect/ReflectInvokeFactory.class");
+			URL url = ClassLoader.getSystemClassLoader().getResource("java/lang/Object.class");
 			if (url == null) throw new NullPointerException();
 			InputStream in = url.openStream();
-			byte[] code = IO.toByteArray(in);
+			if (6 != in.skip(6)) throw new UnknownError();
+//			byte[] code = IO.toByteArray(in);
+			int majorVersion = new DataInputStream(in).readShort() & 0XFFFF;
 			in.close();
 
 			Field field = Unsafe.class.getDeclaredField("theUnsafe");
 			field.setAccessible(true);
 			Unsafe usf = (Unsafe) field.get(null);
 
-			if (code[7] > 0X34)
+			if (majorVersion > 0X34)
 			{
 				Class<?> clazz = Class.forName("jdk.internal.module.IllegalAccessLogger");
 				Field loggerField = clazz.getDeclaredField("logger");
@@ -206,10 +209,10 @@ public class ReflectInvokeFactory
 				usf.putObjectVolatile(clazz, offset, null);
 			}
 
-			if (code[7] <= 0X34) superClass = "sun/reflect/MagicAccessorImpl";
+			if (majorVersion <= 0X34) superClass = "sun/reflect/MagicAccessorImpl";
 			else superClass = "jdk/internal/reflect/MagicAccessorImpl";
 
-			String loaderClassName = code[7] <= 0X34 ? "sun.reflect.DelegatingClassLoader" : "jdk.internal.reflect.DelegatingClassLoader";
+			String loaderClassName = majorVersion <= 0X34 ? "sun.reflect.DelegatingClassLoader" : "jdk.internal.reflect.DelegatingClassLoader";
 			Class<?> clazz = Class.forName(loaderClassName);
 			field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
 			field.setAccessible(true);
@@ -221,6 +224,10 @@ public class ReflectInvokeFactory
 //			in = url.openStream();
 //			code = IO.toByteArray(in);
 //			handle.invoke(null, code, 0, code.length, null, null);
+		}
+		catch (UnknownError err)
+		{
+			throw err;
 		}
 		catch (Throwable t)
 		{
