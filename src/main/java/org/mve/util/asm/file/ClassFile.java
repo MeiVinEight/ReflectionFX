@@ -160,6 +160,56 @@ public class ClassFile implements Binary
 	 * 			CONSTANT_Package			20				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.12">§4.4.12<a/>
 	 *
 	 *
+	 * In a class file whose version number is v, each entry in the constant_pool table
+	 * must have a tag that was first defined in version v or earlier of the class file
+	 * format (<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.1">§4.1<a/>). That is, each entry must denote a kind of constant that is approved
+	 * for use in the class file. <a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4-210">Table 4.4-B<a/> lists each tag with the first version of
+	 * the class file format in which it was defined. Also shown is the version of the
+	 * Java SE Platform which introduced that version of the class file format.
+	 *
+	 * 						Table 4.4-B. Constant pool tags (by tag)
+	 * 			Constant Kind 					Tag 	class file format 	Java SE
+	 * 			CONSTANT_Utf8					1 			45.3 			1.0.2
+	 * 			CONSTANT_Integer				3 			45.3 			1.0.2
+	 * 			CONSTANT_Float					4 			45.3 			1.0.2
+	 * 			CONSTANT_Long					5 			45.3 			1.0.2
+	 * 			CONSTANT_Double					6 			45.3 			1.0.2
+	 * 			CONSTANT_Class					7 			45.3 			1.0.2
+	 * 			CONSTANT_String					8 			45.3 			1.0.2
+	 * 			CONSTANT_Fieldref				9 			45.3 			1.0.2
+	 * 			CONSTANT_Methodref				10 			45.3 			1.0.2
+	 * 			CONSTANT_InterfaceMethodref		11 			45.3 			1.0.2
+	 * 			CONSTANT_NameAndType			12 			45.3 			1.0.2
+	 * 			CONSTANT_MethodHandle			15 			51.0 			7
+	 * 			CONSTANT_MethodType				16 			51.0 			7
+	 * 			CONSTANT_Dynamic				17 			55.0 			11
+	 * 			CONSTANT_InvokeDynamic			18 			51.0 			7
+	 * 			CONSTANT_Module					19 			53.0 			9
+	 * 			CONSTANT_Package				20 			53.0 			9
+	 *
+	 *
+	 * Some entries in the constant_pool table are loadable because they represent
+	 * entities that can be pushed onto the stack at run time to enable further computation.
+	 * In a class file whose version number is v, an entry in the constant_pool table is
+	 * loadable if it has a tag that was first deemed to be loadable in version v or earlier
+	 * of the class file format. <a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4-310">Table 4.4-C<a/> lists each tag with the first version of the
+	 * class file format in which it was deemed to be loadable. Also shown is the version
+	 * of the Java SE Platform which introduced that version of the class file format.
+	 *
+	 * In every case except CONSTANT_Class, a tag was first deemed to be loadable
+	 * in the same version of the class file format that first defined the tag.
+	 *
+	 * 				Table 4.4-C. Loadable constant pool tags
+	 * 		Constant Kind			Tag 	class file format 	Java SE
+	 * 		CONSTANT_Integer		3 			45.3 			1.0.2
+	 * 		CONSTANT_Float			4 			45.3 			1.0.2
+	 * 		CONSTANT_Long			5 			45.3 			1.0.2
+	 * 		CONSTANT_Double			6 			45.3 			1.0.2
+	 * 		CONSTANT_Class			7 			49.0 			5.0
+	 * 		CONSTANT_String			8 			45.3 			1.0.2
+	 * 		CONSTANT_MethodHandle	15 			51.0 			7
+	 * 		CONSTANT_MethodType 	16 			51.0 			7
+	 * 		CONSTANT_Dynamic 		17 			55.0 			11
 	 */
 	private final ConstantPool constantPool = new ConstantPool();
 
