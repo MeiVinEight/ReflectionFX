@@ -1,16 +1,24 @@
-import org.mve.util.SystemUtil;
 import org.mve.util.reflect.ReflectInvokeFactory;
-import org.mve.util.reflect.ReflectionGenericException;
 
 public class Main
 {
-	public static void main(String[] args) throws ReflectionGenericException, NoSuchMethodException
+	private Main()
 	{
-		ReflectInvokeFactory.getReflectInvoker(Main.class, "a", void.class).invoke(null);
+		System.out.println("CTR");
 	}
 
-	private static void a()
+	private void a(Object obj)
 	{
-		SystemUtil.printStackTrace();
+		System.out.println("Obj");
+	}
+
+	private void a(int[] a)
+	{
+		System.out.println("int[]");
+	}
+
+	public static void main(String[] args) throws Exception
+	{
+		ReflectInvokeFactory.getReflectInvoker(Main.class, "<init>", void.class).invoke(new Main());
 	}
 }
