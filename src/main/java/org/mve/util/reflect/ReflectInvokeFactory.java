@@ -254,10 +254,15 @@ public class ReflectInvokeFactory
 		mv.visitMaxs(1, 1);
 		mv.visitEnd();
 		mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+		Label label = new Label();
+		mv.visitVarInsn(Opcodes.ALOAD, 2);
+		mv.visitJumpInsn(Opcodes.IFNULL, label);
+		mv.visitVarInsn(Opcodes.ALOAD, 2);
+		mv.visitInsn(Opcodes.ARRAYLENGTH);
+		mv.visitJumpInsn(Opcodes.IFEQ, label);
 		mv.visitVarInsn(Opcodes.ALOAD, 2);
 		mv.visitInsn(Opcodes.ICONST_0);
 		mv.visitInsn(Opcodes.AALOAD);
-		Label label = new Label();
 		mv.visitJumpInsn(Opcodes.IFNULL, label);
 		if (isFinal)
 		{
