@@ -1,12 +1,15 @@
 package org.mve.util.reflect;
 
 import org.jetbrains.org.objectweb.asm.ClassWriter;
+import org.jetbrains.org.objectweb.asm.Label;
 import org.jetbrains.org.objectweb.asm.MethodVisitor;
 import org.jetbrains.org.objectweb.asm.Opcodes;
 import org.mve.util.IO;
 import org.mve.util.asm.file.AccessFlag;
+import org.mve.util.asm.file.ClassField;
 import org.mve.util.asm.file.ClassFile;
 import org.mve.util.asm.file.ClassMethod;
+import org.mve.util.asm.file.ConstantClass;
 import org.mve.util.asm.file.ConstantPool;
 import org.mve.util.asm.file.ConstantUTF8;
 import sun.misc.Unsafe;
@@ -40,24 +43,31 @@ public class ReflectInvokeFactory
 	 */
 	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException
 	{
-		// find method and throw NoSuchMethodException
-		ClassMethod method = checkMethod(clazz, methodName, returnType, params);
-		return generic(clazz, methodName, (method.getAccessFlag() & AccessFlag.ACC_STATIC) != 0, returnType, params);
+		return checkMethodAndGeneric(clazz.getClassLoader(), clazz, methodName, returnType, params);
 	}
 
 	public static ReflectInvoker getReflectInvoker(ClassLoader classLoader, String className, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException, ClassNotFoundException
 	{
 		Class<?> checkClass = Class.forName(className, false, classLoader);
-		ClassMethod method = checkMethod(checkClass, methodName, returnType, params);
-		return generic(checkClass, methodName, (method.getAccessFlag() & AccessFlag.ACC_STATIC) != 0, returnType, params);
+		return checkMethodAndGeneric(classLoader, checkClass, methodName, returnType, params);
 	}
 
-	private static ClassMethod checkMethod(Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException
+	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String fieldName) throws NoSuchFieldException, ReflectionGenericException
 	{
-		ClassLoader classLoader = clazz.getClassLoader();
+		return checkFieldAndGeneric(clazz.getClassLoader(), clazz, fieldName);
+	}
+
+	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className, String fieldName) throws NoSuchFieldException, ReflectionGenericException, ClassNotFoundException
+	{
+		Class<?> checkClass = Class.forName(className, false, loader);
+		return checkFieldAndGeneric(loader, checkClass, fieldName);
+	}
+
+	private static ReflectInvoker checkMethodAndGeneric(ClassLoader loader, Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException
+	{
 		String descName = clazz.getTypeName().replace('.', '/');
 		String pathName = descName.concat(".class");
-		URL url = classLoader.getResource(pathName);
+		URL url = loader.getResource(pathName);
 		if (url == null) throw new NullPointerException(pathName);
 		MethodType type = MethodType.methodType(returnType, params);
 		ClassMethod method;
@@ -75,8 +85,8 @@ public class ReflectInvokeFactory
 					Objects.requireNonNull(methodName).equals(((ConstantUTF8)pool.getConstantPoolElement(method.getNameIndex())).getUTF8()) &&
 					MethodType.fromMethodDescriptorString(
 						((ConstantUTF8)pool.getConstantPoolElement(method.getDescriptorIndex())).getUTF8(),
-						classLoader
-					).equals(MethodType.methodType(returnType, params))) return method;
+						loader
+					).equals(type)) return generic(clazz.getClassLoader(), file, method);
 			}
 			throw new NoSuchMethodException(descName+'.'+methodName+":"+type.toMethodDescriptorString());
 		}
@@ -86,16 +96,52 @@ public class ReflectInvokeFactory
 		}
 	}
 
-	private static ReflectInvoker generic(Class<?> clazz, String methodName, boolean isStatic, Class<?> returnType, Class<?>... params) throws ReflectionGenericException
+	private static ReflectInvoker checkFieldAndGeneric(ClassLoader loader, Class<?> clazz, String fieldName) throws NoSuchFieldException, ReflectionGenericException
 	{
+		String descName = clazz.getTypeName().replace('.', '/');
+		String pathName = descName.concat(".class");
+		URL url = loader.getResource(pathName);
+		if (url == null) throw new NullPointerException(pathName);
+		ClassField field;
+		try
+		{
+			InputStream in = url.openStream();
+			byte[] code = IO.toByteArray(in);
+			in.close();
+			ClassFile file = new ClassFile(code);
+			ConstantPool pool = file.getConstantPool();
+			for (int i = 0; i < file.getFieldCount(); i++)
+			{
+				field = file.getField(i);
+				if (Objects.requireNonNull(fieldName).equals(((ConstantUTF8)pool.getConstantPoolElement(field.getNameIndex())).getUTF8())) return generic(loader, file, field);
+			}
+			throw new NoSuchFieldException(descName+"."+fieldName);
+		}
+		catch (IOException e)
+		{
+			throw new ReflectionGenericException("Can not check field name", e);
+		}
+	}
+
+	private static ReflectInvoker generic(ClassLoader loader, ClassFile clazz, ClassMethod method) throws ReflectionGenericException
+	{
+		ConstantPool pool = clazz.getConstantPool();
 		// class name
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+		// Method name
+		String methodName = ((ConstantUTF8)pool.getConstantPoolElement(method.getNameIndex())).getUTF8();
 		// description of the method
-		StringBuilder desc = new StringBuilder("(");
-		for (Class<?> param : params) desc.append(getDescription(param));
-		desc.append(')').append(getDescription(returnType));
+		String desc = ((ConstantUTF8)pool.getConstantPoolElement(method.getDescriptorIndex())).getUTF8();
+		// static
+		final boolean isStatic = ((method.getAccessFlag() & AccessFlag.ACC_STATIC) != 0);
 		// binary name of class
-		final String owner = clazz.getTypeName().replace('.', '/');
+		final String owner = ((ConstantUTF8)pool.getConstantPoolElement(((ConstantClass)pool.getConstantPoolElement(clazz.getThisClassIndex())).getNameIndex())).getUTF8();
+		// method descriptor to MethodType
+		MethodType type = MethodType.fromMethodDescriptorString(desc, loader);
+		//return type
+		Class<?> returnType = type.returnType();
+		// params
+		Class<?>[] params = type.parameterArray();
 		// locals and stack
 		final int localVariableTableSize = 3;
 		final int stackSize = params.length + (params.length == 0 ? 0 : (isStatic ? 2 : 3));
@@ -112,11 +158,11 @@ public class ReflectInvokeFactory
 		mv.visitMaxs(1, 1);
 		mv.visitEnd();
 		// implement method "invoke" in interface "ReflectInvoker"
-		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+		mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
 		mv.visitCode();
 		if (!isStatic) mv.visitVarInsn(Opcodes.ALOAD, 1);
 		int i=0;
-		for (Class<?> c : params)
+		for (Class<?> c : type.parameterArray())
 		{
 			mv.visitVarInsn(Opcodes.ALOAD, 2);
 //			mv.visitVarInsn(Opcodes.BIPUSH, i+10);
@@ -134,8 +180,8 @@ public class ReflectInvokeFactory
 				else if (c == char.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
 			}
 		}
-		if (isStatic) mv.visitMethodInsn(Opcodes.INVOKESTATIC, owner, methodName, desc.toString(), false);
-		else mv.visitMethodInsn(methodName.equals("<init>") ? Opcodes.INVOKESPECIAL : Opcodes.INVOKEVIRTUAL, owner, methodName, desc.toString(), false);
+		if (isStatic) mv.visitMethodInsn(Opcodes.INVOKESTATIC, owner, methodName, desc, false);
+		else mv.visitMethodInsn(methodName.equals("<init>") ? Opcodes.INVOKESPECIAL : Opcodes.INVOKEVIRTUAL, owner, methodName, desc, false);
 		if (returnType == void.class) mv.visitInsn(Opcodes.RETURN);
 		else
 		{
@@ -167,25 +213,94 @@ public class ReflectInvokeFactory
 		}
 	}
 
-	private static String getDescription(Class<?> clazz)
+	private static ReflectInvoker generic(ClassLoader loader, ClassFile clazz, ClassField field) throws ReflectionGenericException
 	{
-		StringBuilder name = new StringBuilder();
-		while (clazz.isArray())
+		ConstantPool pool = clazz.getConstantPool();
+		// class name
+		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+
+		String name = ((ConstantUTF8)pool.getConstantPoolElement(field.getNameIndex())).getUTF8();
+		String desc = ((ConstantUTF8)pool.getConstantPoolElement(field.getDescriptorIndex())).getUTF8();
+		String owner = ((ConstantUTF8)pool.getConstantPoolElement(((ConstantClass)pool.getConstantPoolElement(clazz.getThisClassIndex())).getNameIndex())).getUTF8();
+
+		boolean isStatic = (field.getAccessFlag() & AccessFlag.ACC_STATIC) != 0;
+		boolean isFinal = (field.getAccessFlag() & AccessFlag.ACC_FINAL) != 0;
+
+		Class<?> type = MethodType.fromMethodDescriptorString("()"+desc, loader).unwrap().returnType();
+
+		int stack = isStatic ? 2 : 3;
+		int locals = 3;
+
+		ClassWriter cw = new ClassWriter(0);
+		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, null, SUPER_CLASS, new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "<init>", "()V", null, null);
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, SUPER_CLASS, "<init>", "()V", false);
+		mv.visitInsn(Opcodes.RETURN);
+		mv.visitMaxs(1, 1);
+		mv.visitEnd();
+		mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+		mv.visitVarInsn(Opcodes.ALOAD, 2);
+		mv.visitInsn(Opcodes.ICONST_0);
+		mv.visitInsn(Opcodes.AALOAD);
+		Label label = new Label();
+		mv.visitJumpInsn(Opcodes.IFNULL, label);
+		if (isFinal)
 		{
-			name.append('[');
-			clazz = clazz.getComponentType();
+			mv.visitTypeInsn(Opcodes.NEW, "org/mve/util/reflect/IllegalOperationException");
+			mv.visitInsn(Opcodes.DUP);
+			mv.visitLdcInsn("Field is final");
+			mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "org/mve/util/reflect/IllegalOperationException", "<init>", "(Ljava/lang/String;)V", false);
+			mv.visitInsn(Opcodes.ATHROW);
 		}
-		if (clazz == void.class) name.append('V');
-		else if (clazz == byte.class) name.append('B');
-		else if (clazz == short.class) name.append('S');
-		else if (clazz == int.class) name.append('I');
-		else if (clazz == long.class) name.append('J');
-		else if (clazz == float.class) name.append('F');
-		else if (clazz == double.class) name.append('D');
-		else if (clazz == boolean.class) name.append('Z');
-		else if (clazz == char.class) name.append('C');
-		else name.append('L').append(clazz.getTypeName().replace('.', '/')).append(';');
-		return name.toString();
+		else
+		{
+			if (!isStatic) mv.visitVarInsn(Opcodes.ALOAD, 1);
+			mv.visitVarInsn(Opcodes.ALOAD, 2);
+			mv.visitInsn(Opcodes.ICONST_0);
+			mv.visitInsn(Opcodes.AALOAD);
+			if (type.isPrimitive())
+			{
+				if (type == byte.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B", false);
+				else if (type == short.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false);
+				else if (type == int.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
+				else if (type == long.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false);
+				else if (type == float.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false);
+				else if (type == double.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false);
+				else if (type == boolean.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Integer", "booleanValue", "()Z", false);
+				else if (type == char.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
+			}
+			mv.visitFieldInsn(isStatic ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD, owner, name, desc);
+		}
+		mv.visitLabel(label);
+		if (!isStatic) mv.visitVarInsn(Opcodes.ALOAD, 1);
+		mv.visitFieldInsn(isStatic ? Opcodes.GETSTATIC : Opcodes.GETFIELD, owner, name, desc);
+		if (type.isPrimitive())
+		{
+			if (type == byte.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false);
+			else if (type == short.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false);
+			else if (type == int.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
+			else if (type == long.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false);
+			else if (type == float.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false);
+			else if (type == double.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false);
+			else if (type == boolean.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(Z)Ljava/lang/Boolean", false);
+			else if (type == char.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character", false);
+		}
+		mv.visitInsn(Opcodes.ARETURN);
+		mv.visitMaxs(stack, locals);
+		mv.visitEnd();
+		cw.visitEnd();
+		byte[] code = cw.toByteArray();
+
+		try
+		{
+			Class<?> implClass = (Class<?>) DEFINE.invoke(null, code, 0, code.length);
+			return (ReflectInvoker) implClass.getDeclaredConstructor().newInstance();
+		}
+		catch (Throwable throwable)
+		{
+			throw new ReflectionGenericException("Can not define class", throwable);
+		}
 	}
 
 	static

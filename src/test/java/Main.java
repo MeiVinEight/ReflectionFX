@@ -2,23 +2,18 @@ import org.mve.util.reflect.ReflectInvokeFactory;
 
 public class Main
 {
-	private Main()
-	{
-		System.out.println("CTR");
-	}
+	private int a;
 
-	private void a(Object obj)
+	private Main(int a)
 	{
-		System.out.println("Obj");
-	}
-
-	private void a(int[] a)
-	{
-		System.out.println("int[]");
+		this.a = a;
 	}
 
 	public static void main(String[] args) throws Exception
 	{
-		ReflectInvokeFactory.getReflectInvoker(Main.class, "<init>", void.class).invoke(new Main());
+		Main m = new Main(1);
+		System.out.println(m.a);
+		System.out.println(ReflectInvokeFactory.getReflectInvoker(Main.class, "a").invoke(m, 2));
+		System.out.println(m.a);
 	}
 }
