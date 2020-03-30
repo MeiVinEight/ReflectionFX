@@ -4,7 +4,7 @@
   ReflectInvoker invoker = ReflectInvokeFactory.getReflectInvoker(类, 方法名, 返回值类型, 形参类型列表);
   
   Object returnValue = invoker.invoke(obj, 参数列表);
-    静态方法第一个参数可以为null，非静态方法第一个参数为调用的对象
+  静态方法第一个参数可以为null，非静态方法第一个参数为调用的对象
   
   ReflectInvoker invoker = ReflectInvokeFactory(类加载器, 类名, 方法名, 返回值类型, 形参类型列表);
   
