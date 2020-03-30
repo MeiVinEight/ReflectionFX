@@ -4,6 +4,7 @@ import org.jetbrains.org.objectweb.asm.ClassWriter;
 import org.jetbrains.org.objectweb.asm.Label;
 import org.jetbrains.org.objectweb.asm.MethodVisitor;
 import org.jetbrains.org.objectweb.asm.Opcodes;
+import org.jetbrains.org.objectweb.asm.Type;
 import org.mve.util.IO;
 import org.mve.util.asm.file.AccessFlag;
 import org.mve.util.asm.file.ClassField;
@@ -241,7 +242,8 @@ public class ReflectInvokeFactory
 		Class<?> type = MethodType.fromMethodDescriptorString("()"+desc, loader).unwrap().returnType();
 
 		int stack = isFinal ? deepReflect ? 5 : 3 : isStatic ? 3 : 2;
-		int locals = isFinal && deepReflect && isStatic ? 4 : 3;
+//		int locals = isFinal && deepReflect && isStatic ? 4 : 3;
+		int locals = 3;
 
 		ClassWriter cw = new ClassWriter(0);
 		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, null, SUPER_CLASS, new String[]{"org/mve/util/reflect/ReflectInvoker"});
@@ -266,13 +268,15 @@ public class ReflectInvokeFactory
 					Class<?> oc = Class.forName(owner.replace('/', '.'));
 					Field field1 = oc.getDeclaredField(name);
 					long offset = isStatic ? USF.staticFieldOffset(field1) : USF.objectFieldOffset(field1);
-					if (isStatic)
-					{
-						mv.visitLdcInsn(oc);
-						mv.visitVarInsn(Opcodes.ASTORE, 3);
-					}
+//					if (isStatic)
+//					{
+//						mv.visitLdcInsn(oc);
+//						mv.visitVarInsn(Opcodes.ASTORE, 3);
+//					}
 					mv.visitFieldInsn(Opcodes.GETSTATIC, "sun/misc/Unsafe", "theUnsafe", "Lsun/misc/Unsafe;");
-					mv.visitVarInsn(Opcodes.ALOAD, isStatic ? 3 : 1);
+//					mv.visitVarInsn(Opcodes.ALOAD, isStatic ? 3 : 1);
+					if (isStatic) mv.visitLdcInsn(Type.getType(oc));
+					else mv.visitVarInsn(Opcodes.ALOAD, 1);
 					mv.visitLdcInsn(offset);
 					mv.visitVarInsn(Opcodes.ALOAD, 2);
 					mv.visitInsn(Opcodes.ICONST_0);
