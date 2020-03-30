@@ -76,6 +76,28 @@ public class ReflectInvokeFactory
 		return checkFieldAndGeneric(loader, checkClass, fieldName, deepReflect);
 	}
 
+	public static ReflectInvoker getReflectInvoker(Class<?> clazz, Class<?>... params) throws ReflectionGenericException, NoSuchMethodException
+	{
+		return checkConstructorAndGeneric(clazz.getClassLoader(), clazz, true, params);
+	}
+
+	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className, Class<?>... params) throws ReflectionGenericException, NoSuchMethodException, ClassNotFoundException
+	{
+		Class<?> checkClass = Class.forName(className, false, loader);
+		return checkConstructorAndGeneric(loader, checkClass, true, params);
+	}
+
+	public static ReflectInvoker getReflectInvoker(Class<?> clazz, boolean construct, Class<?>... params) throws ReflectionGenericException, NoSuchMethodException
+	{
+		return checkConstructorAndGeneric(clazz.getClassLoader(), clazz, construct, params);
+	}
+
+	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className, boolean construct, Class<?>... params) throws ReflectionGenericException, NoSuchMethodException, ClassNotFoundException
+	{
+		Class<?> checkClass = Class.forName(className, false, loader);
+		return checkConstructorAndGeneric(loader, checkClass, construct, params);
+	}
+
 	private static ReflectInvoker checkMethodAndGeneric(ClassLoader loader, Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException
 	{
 		String descName = clazz.getTypeName().replace('.', '/');
@@ -133,6 +155,38 @@ public class ReflectInvokeFactory
 		catch (IOException e)
 		{
 			throw new ReflectionGenericException("Can not check field name", e);
+		}
+	}
+
+	private static ReflectInvoker checkConstructorAndGeneric(ClassLoader loader, Class<?> clazz, boolean construct, Class<?>... params) throws ReflectionGenericException, NoSuchMethodException
+	{
+		String descName = clazz.getTypeName().replace('.', '/');
+		String pathName = descName.concat(".class");
+		URL url = loader.getResource(pathName);
+		if (url == null) throw new NullPointerException(pathName);
+		MethodType type = MethodType.methodType(void.class, params);
+		ClassMethod method;
+		try
+		{
+			InputStream in = url.openStream();
+			byte[] code = IO.toByteArray(in);
+			ClassFile file = new ClassFile(code);
+			in.close();
+			ConstantPool pool = file.getConstantPool();
+			for (int i=0; i<file.getMethodCount(); i++)
+			{
+				method = file.getMethod(i);
+				if (((ConstantUTF8)pool.getConstantPoolElement(method.getNameIndex())).getUTF8().equals("<init>") &&
+					MethodType.fromMethodDescriptorString(
+						((ConstantUTF8)pool.getConstantPoolElement(method.getDescriptorIndex())).getUTF8(),
+						loader
+					).equals(type)) return generic(clazz, type, construct);
+			}
+			throw new NoSuchMethodException(descName+".<init>:"+type.toMethodDescriptorString());
+		}
+		catch (IOException e)
+		{
+			throw new ReflectionGenericException("Can not check constructor name", e);
 		}
 	}
 
@@ -384,6 +438,63 @@ public class ReflectInvokeFactory
 		cw.visitEnd();
 		byte[] code = cw.toByteArray();
 
+		try
+		{
+			Class<?> implClass = (Class<?>) DEFINE.invoke(null, code, 0, code.length);
+			return (ReflectInvoker) implClass.getDeclaredConstructor().newInstance();
+		}
+		catch (Throwable throwable)
+		{
+			throw new ReflectionGenericException("Can not define class", throwable);
+		}
+	}
+
+	private static ReflectInvoker generic(Class<?> clazz, MethodType type, boolean construct) throws ReflectionGenericException
+	{
+		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+		String desc = type.toMethodDescriptorString();
+		String owner = clazz.getTypeName().replace('.', '/');
+		ClassWriter cw = new ClassWriter(0);
+		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, null, SUPER_CLASS, new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "<init>", "()V", null, null);
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, SUPER_CLASS, "<init>", "()V", false);
+		mv.visitInsn(Opcodes.RETURN);
+		mv.visitMaxs(1, 1);
+		mv.visitEnd();
+		mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+		mv.visitTypeInsn(Opcodes.NEW, owner);
+		if(construct)
+		{
+			mv.visitInsn(Opcodes.DUP);
+			int i=0;
+			for (Class<?> c : type.parameterArray())
+			{
+				mv.visitVarInsn(Opcodes.ALOAD, 2);
+//				mv.visitVarInsn(Opcodes.BIPUSH, i+10);
+				mv.visitIntInsn(Opcodes.BIPUSH, i++);
+				mv.visitInsn(Opcodes.AALOAD);
+				if (c.isPrimitive())
+				{
+					if (c == byte.class)mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "byteValue", "()B", false);
+					else if (c == short.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "shortValue", "()S", false);
+					else if (c == int.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "intValue", "()I", false);
+					else if (c == long.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "longValue", "()J", false);
+					else if (c == float.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "floatValue", "()F", false);
+					else if (c == double.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "doubleValue", "()D", false);
+					else if (c == boolean.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "booleanValue", "()Z", false);
+					else if (c == char.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "charValue", "()C", false);
+				}
+			}
+			mv.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, "<init>", desc, false);
+		}
+		mv.visitInsn(Opcodes.ARETURN);
+		mv.visitMaxs(construct ? (2+(type.parameterArray().length == 0 ? 0 : type.parameterArray().length+1)) : 1, 3);
+		mv.visitEnd();
+		cw.visitEnd();
+		byte[] code = cw.toByteArray();
+
+		// load the class's byte code
 		try
 		{
 			Class<?> implClass = (Class<?>) DEFINE.invoke(null, code, 0, code.length);
