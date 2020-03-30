@@ -2,9 +2,12 @@
 用来简化反射的工具
 # 反射调用方法
   ReflectInvoker invoker = ReflectInvokeFactory.getReflectInvoker(类, 方法名, 返回值类型, 形参类型列表);
+  
   Object returnValue = invoker.invoke(obj, 参数列表);
     静态方法第一个参数可以为null，非静态方法第一个参数为调用的对象
+  
   ReflectInvoker invoker = ReflectInvokeFactory(类加载器, 类名, 方法名, 返回值类型, 形参类型列表);
+  
   这个方法可以用来反射不可以直接使用的类或特殊类比如BootstrapClassLoader加载的类
 # 反射属性
   ReflectInvoker invoker = ReflectInvokeFactory.getReflectInvoker(类, 属性名);
