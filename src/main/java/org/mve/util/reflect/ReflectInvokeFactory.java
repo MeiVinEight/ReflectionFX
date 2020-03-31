@@ -32,174 +32,142 @@ public class ReflectInvokeFactory
 	private static final Unsafe USF;
 	private static int id = 0;
 
-	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException
+	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws ReflectionGenericException
 	{
-		return checkMethodAndGeneric(clazz.getClassLoader(), clazz, methodName, returnType, params);
+		try { return checkMethodAndGeneric(clazz.getClassLoader(), clazz, methodName, returnType, params); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
 	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String methodName, boolean isStatic, Class<?> returnType, Class<?>... params) throws ReflectionGenericException
 	{
-		return generic(clazz, methodName, MethodType.methodType(returnType, params), isStatic);
+		try { return generic(clazz, methodName, MethodType.methodType(returnType, params), isStatic); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static ReflectInvoker getReflectInvoker(ClassLoader classLoader, String className, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException, ClassNotFoundException
+	public static ReflectInvoker getReflectInvoker(ClassLoader classLoader, String className, String methodName, Class<?> returnType, Class<?>... params) throws ReflectionGenericException
 	{
-		Class<?> checkClass = Class.forName(className, false, classLoader);
-		return checkMethodAndGeneric(classLoader, checkClass, methodName, returnType, params);
+		try { return checkMethodAndGeneric(classLoader, Class.forName(className, false, classLoader), methodName, returnType, params); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String fieldName) throws NoSuchFieldException, ReflectionGenericException
+	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String fieldName) throws ReflectionGenericException
 	{
-		return checkFieldAndGeneric(clazz.getClassLoader(), clazz, fieldName, false);
+		try { return checkFieldAndGeneric(clazz.getClassLoader(), clazz, fieldName, false); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
 	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal) throws ReflectionGenericException
 	{
-		return generic(clazz, fieldName, type, isStatic, isFinal, false);
+		try { return generic(clazz, fieldName, type, isStatic, isFinal, false); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className, String fieldName) throws NoSuchFieldException, ReflectionGenericException, ClassNotFoundException
+	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className, String fieldName) throws ReflectionGenericException
 	{
-		Class<?> clazz = Class.forName(className, false, loader);
-		return checkFieldAndGeneric(loader, clazz, fieldName, false);
+		try { return checkFieldAndGeneric(loader, Class.forName(className, false, loader), fieldName, false); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String fieldName, boolean deepReflect) throws NoSuchFieldException, ReflectionGenericException
+	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String fieldName, boolean deepReflect) throws ReflectionGenericException
 	{
-		return checkFieldAndGeneric(clazz.getClassLoader(), clazz, fieldName, deepReflect);
+		try { return checkFieldAndGeneric(clazz.getClassLoader(), clazz, fieldName, deepReflect); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
 	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect) throws ReflectionGenericException
 	{
-		return generic(clazz, fieldName, type, isStatic, isFinal, deepReflect);
+		try { return generic(clazz, fieldName, type, isStatic, isFinal, deepReflect); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className, String fieldName, boolean deepReflect) throws NoSuchFieldException, ReflectionGenericException, ClassNotFoundException
+	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className, String fieldName, boolean deepReflect) throws ReflectionGenericException
 	{
-		Class<?> checkClass = Class.forName(className, false, loader);
-		return checkFieldAndGeneric(loader, checkClass, fieldName, deepReflect);
+		try { return checkFieldAndGeneric(loader, Class.forName(className, false, loader), fieldName, deepReflect); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static ReflectInvoker getReflectInvoker(Class<?> clazz, Class<?>... params) throws ReflectionGenericException, NoSuchMethodException
+	public static ReflectInvoker getReflectInvoker(Class<?> clazz, Class<?>... params) throws ReflectionGenericException
 	{
-		return checkConstructorAndGeneric(clazz.getClassLoader(), clazz, params);
+		try { return checkConstructorAndGeneric(clazz.getClassLoader(), clazz, params); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className, Class<?>... params) throws ReflectionGenericException, NoSuchMethodException, ClassNotFoundException
+	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className, Class<?>... params) throws ReflectionGenericException
 	{
-		Class<?> checkClass = Class.forName(className, false, loader);
-		return checkConstructorAndGeneric(loader, checkClass, params);
+		try { Class<?> checkClass = Class.forName(className, false, loader);return checkConstructorAndGeneric(loader, checkClass, params); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
 	public static ReflectInvoker getReflectInvoker(Class<?> clazz) throws ReflectionGenericException
 	{
-		return generic(clazz);
+		try { return generic(clazz); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className) throws ReflectionGenericException, ClassNotFoundException
+	public static ReflectInvoker getReflectInvoker(ClassLoader loader, String className) throws ReflectionGenericException
 	{
-		Class<?> checkClass = Class.forName(className, false, loader);
-		return generic(checkClass);
+		try { return generic(Class.forName(className, false, loader)); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	private static ReflectInvoker checkMethodAndGeneric(ClassLoader loader, Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws NoSuchMethodException, ReflectionGenericException
+	public static ReflectInvoker throwException() throws ReflectionGenericException
+	{
+		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+		ClassWriter cw = new ClassWriter(0);
+		cw.visit(52, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, null, SUPER_CLASS, new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		genericConstructor(cw);
+		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+		mv.visitCode();
+		mv.visitVarInsn(Opcodes.ALOAD, 1);
+		mv.visitInsn(Opcodes.ATHROW);
+		mv.visitMaxs(1, 3);
+		mv.visitEnd();
+		try { return define(cw); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+	}
+
+	private static ReflectInvoker checkMethodAndGeneric(ClassLoader loader, Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws Throwable
 	{
 		String descName = clazz.getTypeName().replace('.', '/');
-		String pathName = descName.concat(".class");
-		URL url = loader.getResource(pathName);
-		if (url == null) throw new NullPointerException(pathName);
+		ClassFile file = findClass(loader, clazz);
 		MethodType type = MethodType.methodType(returnType, params);
-		ClassMethod method;
-		try
+		ConstantPool pool = file.getConstantPool();
+		for (int i = 0; i < file.getMethodCount(); i++)
 		{
-			InputStream in = url.openStream();
-			byte[] code = IO.toByteArray(in);
-			in.close();
-			ClassFile file = new ClassFile(code);
-			ConstantPool pool = file.getConstantPool();
-			for (int i = 0; i < file.getMethodCount(); i++)
-			{
-				method = file.getMethod(i);
-				if (
-					Objects.requireNonNull(methodName).equals(((ConstantUTF8)pool.getConstantPoolElement(method.getNameIndex())).getUTF8()) &&
+			ClassMethod method = file.getMethod(i);
+			if (
+				Objects.requireNonNull(methodName).equals(((ConstantUTF8)pool.getConstantPoolElement(method.getNameIndex())).getUTF8()) &&
 					MethodType.fromMethodDescriptorString(
 						((ConstantUTF8)pool.getConstantPoolElement(method.getDescriptorIndex())).getUTF8(),
 						loader
 					).equals(type)) return generic(clazz, methodName, type, (method.getAccessFlag() & AccessFlag.ACC_STATIC) != 0);
-			}
-			throw new NoSuchMethodException(descName+'.'+methodName+":"+type.toMethodDescriptorString());
 		}
-		catch (IOException e)
-		{
-			throw new ReflectionGenericException("Can not check method name", e);
-		}
+		throw new NoSuchMethodException(descName+'.'+methodName+":"+type.toMethodDescriptorString());
 	}
 
-	private static ReflectInvoker checkFieldAndGeneric(ClassLoader loader, Class<?> clazz, String fieldName, boolean deepReflect) throws NoSuchFieldException, ReflectionGenericException
+	private static ReflectInvoker checkFieldAndGeneric(ClassLoader loader, Class<?> clazz, String fieldName, boolean deepReflect) throws Throwable
 	{
 		String descName = clazz.getTypeName().replace('.', '/');
-		String pathName = descName.concat(".class");
-		URL url = loader.getResource(pathName);
-		if (url == null) throw new NullPointerException(pathName);
-		ClassField field;
-		try
+		ClassFile file = findClass(loader, clazz);
+		ConstantPool pool = file.getConstantPool();
+		for (int i = 0; i < file.getFieldCount(); i++)
 		{
-			InputStream in = url.openStream();
-			byte[] code = IO.toByteArray(in);
-			in.close();
-			ClassFile file = new ClassFile(code);
-			ConstantPool pool = file.getConstantPool();
-			for (int i = 0; i < file.getFieldCount(); i++)
+			ClassField field = file.getField(i);
+			if (Objects.requireNonNull(fieldName).equals(((ConstantUTF8)pool.getConstantPoolElement(field.getNameIndex())).getUTF8()))
 			{
-				field = file.getField(i);
-				if (Objects.requireNonNull(fieldName).equals(((ConstantUTF8)pool.getConstantPoolElement(field.getNameIndex())).getUTF8()))
-				{
-					Class<?> type = MethodType.fromMethodDescriptorString("()"+((ConstantUTF8)pool.getConstantPoolElement(field.getDescriptorIndex())).getUTF8(), loader).returnType();
-					Field f = clazz.getDeclaredField(fieldName);
-					return generic(clazz, fieldName, type, (f.getModifiers() & Modifier.STATIC) != 0, (f.getModifiers() & Modifier.FINAL) != 0, deepReflect);
-				}
+				Class<?> type = MethodType.fromMethodDescriptorString("()"+((ConstantUTF8)pool.getConstantPoolElement(field.getDescriptorIndex())).getUTF8(), loader).returnType();
+				Field f = clazz.getDeclaredField(fieldName);
+				return generic(clazz, fieldName, type, (f.getModifiers() & Modifier.STATIC) != 0, (f.getModifiers() & Modifier.FINAL) != 0, deepReflect);
 			}
-			throw new NoSuchFieldException(descName+"."+fieldName);
 		}
-		catch (IOException e)
-		{
-			throw new ReflectionGenericException("Can not check field name", e);
-		}
+		throw new NoSuchFieldException(descName+"."+fieldName);
 	}
 
-	private static ReflectInvoker checkConstructorAndGeneric(ClassLoader loader, Class<?> clazz, Class<?>... params) throws ReflectionGenericException, NoSuchMethodException
+	private static ReflectInvoker checkConstructorAndGeneric(ClassLoader loader, Class<?> clazz, Class<?>... params) throws Throwable
 	{
 		String descName = clazz.getTypeName().replace('.', '/');
-		String pathName = descName.concat(".class");
-		URL url = loader.getResource(pathName);
-		if (url == null) throw new NullPointerException(pathName);
+		ClassFile file = findClass(loader, clazz);
 		MethodType type = MethodType.methodType(void.class, params);
-		ClassMethod method;
-		try
+		ConstantPool pool = file.getConstantPool();
+		for (int i=0; i<file.getMethodCount(); i++)
 		{
-			InputStream in = url.openStream();
-			byte[] code = IO.toByteArray(in);
-			ClassFile file = new ClassFile(code);
-			in.close();
-			ConstantPool pool = file.getConstantPool();
-			for (int i=0; i<file.getMethodCount(); i++)
-			{
-				method = file.getMethod(i);
-				if (((ConstantUTF8)pool.getConstantPoolElement(method.getNameIndex())).getUTF8().equals("<init>") &&
-					MethodType.fromMethodDescriptorString(
-						((ConstantUTF8)pool.getConstantPoolElement(method.getDescriptorIndex())).getUTF8(),
-						loader
-					).equals(type)) return generic(clazz, type);
-			}
-			throw new NoSuchMethodException(descName+".<init>:"+type.toMethodDescriptorString());
+			ClassMethod method = file.getMethod(i);
+			if (((ConstantUTF8)pool.getConstantPoolElement(method.getNameIndex())).getUTF8().equals("<init>") &&
+				MethodType.fromMethodDescriptorString(
+					((ConstantUTF8)pool.getConstantPoolElement(method.getDescriptorIndex())).getUTF8(),
+					loader
+				).equals(type)) return generic(clazz, type);
 		}
-		catch (IOException e)
-		{
-			throw new ReflectionGenericException("Can not check constructor name", e);
-		}
+		throw new NoSuchMethodException(descName+".<init>:"+type.toMethodDescriptorString());
 	}
 
-	private static ReflectInvoker generic(Class<?> clazz, String methodName, MethodType type, boolean isStatic) throws ReflectionGenericException
+	private static ReflectInvoker generic(Class<?> clazz, String methodName, MethodType type, boolean isStatic) throws Throwable
 	{
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		String desc = type.toMethodDescriptorString();
@@ -226,7 +194,7 @@ public class ReflectInvokeFactory
 		return define(cw);
 	}
 
-	private static ReflectInvoker generic(Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect) throws ReflectionGenericException
+	private static ReflectInvoker generic(Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect) throws Throwable
 	{
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 
@@ -314,7 +282,7 @@ public class ReflectInvokeFactory
 		return define(cw);
 	}
 
-	private static ReflectInvoker generic(Class<?> clazz, MethodType type) throws ReflectionGenericException
+	private static ReflectInvoker generic(Class<?> clazz, MethodType type) throws Throwable
 	{
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		String desc = type.toMethodDescriptorString();
@@ -334,7 +302,7 @@ public class ReflectInvokeFactory
 		return define(cw);
 	}
 
-	private static ReflectInvoker generic(Class<?> clazz) throws ReflectionGenericException
+	private static ReflectInvoker generic(Class<?> clazz) throws Throwable
 	{
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		ClassWriter cw = new ClassWriter(0);
@@ -346,6 +314,18 @@ public class ReflectInvokeFactory
 		mv.visitMaxs(1, 3);
 		mv.visitEnd();
 		return define(cw);
+	}
+
+	private static ClassFile findClass(ClassLoader loader, Class<?> clazz) throws IOException
+	{
+		String descName = clazz.getTypeName().replace('.', '/');
+		String pathName = descName.concat(".class");
+		URL url = loader.getResource(pathName);
+		if (url == null) throw new NullPointerException(pathName);
+		InputStream in = url.openStream();
+		byte[] code = IO.toByteArray(in);
+		in.close();
+		return new ClassFile(code);
 	}
 
 	private static void pushArguments(Class<?>[] arguments, MethodVisitor mv)
@@ -384,19 +364,12 @@ public class ReflectInvokeFactory
 		else if (c == char.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "charValue", "()C", false);
 	}
 
-	private static ReflectInvoker define(ClassWriter cw) throws ReflectionGenericException
+	private static ReflectInvoker define(ClassWriter cw) throws Throwable
 	{
 		cw.visitEnd();
 		byte[] code = cw.toByteArray();
-		try
-		{
-			Class<?> implClass = (Class<?>) DEFINE.invoke(null, code, 0, code.length);
-			return (ReflectInvoker) implClass.getDeclaredConstructor().newInstance();
-		}
-		catch (Throwable throwable)
-		{
-			throw new ReflectionGenericException("Can not define class", throwable);
-		}
+		Class<?> implClass = (Class<?>) DEFINE.invoke(null, code, 0, code.length);
+		return (ReflectInvoker) implClass.getDeclaredConstructor().newInstance();
 	}
 
 	private static void genericConstructor(ClassWriter cw)
