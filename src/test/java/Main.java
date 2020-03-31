@@ -5,7 +5,9 @@ public class Main
 {
 	public static void main(String[] args)
 	{
+		NullPointerException npe = new NullPointerException();
+		ReflectInvoker constant = ReflectInvokeFactory.constant(npe);
 		ReflectInvoker thrower = ReflectInvokeFactory.throwException();
-		thrower.invoke(new Exception());
+		thrower.invoke(constant.invoke(null));
 	}
 }

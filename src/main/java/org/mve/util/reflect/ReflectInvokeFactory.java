@@ -1,6 +1,7 @@
 package org.mve.util.reflect;
 
 import org.jetbrains.org.objectweb.asm.ClassWriter;
+import org.jetbrains.org.objectweb.asm.FieldVisitor;
 import org.jetbrains.org.objectweb.asm.Label;
 import org.jetbrains.org.objectweb.asm.MethodVisitor;
 import org.jetbrains.org.objectweb.asm.Opcodes;
@@ -101,15 +102,53 @@ public class ReflectInvokeFactory
 	{
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		ClassWriter cw = new ClassWriter(0);
-		cw.visit(52, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, null, SUPER_CLASS, new String[]{"org/mve/util/reflect/ReflectInvoker"});
-		genericConstructor(cw);
+		cw.visit(52, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, null, "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		genericConstructor(cw, "java/lang/Object");
 		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
 		mv.visitCode();
 		mv.visitVarInsn(Opcodes.ALOAD, 1);
+		mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Throwable");
 		mv.visitInsn(Opcodes.ATHROW);
 		mv.visitMaxs(1, 3);
 		mv.visitEnd();
 		try { return define(cw); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+	}
+
+	public static ReflectInvoker constant(Object value)
+	{
+		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+		ClassWriter cw = new ClassWriter(0);
+		cw.visit(52, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, null, "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		FieldVisitor fv = cw.visitField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL, "final", "Ljava/lang/Object;", null, null);
+		fv.visitEnd();
+		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "<init>", "(Ljava/lang/Object;)V", null, null);
+		mv.visitCode();
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitVarInsn(Opcodes.ALOAD, 1);
+		mv.visitFieldInsn(Opcodes.PUTFIELD, className, "final", "Ljava/lang/Object;");
+		mv.visitInsn(Opcodes.RETURN);
+		mv.visitMaxs(2, 2);
+		mv.visitEnd();
+		mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+		mv.visitCode();
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitFieldInsn(Opcodes.GETFIELD, className, "final", "Ljava/lang/Object;");
+		mv.visitInsn(Opcodes.ARETURN);
+		mv.visitMaxs(1, 3);
+		mv.visitEnd();
+		cw.visitEnd();
+		byte[] code = cw.toByteArray();
+		try
+		{
+			Class<?> clazz = (Class<?>) DEFINE.invoke(null, code, 0, code.length);
+			return (ReflectInvoker) clazz.getDeclaredConstructor(Object.class).newInstance(value);
+		}
+		catch (Throwable throwable)
+		{
+			throw new ReflectionGenericException("Can not generic invoker", throwable);
+		}
 	}
 
 	private static ReflectInvoker checkMethodAndGeneric(ClassLoader loader, Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws Throwable
@@ -179,7 +218,7 @@ public class ReflectInvokeFactory
 
 		ClassWriter cw = new ClassWriter(0);
 		cw.visit(52, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, null, SUPER_CLASS, new String[]{"org/mve/util/reflect/ReflectInvoker"});
-		genericConstructor(cw);
+		genericConstructor(cw, SUPER_CLASS);
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
 		mv.visitCode();
 		if (!isStatic) mv.visitVarInsn(Opcodes.ALOAD, 1);
@@ -206,7 +245,7 @@ public class ReflectInvokeFactory
 
 		ClassWriter cw = new ClassWriter(0);
 		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, null, SUPER_CLASS, new String[]{"org/mve/util/reflect/ReflectInvoker"});
-		genericConstructor(cw);
+		genericConstructor(cw, SUPER_CLASS);
 		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
 		mv.visitCode();
 		Label label = new Label();
@@ -225,11 +264,10 @@ public class ReflectInvokeFactory
 			{
 				try
 				{
-					Class<?> oc = Class.forName(owner.replace('/', '.'));
-					Field field1 = oc.getDeclaredField(fieldName);
+					Field field1 = clazz.getDeclaredField(fieldName);
 					long offset = isStatic ? USF.staticFieldOffset(field1) : USF.objectFieldOffset(field1);
 					mv.visitFieldInsn(Opcodes.GETSTATIC, "sun/misc/Unsafe", "theUnsafe", "Lsun/misc/Unsafe;");
-					if (isStatic) mv.visitLdcInsn(Type.getType(oc));
+					if (isStatic) mv.visitLdcInsn(Type.getType(clazz));
 					else mv.visitVarInsn(Opcodes.ALOAD, 1);
 					mv.visitLdcInsn(offset);
 					mv.visitVarInsn(Opcodes.ALOAD, 2);
@@ -289,7 +327,7 @@ public class ReflectInvokeFactory
 		String owner = clazz.getTypeName().replace('.', '/');
 		ClassWriter cw = new ClassWriter(0);
 		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, null, SUPER_CLASS, new String[]{"org/mve/util/reflect/ReflectInvoker"});
-		genericConstructor(cw);
+		genericConstructor(cw, SUPER_CLASS);
 		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
 		mv.visitCode();
 		mv.visitTypeInsn(Opcodes.NEW, owner);
@@ -307,7 +345,7 @@ public class ReflectInvokeFactory
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		ClassWriter cw = new ClassWriter(0);
 		cw.visit(52, AccessFlag.ACC_STRICT | AccessFlag.ACC_PUBLIC, className, null, SUPER_CLASS, new String[]{"org/mve/util/reflect/ReflectInvoker"});
-		genericConstructor(cw);
+		genericConstructor(cw, SUPER_CLASS);
 		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
 		mv.visitTypeInsn(Opcodes.NEW, clazz.getTypeName().replace('.', '/'));
 		mv.visitInsn(Opcodes.ARETURN);
@@ -372,12 +410,12 @@ public class ReflectInvokeFactory
 		return (ReflectInvoker) implClass.getDeclaredConstructor().newInstance();
 	}
 
-	private static void genericConstructor(ClassWriter cw)
+	private static void genericConstructor(ClassWriter cw, String superClass)
 	{
 		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "<init>", "()V", null, null);
 		mv.visitCode();
 		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, SUPER_CLASS, "<init>", "()V", false);
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass, "<init>", "()V", false);
 		mv.visitInsn(Opcodes.RETURN);
 		mv.visitMaxs(1, 1);
 		mv.visitEnd();
@@ -433,12 +471,10 @@ public class ReflectInvokeFactory
 			if (majorVersion <= 0X34) superClass = "sun/reflect/MagicAccessorImpl";
 			else superClass = "jdk/internal/reflect/MagicAccessorImpl";
 
-			String loaderClassName = majorVersion <= 0X34 ? "sun.reflect.DelegatingClassLoader" : "jdk.internal.reflect.DelegatingClassLoader";
-			Class<?> clazz = Class.forName(loaderClassName);
 			field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
 			field.setAccessible(true);
 			MethodHandles.Lookup lookup = (MethodHandles.Lookup) field.get(null);
-			handle = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class)).bindTo(lookup.findConstructor(clazz, MethodType.methodType(void.class, ClassLoader.class)).invoke(ClassLoader.getSystemClassLoader()));
+			handle = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class)).bindTo(ReflectInvokeFactory.class.getClassLoader()/*lookup.findConstructor(clazz, MethodType.methodType(void.class, ClassLoader.class)).invoke(ClassLoader.getSystemClassLoader())*/);
 //			handle = lookup.findVirtual(Unsafe.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)).bindTo(usf);
 //			url = ReflectInvokeFactory.class.getClassLoader().getResource("org/mve/util/reflect/ReflectInvoker.class");
 //			if (url == null) throw new NullPointerException();
