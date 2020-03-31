@@ -3,11 +3,9 @@ import org.mve.util.reflect.ReflectInvoker;
 
 public class Main
 {
+	private int i;
 	public static void main(String[] args)
 	{
-		NullPointerException npe = new NullPointerException();
-		ReflectInvoker constant = ReflectInvokeFactory.constant(npe);
-		ReflectInvoker thrower = ReflectInvokeFactory.throwException();
-		thrower.invoke(constant.invoke(null));
+		ReflectInvoker invoker = ReflectInvokeFactory.getReflectInvoker(Main.class, "i");
 	}
 }

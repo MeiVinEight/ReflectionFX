@@ -31,6 +31,7 @@ public class ReflectInvokeFactory
 	private static final MethodHandle DEFINE;
 	private static final String SUPER_CLASS;
 	private static final Unsafe USF;
+	private static final ClassLoader INTERNAL_CLASS_LOADER;
 	private static int id = 0;
 
 	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String methodName, Class<?> returnType, Class<?>... params) throws ReflectionGenericException
@@ -111,7 +112,7 @@ public class ReflectInvokeFactory
 		mv.visitInsn(Opcodes.ATHROW);
 		mv.visitMaxs(1, 3);
 		mv.visitEnd();
-		try { return define(cw); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return define(cw, ClassLoader.getSystemClassLoader()); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
 	public static ReflectInvoker constant(Object value)
@@ -142,7 +143,7 @@ public class ReflectInvokeFactory
 		byte[] code = cw.toByteArray();
 		try
 		{
-			Class<?> clazz = (Class<?>) DEFINE.invoke(null, code, 0, code.length);
+			Class<?> clazz = (Class<?>) DEFINE.invoke(ReflectInvokeFactory.class.getClassLoader(), null, code, 0, code.length);
 			return (ReflectInvoker) clazz.getDeclaredConstructor(Object.class).newInstance(value);
 		}
 		catch (Throwable throwable)
@@ -230,7 +231,7 @@ public class ReflectInvokeFactory
 		mv.visitInsn(Opcodes.ARETURN);
 		mv.visitMaxs(stackSize, localVariableTableSize);
 		mv.visitEnd();
-		return define(cw);
+		return define(cw, INTERNAL_CLASS_LOADER);
 	}
 
 	private static ReflectInvoker generic(Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect) throws Throwable
@@ -317,7 +318,7 @@ public class ReflectInvokeFactory
 		mv.visitInsn(Opcodes.ARETURN);
 		mv.visitMaxs(stack, locals);
 		mv.visitEnd();
-		return define(cw);
+		return define(cw, INTERNAL_CLASS_LOADER);
 	}
 
 	private static ReflectInvoker generic(Class<?> clazz, MethodType type) throws Throwable
@@ -337,7 +338,7 @@ public class ReflectInvokeFactory
 		mv.visitInsn(Opcodes.ARETURN);
 		mv.visitMaxs(2 + (type.parameterArray().length == 0 ? 0 : type.parameterArray().length+1), 3);
 		mv.visitEnd();
-		return define(cw);
+		return define(cw, INTERNAL_CLASS_LOADER);
 	}
 
 	private static ReflectInvoker generic(Class<?> clazz) throws Throwable
@@ -351,7 +352,7 @@ public class ReflectInvokeFactory
 		mv.visitInsn(Opcodes.ARETURN);
 		mv.visitMaxs(1, 3);
 		mv.visitEnd();
-		return define(cw);
+		return define(cw, INTERNAL_CLASS_LOADER);
 	}
 
 	private static ClassFile findClass(ClassLoader loader, Class<?> clazz) throws IOException
@@ -402,11 +403,11 @@ public class ReflectInvokeFactory
 		else if (c == char.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "charValue", "()C", false);
 	}
 
-	private static ReflectInvoker define(ClassWriter cw) throws Throwable
+	private static ReflectInvoker define(ClassWriter cw, ClassLoader loader) throws Throwable
 	{
 		cw.visitEnd();
 		byte[] code = cw.toByteArray();
-		Class<?> implClass = (Class<?>) DEFINE.invoke(null, code, 0, code.length);
+		Class<?> implClass = (Class<?>) DEFINE.invoke(loader, null, code, 0, code.length);
 		return (ReflectInvoker) implClass.getDeclaredConstructor().newInstance();
 	}
 
@@ -443,9 +444,6 @@ public class ReflectInvokeFactory
 
 	static
 	{
-		MethodHandle handle = null;
-		String superClass = null;
-		Unsafe usf = null;
 		try
 		{
 			URL url = ClassLoader.getSystemClassLoader().getResource("java/lang/Object.class");
@@ -456,25 +454,30 @@ public class ReflectInvokeFactory
 			int majorVersion = new DataInputStream(in).readShort() & 0XFFFF;
 			in.close();
 
-			Field field = Unsafe.class.getDeclaredField("theUnsafe");
-			field.setAccessible(true);
-			usf = (Unsafe) field.get(null);
-
-			if (majorVersion > 0X34)
 			{
-				Class<?> clazz = Class.forName("jdk.internal.module.IllegalAccessLogger");
-				Field loggerField = clazz.getDeclaredField("logger");
-				long offset = usf.staticFieldOffset(loggerField);
-				usf.putObjectVolatile(clazz, offset, null);
+				Field field = Unsafe.class.getDeclaredField("theUnsafe");
+				field.setAccessible(true);
+				USF = (Unsafe) field.get(null);
+
+				if (majorVersion > 0X34)
+				{
+					Class<?> clazz = Class.forName("jdk.internal.module.IllegalAccessLogger");
+					Field loggerField = clazz.getDeclaredField("logger");
+					long offset = USF.staticFieldOffset(loggerField);
+					USF.putObjectVolatile(clazz, offset, null);
+				}
+
+				if (majorVersion <= 0X34) SUPER_CLASS = "sun/reflect/MagicAccessorImpl";
+				else SUPER_CLASS = "jdk/internal/reflect/MagicAccessorImpl";
+
 			}
 
-			if (majorVersion <= 0X34) superClass = "sun/reflect/MagicAccessorImpl";
-			else superClass = "jdk/internal/reflect/MagicAccessorImpl";
-
-			field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+			Class<?> clazz = Class.forName(majorVersion > 0x34 ? "jdk.internal.reflect.DelegatingClassLoader" : "sun.reflect.DelegatingClassLoader");
+			Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
 			field.setAccessible(true);
 			MethodHandles.Lookup lookup = (MethodHandles.Lookup) field.get(null);
-			handle = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class)).bindTo(ReflectInvokeFactory.class.getClassLoader()/*lookup.findConstructor(clazz, MethodType.methodType(void.class, ClassLoader.class)).invoke(ClassLoader.getSystemClassLoader())*/);
+			INTERNAL_CLASS_LOADER = (ClassLoader) lookup.findConstructor(clazz, MethodType.methodType(void.class, ClassLoader.class)).invoke(ClassLoader.getSystemClassLoader());
+			DEFINE = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
 //			handle = lookup.findVirtual(Unsafe.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)).bindTo(usf);
 //			url = ReflectInvokeFactory.class.getClassLoader().getResource("org/mve/util/reflect/ReflectInvoker.class");
 //			if (url == null) throw new NullPointerException();
@@ -482,16 +485,9 @@ public class ReflectInvokeFactory
 //			code = IO.toByteArray(in);
 //			handle.invoke(null, code, 0, code.length, null, null);
 		}
-		catch (UnknownError err)
-		{
-			throw err;
-		}
 		catch (Throwable t)
 		{
-			t.printStackTrace();
+			throw new UninitializedException(t);
 		}
-		USF = usf;
-		DEFINE = handle;
-		SUPER_CLASS = superClass;
 	}
 }
