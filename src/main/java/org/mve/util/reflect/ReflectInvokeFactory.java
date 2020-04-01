@@ -436,7 +436,7 @@ public class ReflectInvokeFactory
 			mv.visitInsn(Opcodes.AALOAD);
 			stack.pop();
 			if (c.isPrimitive()) unwarp(c, mv);
-			else mv.visitTypeInsn(Opcodes.CHECKCAST, c.getTypeName().replace('.', '/'));
+			else mv.visitTypeInsn(Opcodes.CHECKCAST, getType(c));
 		}
 	}
 
@@ -484,6 +484,19 @@ public class ReflectInvokeFactory
 		mv.visitEnd();
 	}
 
+	private static String getType(Class<?> clazz)
+	{
+		StringBuilder sb = new StringBuilder();
+		while (clazz.isArray())
+		{
+			sb.append('[');
+			clazz = clazz.getComponentType();
+		}
+		if (clazz.isPrimitive()) sb.append(primitive(clazz));
+		else sb.append(clazz.getTypeName().replace('.', '/'));
+		return sb.toString();
+	}
+
 	private static String getDescriptor(Class<?> clazz)
 	{
 		StringBuilder builder = new StringBuilder();
@@ -492,16 +505,22 @@ public class ReflectInvokeFactory
 			builder.append('[');
 			clazz = clazz.getComponentType();
 		}
-		if (clazz == byte.class) builder.append('B');
-		else if (clazz == short.class) builder.append('S');
-		else if (clazz == int.class) builder.append("I");
-		else if (clazz == long.class) builder.append('J');
-		else if (clazz == float.class) builder.append('F');
-		else if (clazz == double.class) builder.append('D');
-		else if (clazz == boolean.class) builder.append('Z');
-		else if (clazz == char.class) builder.append('C');
+		if (clazz.isPrimitive()) builder.append(primitive(clazz));
 		else builder.append('L').append(clazz.getTypeName().replace('.', '/')).append(';');
 		return builder.toString();
+	}
+
+	private static String primitive(Class<?> clazz)
+	{
+		if (clazz == byte.class) return "B";
+		else if (clazz == short.class) return "S";
+		else if (clazz == int.class) return "I";
+		else if (clazz == long.class) return "J";
+		else if (clazz == float.class) return "F";
+		else if (clazz == double.class) return "D";
+		else if (clazz == boolean.class) return "Z";
+		else if (clazz == char.class) return "C";
+		else return null;
 	}
 
 	static
