@@ -394,7 +394,7 @@ public class ReflectInvokeFactory
 		ClassWriter cw = new ClassWriter(0);
 		cw.visit(52, AccessFlag.ACC_STRICT | AccessFlag.ACC_PUBLIC, className, null, SUPER_CLASS, new String[]{"org/mve/util/reflect/ReflectInvoker"});
 		genericConstructor(cw, SUPER_CLASS);
-		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;", null, null);
 		mv.visitTypeInsn(Opcodes.NEW, clazz.getTypeName().replace('.', '/'));
 		mv.visitInsn(Opcodes.ARETURN);
 		mv.visitMaxs(1, 2);
