@@ -50,6 +50,11 @@ public class ReflectInvokeFactory
 		try { return checkMethodAndGeneric(classLoader, Class.forName(className, false, classLoader), methodName, returnType, params); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
+	public static ReflectInvoker getReflectInvoker(ClassLoader classLoader, String className, String methodName, boolean isStatic, Class<?> returnType, Class<?>... params) throws ReflectionGenericException
+	{
+		try { return generic(classLoader.loadClass(className), methodName, MethodType.methodType(returnType, params), isStatic); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+	}
+
 	public static ReflectInvoker getReflectInvoker(Class<?> clazz, String fieldName) throws ReflectionGenericException
 	{
 		try { return checkFieldAndGeneric(clazz.getClassLoader(), clazz, fieldName, false); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
