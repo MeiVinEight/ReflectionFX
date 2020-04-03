@@ -1,6 +1,6 @@
 package org.mve.util.reflect;
 
-public interface ReflectInvoker
+public interface ReflectInvoker<T>
 {
-	Object invoke(Object... args);
+	T invoke(Object... args);
 }
