@@ -4,7 +4,6 @@ import org.jetbrains.org.objectweb.asm.ClassWriter;
 import org.jetbrains.org.objectweb.asm.FieldVisitor;
 import org.jetbrains.org.objectweb.asm.Label;
 import org.jetbrains.org.objectweb.asm.MethodVisitor;
-import org.jetbrains.org.objectweb.asm.ModuleVisitor;
 import org.jetbrains.org.objectweb.asm.Opcodes;
 import org.jetbrains.org.objectweb.asm.Type;
 import org.mve.util.asm.OperandStack;
@@ -12,7 +11,6 @@ import org.mve.util.asm.file.AccessFlag;
 import sun.misc.Unsafe;
 
 import java.io.DataInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -23,10 +21,10 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unchecked"})
 public class ReflectInvokeFactory
 {
 	public static final Unsafe UNSAFE;
@@ -34,26 +32,26 @@ public class ReflectInvokeFactory
 	public static final Class<?> DELEGATING_CLASS;
 	public static final MethodHandle DEFINE;
 	public static final ReflectInvoker<Object> METHOD_HANDLE_INVOKER;
-	public static final ReflectInvoker<Class<?>> CALLER = null; // FIXME
+	public static final ReflectInvoker<Class<?>> CALLER;
+	public static final ReflectionClassLoader INTERNAL_CLASS_LOADER;
 	private static final String MAGIC_ACCESSOR;
-	private static final ReflectionClassLoader INTERNAL_CLASS_LOADER;
 	private static final ReflectInvoker<ReflectionClassLoader> CLASS_LOADER_FACTORY;
 	private static final Map<ClassLoader, ReflectionClassLoader> CLASS_LOADER_MAP = new ConcurrentHashMap<>();
 	private static int id = 0;
 
-	public static <T> ReflectInvoker<T> getReflectInvoker(Class<?> clazz, String methodName, boolean isStatic, Class<T> returnType, Class<?>... params) throws ReflectionGenericException
+	public static <T> ReflectInvoker<T> getReflectInvoker(Class<?> clazz, String methodName, boolean isStatic, Class<T> returnType, Class<?>... params)
 	{
-		try { return clazz == ReflectInvokeFactory.class ? null : generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, methodName, MethodType.methodType(returnType, params), isStatic); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, methodName, MethodType.methodType(returnType, params), isStatic); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
 	public static <T> ReflectInvoker<T> getReflectInvoker(Class<?> clazz, String fieldName, Class<T> type, boolean isStatic, boolean isFinal)
 	{
-		try { return clazz == ReflectInvokeFactory.class ? null : generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, false); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, false); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
 	public static <T> ReflectInvoker<T> getReflectInvoker(Class<?> clazz, String fieldName, Class<T> type, boolean isStatic, boolean isFinal, boolean deepReflect)
 	{
-		try { return clazz == ReflectInvokeFactory.class ? null : generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, deepReflect); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, deepReflect); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
 	public static <T> ReflectInvoker<T> getReflectInvoker(Class<T> clazz)
@@ -142,9 +140,9 @@ public class ReflectInvokeFactory
 		Class<?>[] params = type.parameterArray();
 		final OperandStack stack = new OperandStack();
 		ClassWriter cw = new ClassWriter(0);
-		cw.visit(52, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<"+getDescriptor(returnType == void.class ? Void.class : returnType)+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		cw.visit(52, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<"+getDescriptor(typeWarp(returnType))+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectInvoker"});
 		genericConstructor(cw, MAGIC_ACCESSOR);
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(returnType == void.class ? Void.class : returnType), null, null);
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(typeWarp(returnType)), null, null);
 		mv.visitCode();
 		if (!isStatic) arrayFirst(mv, owner, stack);
 		pushArguments(params, mv, isStatic ? 0 : 1, stack);
@@ -158,20 +156,21 @@ public class ReflectInvokeFactory
 		stack.pop();
 		mv.visitMaxs(stack.getMaxSize(), 2);
 		mv.visitEnd();
-		bridge(cw, className, returnType == void.class ? Void.class : returnType);
+		bridge(cw, className, typeWarp(returnType));
 		return define(cw, callerLoader);
 	}
 
 	private static <T> ReflectInvoker<T> generic(ClassLoader callerLoader, Class<?> clazz, String fieldName, Class<T> type, boolean isStatic, boolean isFinal, boolean deepReflect) throws Throwable
 	{
+		if (typeWarp(type) == Void.class) throw new IllegalArgumentException("illegal type: void");
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		String desc = getDescriptor(type);
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
 		ClassWriter cw = new ClassWriter(0);
-		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<"+getDescriptor(type)+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<"+getDescriptor(typeWarp(type))+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectInvoker"});
 		genericConstructor(cw, MAGIC_ACCESSOR);
-		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(type), null, null);
+		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(typeWarp(type)), null, null);
 		mv.visitCode();
 		Label label = new Label();
 		mv.visitVarInsn(Opcodes.ALOAD, 1);
@@ -279,12 +278,13 @@ public class ReflectInvokeFactory
 		stack.pop();
 		mv.visitMaxs(stack.getMaxSize(), 2);
 		mv.visitEnd();
-		bridge(cw, className, type);
+		bridge(cw, className, typeWarp(type));
 		return define(cw, callerLoader);
 	}
 
 	private static <T> ReflectInvoker<T> generic(ClassLoader callerLoader, Class<T> clazz, MethodType type) throws Throwable
 	{
+		if (typeWarp(clazz) == Void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		String desc = type.toMethodDescriptorString();
 		final OperandStack stack = new OperandStack();
@@ -312,6 +312,7 @@ public class ReflectInvokeFactory
 
 	private static <T> ReflectInvoker<T> generic(ClassLoader callerLoader, Class<T> clazz) throws Throwable
 	{
+		if (typeWarp(clazz) == Void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		ClassWriter cw = new ClassWriter(0);
 		cw.visit(52, AccessFlag.ACC_STRICT | AccessFlag.ACC_PUBLIC, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<"+getDescriptor(clazz)+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectInvoker"});
@@ -380,6 +381,20 @@ public class ReflectInvokeFactory
 		else if (c == double.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false);
 		else if (c == boolean.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
 		else if (c == char.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false);
+	}
+
+	private static Class<?> typeWarp(Class<?> type)
+	{
+		if (type == void.class) return Void.class;
+		else if (type == byte.class) return Byte.class;
+		else if (type == short.class) return Short.class;
+		else if (type == int.class) return Integer.class;
+		else if (type == long.class) return Long.class;
+		else if (type == float.class) return Float.class;
+		else if (type == double.class) return Double.class;
+		else if (type == boolean.class) return Boolean.class;
+		else if (type == char.class) return Character.class;
+		else return type;
 	}
 
 	private static void unwarp(Class<?> c, MethodVisitor mv)
@@ -518,7 +533,6 @@ public class ReflectInvokeFactory
 						String.class
 					)
 				);
-				System.out.println(Class.class.getMethod("getModule").invoke(Object.class));
 				exports.invoke(
 					jla,
 					Class.class.getMethod("getModule").invoke(Object.class),
@@ -605,7 +619,7 @@ public class ReflectInvokeFactory
 			 */
 			Class<?> internalClassLoader;
 			{
-				String internal_classloader_name = majorVersion > 0x34 ? "jdk/internal/loader/ClassLoader" : "org/mve/util/reflect/ClassLoader";
+				String internal_classloader_name = "org/mve/util/reflect/ClassLoader";
 				String superClass = majorVersion > 0x34 ? "jdk/internal/loader/BuiltinClassLoader" : "java/lang/ClassLoader";
 				try
 				{
@@ -613,7 +627,11 @@ public class ReflectInvokeFactory
 				}
 				catch (Throwable t)
 				{
+					/*
+					 * has no constructor
+					 */
 					ClassWriter cw = new ClassWriter(0);
+					cw.visitSource("ClassLoader.java", null);
 					cw.visit(
 						0x34,
 						AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER,
@@ -652,199 +670,12 @@ public class ReflectInvokeFactory
 					}
 
 					/*
-					 * Constructor
-					 *   (ClassLoader)
-					 */
-					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC,
-							"<init>",
-							MethodType.methodType(
-								void.class,
-								ClassLoader.class
-							).toMethodDescriptorString(),
-							null,
-							null
-						);
-						mv.visitCode();
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						if (majorVersion > 0x34) mv.visitLdcInsn(UUID.randomUUID().toString());
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(ClassLoader.class),
-							"getParent",
-							MethodType.methodType(
-								ClassLoader.class
-							).toMethodDescriptorString(),
-							false
-						);
-						if (majorVersion > 0x34) mv.visitTypeInsn(Opcodes.CHECKCAST, superClass);
-						if (majorVersion > 0x34) mv.visitInsn(Opcodes.ACONST_NULL);
-						mv.visitMethodInsn(
-							Opcodes.INVOKESPECIAL,
-							superClass,
-							"<init>",
-							(
-								majorVersion > 0x34 ?
-									MethodType.methodType(
-										void.class,
-										String.class,
-										Class.forName(superClass.replace('/', '.')),
-										Class.forName(new String("jdk.internal.loader.URLClassPath".getBytes()))
-									)
-									:
-									MethodType.methodType(
-										void.class,
-										ClassLoader.class
-									)
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						mv.visitTypeInsn(Opcodes.NEW, getType(ConcurrentHashMap.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(ConcurrentHashMap.class),
-							"<init>",
-							"()V",
-							false
-						);
-						mv.visitFieldInsn(
-							Opcodes.PUTFIELD,
-							internal_classloader_name,
-							"class",
-							getDescriptor(Map.class)
-						);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(ClassLoader.class),
-							"getParent",
-							MethodType.methodType(ClassLoader.class).toMethodDescriptorString(),
-							false
-						);
-						mv.visitVarInsn(Opcodes.ASTORE, 2);
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectInvokeFactory.class),
-							"TRUSTED_LOOKUP",
-							getDescriptor(MethodHandles.Lookup.class)
-						);
-						mv.visitLdcInsn(Type.getType(ClassLoader.class));
-						mv.visitLdcInsn("parent");
-						mv.visitLdcInsn(Type.getType(ClassLoader.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandles.Lookup.class),
-							"findSetter",
-							MethodType.methodType(
-								MethodHandle.class,
-								Class.class,
-								String.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ICONST_2);
-						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-						mv.visitInsn(Opcodes.AASTORE);
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						mv.visitInsn(Opcodes.AASTORE);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandle.class),
-							"invoke",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.POP);
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectInvokeFactory.class),
-							"TRUSTED_LOOKUP",
-							getDescriptor(MethodHandles.Lookup.class)
-						);
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectInvokeFactory.class),
-							"DELEGATING_CLASS",
-							getDescriptor(Class.class)
-						);
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(Void.class),
-							"TYPE",
-							getDescriptor(Class.class)
-						);
-						mv.visitLdcInsn(Type.getType(ClassLoader.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKESPECIAL,
-							getType(MethodType.class),
-							"methodType",
-							MethodType.methodType(
-								MethodType.class,
-								Class.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandles.Lookup.class),
-							"findConstructor",
-							MethodType.methodType(
-								MethodHandle.class,
-								Class.class,
-								MethodType.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.AASTORE);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandle.class),
-							"invoke",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(ClassLoader.class));
-						mv.visitFieldInsn(
-							Opcodes.PUTFIELD,
-							internal_classloader_name,
-							"this",
-							getDescriptor(ClassLoader.class)
-						);
-						mv.visitInsn(Opcodes.RETURN);
-						mv.visitMaxs(6, 3);
-						mv.visitEnd();
-					}
-
-					/*
 					 * implement method define
 					 *   Class<?> define(byte[])
 					 */
 					{
 						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SYNTHETIC,
+							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SYNTHETIC | AccessFlag.ACC_SYNCHRONIZED,
 							"define",
 							MethodType.methodType(
 								Class.class,
@@ -897,7 +728,6 @@ public class ReflectInvokeFactory
 						mv.visitInsn(Opcodes.DUP);
 						mv.visitInsn(Opcodes.ICONST_4);
 						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitTypeInsn(Opcodes.CHECKCAST, "[B");
 						mv.visitInsn(Opcodes.ARRAYLENGTH);
 						warp(int.class, mv);
 						mv.visitInsn(Opcodes.AASTORE);
@@ -905,7 +735,7 @@ public class ReflectInvokeFactory
 						mv.visitMethodInsn(
 							Opcodes.INVOKEVIRTUAL,
 							getType(MethodHandle.class),
-							"invoke",
+							"invokeWithArguments",
 							MethodType.methodType(
 								Object.class,
 								Object[].class
@@ -971,6 +801,9 @@ public class ReflectInvokeFactory
 						);
 						mv.visitCode();
 						Label ret = new Label();
+						Label line = new Label();
+						mv.visitLabel(line);
+						mv.visitLineNumber(10, line);
 						mv.visitVarInsn(Opcodes.ALOAD, 0);
 						mv.visitVarInsn(Opcodes.ALOAD, 1);
 						mv.visitMethodInsn(
@@ -986,6 +819,10 @@ public class ReflectInvokeFactory
 						mv.visitInsn(Opcodes.DUP);
 						mv.visitJumpInsn(Opcodes.IFNONNULL, ret);
 						mv.visitInsn(Opcodes.POP);
+						mv.visitLabel(line);
+						mv.visitLineNumber(11, line);
+
+
 						mv.visitVarInsn(Opcodes.ALOAD, 0);
 						mv.visitFieldInsn(
 							Opcodes.GETFIELD,
@@ -1004,8 +841,13 @@ public class ReflectInvokeFactory
 							).toMethodDescriptorString(),
 							true
 						);
+						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(Class.class));
 						mv.visitInsn(Opcodes.DUP);
 						mv.visitJumpInsn(Opcodes.IFNONNULL, ret);
+
+
+						mv.visitLabel(line);
+						mv.visitLineNumber(12, line);
 						mv.visitFrame(			// FRAME
 							Opcodes.F_SAME1,
 							0,
@@ -1024,6 +866,8 @@ public class ReflectInvokeFactory
 							).toMethodDescriptorString(),
 							false
 						);
+						Label tryLabel = new Label();
+						mv.visitLabel(tryLabel);
 						mv.visitVarInsn(Opcodes.ALOAD, 1);
 						mv.visitMethodInsn(
 							Opcodes.INVOKEVIRTUAL,
@@ -1035,6 +879,20 @@ public class ReflectInvokeFactory
 							).toMethodDescriptorString(),
 							false
 						);
+						Label catchLabel = new Label();
+						mv.visitJumpInsn(Opcodes.GOTO, ret);
+						mv.visitFrame(			// FRAME
+							Opcodes.F_SAME1,
+							0,
+							null,
+							1,
+							new Object[]{"java/lang/Throwable"}
+						);
+						Label tLabel = new Label();
+						mv.visitLabel(tLabel);
+						mv.visitLabel(catchLabel);
+						mv.visitInsn(Opcodes.POP);
+						mv.visitInsn(Opcodes.ACONST_NULL);
 						mv.visitFrame(			// FRAME
 							Opcodes.F_SAME1,
 							0,
@@ -1044,7 +902,9 @@ public class ReflectInvokeFactory
 						);
 						mv.visitLabel(ret);
 						mv.visitInsn(Opcodes.ARETURN);
+						mv.visitTryCatchBlock(tryLabel, catchLabel, tLabel, "java/lang/Throwable");
 						mv.visitMaxs(2, flag ? 3 : 2);
+						mv.visitEnd();
 					}
 
 					byte[] code = cw.toByteArray();
@@ -1086,32 +946,370 @@ public class ReflectInvokeFactory
 					mv.visitCode();
 					if (majorVersion > 0x34)
 					{
+//						mv.visitTypeInsn(Opcodes.INSTANCEOF, "jdk/internal/loader/BuiltinClassLoader");
+						mv.visitLdcInsn("jdk.internal.loader.BuiltinClassLoader");
+						mv.visitMethodInsn(
+							Opcodes.INVOKESTATIC,
+							getType(Class.class),
+							"forName",
+							MethodType.methodType(
+								Class.class,
+								String.class
+							).toMethodDescriptorString(),
+							false
+						);
 						mv.visitVarInsn(Opcodes.ALOAD, 1);
 						mv.visitInsn(Opcodes.ICONST_0);
 						mv.visitInsn(Opcodes.AALOAD);
-						mv.visitTypeInsn(Opcodes.INSTANCEOF, "jdk/internal/loader/BuiltinClassLoader");
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(Class.class),
+							"isInstance",
+							MethodType.methodType(
+								boolean.class,
+								Object.class
+							).toMethodDescriptorString(),
+							false
+						);
 						Label l1 = new Label();
 						mv.visitJumpInsn(Opcodes.IFEQ, l1);
-						mv.visitTypeInsn(Opcodes.NEW, getType(internalClassLoader));
+						mv.visitFieldInsn(
+							Opcodes.GETSTATIC,
+							getType(ReflectInvokeFactory.class),
+							"UNSAFE",
+							getDescriptor(Unsafe.class)
+						);
+						mv.visitLdcInsn(Type.getType(internalClassLoader));
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(Unsafe.class),
+							"allocateInstance",
+							MethodType.methodType(
+								Object.class,
+								Class.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(ReflectionClassLoader.class));
+						mv.visitVarInsn(Opcodes.ASTORE, 2);
+
+						/*
+						 * TRUSTED_LOOKUP.findSetter(clazz, "parent", clazz);
+						 */
+						mv.visitFieldInsn(
+							Opcodes.GETSTATIC,
+							getType(ReflectInvokeFactory.class),
+							"TRUSTED_LOOKUP",
+							getDescriptor(MethodHandles.Lookup.class)
+						);	// lookup
+						mv.visitLdcInsn(Type.getType(ClassLoader.class));
+						mv.visitLdcInsn("parent");
+						mv.visitLdcInsn(Type.getType(ClassLoader.class));
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandles.Lookup.class),
+							"findSetter",
+							MethodType.methodType(
+								MethodHandle.class,
+								Class.class,
+								String.class,
+								Class.class
+							).toMethodDescriptorString(),
+							false
+						);
 						mv.visitInsn(Opcodes.DUP);
+
+						/*
+						 * handle.invoke(loader, ((ClassLoader)args[0]).getParent());
+						 */
+						mv.visitInsn(Opcodes.ICONST_2);
+						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
+						mv.visitInsn(Opcodes.DUP);
+						mv.visitInsn(Opcodes.ICONST_0);
+						mv.visitVarInsn(Opcodes.ALOAD, 2);
+						mv.visitInsn(Opcodes.AASTORE);
+						mv.visitInsn(Opcodes.DUP);
+						mv.visitInsn(Opcodes.ICONST_1);
 						mv.visitVarInsn(Opcodes.ALOAD, 1);
 						mv.visitInsn(Opcodes.ICONST_0);
 						mv.visitInsn(Opcodes.AALOAD);
 						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(ClassLoader.class));
 						mv.visitMethodInsn(
-							Opcodes.INVOKESPECIAL,
-							getType(internalClassLoader),
-							"<init>",
+							Opcodes.INVOKEVIRTUAL,
+							getType(ClassLoader.class),
+							"getParent",
 							MethodType.methodType(
-								void.class,
 								ClassLoader.class
 							).toMethodDescriptorString(),
 							false
 						);
+						mv.visitInsn(Opcodes.AASTORE);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandle.class),
+							"invokeWithArguments",
+							MethodType.methodType(
+								Object.class,
+								Object[].class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.POP);
+
+						/*
+						 * handle.invoke(args[0], loader);
+						 */
+						Function<MethodVisitor, Void> f = (mv1) ->
+						{
+							mv1.visitInsn(Opcodes.ICONST_2);
+							mv1.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
+							mv1.visitInsn(Opcodes.DUP);
+							mv1.visitInsn(Opcodes.ICONST_0);
+							mv1.visitVarInsn(Opcodes.ALOAD, 1);
+							mv1.visitInsn(Opcodes.ICONST_0);
+							mv1.visitInsn(Opcodes.AALOAD);
+							mv1.visitInsn(Opcodes.AASTORE);
+							mv1.visitInsn(Opcodes.DUP);
+							mv1.visitInsn(Opcodes.ICONST_1);
+							mv1.visitVarInsn(Opcodes.ALOAD, 2);
+							mv1.visitInsn(Opcodes.AASTORE);
+							mv1.visitMethodInsn(
+								Opcodes.INVOKEVIRTUAL,
+								getType(MethodHandle.class),
+								"invokeWithArguments",
+								MethodType.methodType(
+									Object.class,
+									Object[].class
+								).toMethodDescriptorString(),
+								false
+							);
+							mv1.visitInsn(Opcodes.POP);
+							return null;
+						};
+
+						f.apply(mv);
+
+						/*
+						 * TRUSTED_LOOKUP.findSetter(clazz, "parent", clazz);
+						 */
+						mv.visitFieldInsn(
+							Opcodes.GETSTATIC,
+							getType(ReflectInvokeFactory.class),
+							"TRUSTED_LOOKUP",
+							getDescriptor(MethodHandles.Lookup.class)
+						);	// lookup
+						mv.visitLdcInsn("jdk.internal.loader.BuiltinClassLoader");
+						mv.visitMethodInsn(
+							Opcodes.INVOKESTATIC,
+							getType(Class.class),
+							"forName",
+							MethodType.methodType(
+								Class.class,
+								String.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitLdcInsn("parent");
+						mv.visitLdcInsn("jdk.internal.loader.BuiltinClassLoader");
+						mv.visitMethodInsn(
+							Opcodes.INVOKESTATIC,
+							getType(Class.class),
+							"forName",
+							MethodType.methodType(
+								Class.class,
+								String.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandles.Lookup.class),
+							"findSetter",
+							MethodType.methodType(
+								MethodHandle.class,
+								Class.class,
+								String.class,
+								Class.class
+							).toMethodDescriptorString(),
+							false
+						);
+
+						f.apply(mv);
+
+						/*
+						 * TRUSTED_LOOKUP.findSetter(internalClassLoader, "this", ClassLoader.class)
+						 * 		.invoke(TRUSTED_LOOKUP.findConstructor(clazz, MethodType.methodType(void.class, ClassLoader.class)).invoke(args[0]))
+						 */
+						mv.visitFieldInsn(
+							Opcodes.GETSTATIC,
+							getType(ReflectInvokeFactory.class),
+							"TRUSTED_LOOKUP",
+							getDescriptor(MethodHandles.Lookup.class)
+						);
+						mv.visitLdcInsn(Type.getType(internalClassLoader));
+						mv.visitLdcInsn("this");
+						mv.visitLdcInsn(Type.getType(ClassLoader.class));
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandles.Lookup.class),
+							"findSetter",
+							MethodType.methodType(
+								MethodHandle.class,
+								Class.class,
+								String.class,
+								Class.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.ICONST_2);
+						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
+						mv.visitInsn(Opcodes.DUP);
+						mv.visitInsn(Opcodes.ICONST_0);
+						mv.visitVarInsn(Opcodes.ALOAD, 2);
+						mv.visitInsn(Opcodes.AASTORE);
+						mv.visitInsn(Opcodes.DUP);
+						mv.visitInsn(Opcodes.ICONST_1);
+						mv.visitFieldInsn(
+							Opcodes.GETSTATIC,
+							getType(ReflectInvokeFactory.class),
+							"TRUSTED_LOOKUP",
+							getDescriptor(MethodHandles.Lookup.class)
+						);
+						mv.visitLdcInsn(DELEGATING_CLASS.getTypeName());
+						mv.visitMethodInsn(
+							Opcodes.INVOKESTATIC,
+							getType(Class.class),
+							"forName",
+							MethodType.methodType(
+								Class.class,
+								String.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitFieldInsn(
+							Opcodes.GETSTATIC,
+							getType(Void.class),
+							"TYPE",
+							getDescriptor(Class.class)
+						);
+						mv.visitLdcInsn(Type.getType(ClassLoader.class));
+						mv.visitMethodInsn(
+							Opcodes.INVOKESTATIC,
+							getType(MethodType.class),
+							"methodType",
+							MethodType.methodType(
+								MethodType.class,
+								Class.class,
+								Class.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandles.Lookup.class),
+							"findConstructor",
+							MethodType.methodType(
+								MethodHandle.class,
+								Class.class,
+								MethodType.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.ICONST_1);
+						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
+						mv.visitInsn(Opcodes.DUP);
+						mv.visitInsn(Opcodes.ICONST_0);
+						mv.visitVarInsn(Opcodes.ALOAD, 1);
+						mv.visitInsn(Opcodes.ICONST_0);
+						mv.visitInsn(Opcodes.AALOAD);
+						mv.visitInsn(Opcodes.AASTORE);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandle.class),
+							"invokeWithArguments",
+							MethodType.methodType(
+								Object.class,
+								Object[].class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.AASTORE);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandle.class),
+							"invokeWithArguments",
+							MethodType.methodType(
+								Object.class,
+								Object[].class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.POP);
+
+						/*
+						 * TRUSTED_LOOKUP.findSetter(internalClassLoader, "class", Map.class)
+						 * 		.invoke(loader, new ConcurrentHashMap());
+						 */
+						mv.visitFieldInsn(
+							Opcodes.GETSTATIC,
+							getType(ReflectInvokeFactory.class),
+							"TRUSTED_LOOKUP",
+							getDescriptor(MethodHandles.Lookup.class)
+						);
+						mv.visitLdcInsn(Type.getType(internalClassLoader));
+						mv.visitLdcInsn("class");
+						mv.visitLdcInsn(Type.getType(Map.class));
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandles.Lookup.class),
+							"findSetter",
+							MethodType.methodType(
+								MethodHandle.class,
+								Class.class,
+								String.class,
+								Class.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.ICONST_2);
+						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
+						mv.visitInsn(Opcodes.DUP);
+						mv.visitInsn(Opcodes.ICONST_0);
+						mv.visitVarInsn(Opcodes.ALOAD, 2);
+						mv.visitInsn(Opcodes.AASTORE);
+						mv.visitInsn(Opcodes.DUP);
+						mv.visitInsn(Opcodes.ICONST_1);
+						mv.visitTypeInsn(Opcodes.NEW, getType(ConcurrentHashMap.class));
+						mv.visitInsn(Opcodes.DUP);
+						mv.visitMethodInsn(
+							Opcodes.INVOKESPECIAL,
+							getType(ConcurrentHashMap.class),
+							"<init>",
+							"()V",
+							false
+						);
+						mv.visitInsn(Opcodes.AASTORE);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandle.class),
+							"invokeWithArguments",
+							MethodType.methodType(
+								Object.class,
+								Object[].class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.POP);
+						mv.visitVarInsn(Opcodes.ALOAD, 2);
+
 						Label l2 = new Label();
 						mv.visitJumpInsn(Opcodes.GOTO, l2);
 						mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
 						mv.visitLabel(l1);
+
+						/*
+						 * standard class loader
+						 */
 						mv.visitTypeInsn(Opcodes.NEW, getType(StandardReflectionClassLoader.class));
 						mv.visitInsn(Opcodes.DUP);
 						mv.visitVarInsn(Opcodes.ALOAD, 1);
@@ -1129,7 +1327,9 @@ public class ReflectInvokeFactory
 							false
 						);
 						mv.visitLabel(l2);
-						mv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[]{"java/lang/ClassLoader"});
+						mv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[]{"org/mve/util/reflect/ReflectionClassLoader"});
+						mv.visitInsn(Opcodes.ARETURN);
+						mv.visitMaxs(10, 3);
 					}
 					else
 					{
@@ -1149,17 +1349,13 @@ public class ReflectInvokeFactory
 							).toMethodDescriptorString(),
 							false
 						);
+						mv.visitInsn(Opcodes.ARETURN);
+						mv.visitMaxs(4, 2);
 					}
-					mv.visitInsn(Opcodes.ARETURN);
-					mv.visitMaxs(4, 2);
 					mv.visitEnd();
 					bridge(cw, "org/mve/util/reflect/ClassLoaderConstructor", ReflectionClassLoader.class);
 					cw.visitEnd();
 					byte[] code = cw.toByteArray();
-					FileOutputStream out = new FileOutputStream("ClassLoaderConstructor.class");
-					out.write(code);
-					out.flush();
-					out.close();
 					c = (Class<?>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ClassLoader.getSystemClassLoader(), null, code, 0, code.length);
 				}
 
@@ -1172,6 +1368,55 @@ public class ReflectInvokeFactory
 			 * caller class
 			 */
 			{
+				Class<? extends ReflectInvoker<Class<?>>> c;
+				try
+				{
+					c = (Class<? extends ReflectInvoker<Class<?>>>) Class.forName("org.mve.util.reflect.CallerClassGetter");
+				}
+				catch (Throwable t)
+				{
+					ClassWriter cw = new ClassWriter(0);
+					cw.visit(
+						0x34,
+						0x21,
+						"org/mve/util/reflect/CallerClassGetter",
+						"Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<Ljava/lang/Class<*>;>;",
+						getType(SecurityManager.class),
+						new String[]{getType(ReflectInvoker.class)}
+					);
+					genericConstructor(cw, getType(SecurityManager.class));
+					MethodVisitor mv = cw.visitMethod(
+						AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
+						"invoke",
+						MethodType.methodType(
+							Class.class,
+							Object[].class
+						).toMethodDescriptorString(),
+						"([Ljava/lang/Object;)Ljava/lang/Class<*>;",
+						null
+					);
+					mv.visitCode();
+					mv.visitVarInsn(Opcodes.ALOAD, 0);
+					mv.visitMethodInsn(
+						Opcodes.INVOKEVIRTUAL,
+						getType(SecurityManager.class),
+						"getClassContext",
+						MethodType.methodType(
+							Class[].class
+						).toMethodDescriptorString(),
+						false
+					);
+					mv.visitInsn(Opcodes.ICONST_3);
+					mv.visitInsn(Opcodes.AALOAD);
+					mv.visitInsn(Opcodes.ARETURN);
+					mv.visitMaxs(2, 2);
+					mv.visitEnd();
+					bridge(cw, "org/mve/util/reflect/CallerClassGetter", Class.class);
+					cw.visitEnd();
+					byte[] code = cw.toByteArray();
+					c = (Class<? extends ReflectInvoker<Class<?>>>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ClassLoader.getSystemClassLoader(), null, code, 0, code.length);
+				}
+				CALLER = c.getDeclaredConstructor().newInstance();
 			}
 		}
 		catch (Throwable t)
