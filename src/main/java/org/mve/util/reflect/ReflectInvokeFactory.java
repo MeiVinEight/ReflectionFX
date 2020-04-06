@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.security.AccessController;
@@ -29,10 +30,11 @@ public class ReflectInvokeFactory
 {
 	public static final Unsafe UNSAFE;
 	public static final MethodHandles.Lookup TRUSTED_LOOKUP;
-	public static final Class<?> DELEGATING_CLASS;
 	public static final MethodHandle DEFINE;
 	public static final ReflectInvoker<Object> METHOD_HANDLE_INVOKER;
 	public static final ReflectInvoker<Class<?>> CALLER;
+	public static final Accessor ACCESSOR;
+	public static final Class<?> DELEGATING_CLASS;
 	private static final ReflectionClassLoader INTERNAL_CLASS_LOADER;
 	private static final String MAGIC_ACCESSOR;
 	private static final ReflectInvoker<ReflectionClassLoader> CLASS_LOADER_FACTORY;
@@ -483,13 +485,38 @@ public class ReflectInvokeFactory
 			int majorVersion = new DataInputStream(in).readShort() & 0XFFFF;
 			in.close();
 
+			DELEGATING_CLASS = Class.forName(majorVersion > 0x34 ? "jdk.internal.reflect.DelegatingClassLoader" : "sun.reflect.DelegatingClassLoader");
+
 			/*
-			 * disable reflect warn
+			 * Unsafe
 			 */
 			{
 				Field field = Unsafe.class.getDeclaredField("theUnsafe");
 				field.setAccessible(true);
 				UNSAFE = (Unsafe) field.get(null);
+			}
+
+			/*
+			 * trusted lookup
+			 */
+			{
+				Object illegalAccessLogger = null;
+				if (majorVersion > 0X34)
+				{
+					String name = "jdk.internal.module.IllegalAccessLogger";
+					Class<?> clazz = Class.forName(name);
+					Field loggerField = clazz.getDeclaredField("logger");
+					long offset = UNSAFE.staticFieldOffset(loggerField);
+					illegalAccessLogger = UNSAFE.getObjectVolatile(clazz, offset);
+					UNSAFE.putObjectVolatile(clazz, offset, null);
+				}
+
+				{
+					Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+					field.setAccessible(true);
+					MethodHandles.Lookup lookup = TRUSTED_LOOKUP = (MethodHandles.Lookup) field.get(null);
+					DEFINE = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
+				}
 
 				if (majorVersion > 0X34)
 				{
@@ -497,20 +524,11 @@ public class ReflectInvokeFactory
 					Class<?> clazz = Class.forName(name);
 					Field loggerField = clazz.getDeclaredField("logger");
 					long offset = UNSAFE.staticFieldOffset(loggerField);
-					UNSAFE.putObjectVolatile(clazz, offset, null);
+					UNSAFE.putObjectVolatile(clazz, offset, illegalAccessLogger);
 				}
 
 				if (majorVersion <= 0X34) MAGIC_ACCESSOR = "sun/reflect/MagicAccessorImpl";
 				else MAGIC_ACCESSOR = "jdk/internal/reflect/MagicAccessorImpl";
-			}
-
-			{
-				DELEGATING_CLASS = Class.forName(majorVersion > 0x34 ? "jdk.internal.reflect.DelegatingClassLoader" : "sun.reflect.DelegatingClassLoader");
-				Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-				field.setAccessible(true);
-				MethodHandles.Lookup lookup = TRUSTED_LOOKUP = (MethodHandles.Lookup) field.get(null);
-				DEFINE = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
-//				INTERNAL_CLASS_LOADER = new ReflectionClassLoader(ReflectInvoker.class.getClassLoader());
 			}
 
 			/*
@@ -944,7 +962,6 @@ public class ReflectInvokeFactory
 					mv.visitCode();
 					if (majorVersion > 0x34)
 					{
-//						mv.visitTypeInsn(Opcodes.INSTANCEOF, "jdk/internal/loader/BuiltinClassLoader");
 						mv.visitLdcInsn("jdk.internal.loader.BuiltinClassLoader");
 						mv.visitMethodInsn(
 							Opcodes.INVOKESTATIC,
@@ -1415,6 +1432,137 @@ public class ReflectInvokeFactory
 					c = (Class<? extends ReflectInvoker<Class<?>>>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ClassLoader.getSystemClassLoader(), null, code, 0, code.length);
 				}
 				CALLER = c.getDeclaredConstructor().newInstance();
+			}
+
+			/*
+			 * accessor
+			 */
+			{
+				Class<?> c;
+				try
+				{
+					c = Class.forName("org.mve.util.reflect.MagicAccessor");
+				}
+				catch (Throwable t)
+				{
+					ClassWriter cw = new ClassWriter(0);
+					cw.visitSource("MagicAccessor.java", null);
+					cw.visit(
+						0x34,
+						0x21,
+						"org/mve/util/reflect/MagicAccessor",
+						"Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<Ljava/lang/Void;>;",
+						MAGIC_ACCESSOR,
+						new String[]{
+							getType(ReflectInvoker.class),
+							getType(Accessor.class)
+						}
+					);
+
+					genericConstructor(cw, MAGIC_ACCESSOR);
+
+					/*
+					 * implement method Object invoke(Object... args);
+					 */
+					{
+						MethodVisitor mv = cw.visitMethod(
+							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
+							"invoke",
+							MethodType.methodType(
+								void.class,
+								Object[].class
+							).toMethodDescriptorString(),
+							null,
+							null
+						);
+						mv.visitCode();
+						Label line = new Label();
+						mv.visitLabel(line);
+						mv.visitLineNumber(1, line);
+						mv.visitVarInsn(Opcodes.ALOAD, 0);
+						mv.visitVarInsn(Opcodes.ALOAD, 1);
+						mv.visitInsn(Opcodes.ICONST_0);
+						mv.visitInsn(Opcodes.AALOAD);
+						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(AccessibleObject.class));
+						mv.visitVarInsn(Opcodes.ALOAD, 1);
+						mv.visitInsn(Opcodes.ICONST_1);
+						mv.visitInsn(Opcodes.AALOAD);
+						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(Boolean.class));
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(Boolean.class),
+							"booleanValue",
+							MethodType.methodType(
+								boolean.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEINTERFACE,
+							getType(Accessor.class),
+							"setAccessible",
+							MethodType.methodType(
+								void.class,
+								AccessibleObject.class,
+								boolean.class
+							).toMethodDescriptorString(),
+							true
+						);
+						mv.visitLabel(line);
+						mv.visitLineNumber(2, line);
+						mv.visitInsn(Opcodes.ACONST_NULL);
+						mv.visitLabel(line);
+						mv.visitLineNumber(3, line);
+						mv.visitInsn(Opcodes.ARETURN);
+						mv.visitMaxs(4, 2);
+						mv.visitEnd();
+					}
+
+					/*
+					 * implement method void setAccessible(AccessibleObject acc, boolean flag);
+					 */
+					{
+						MethodVisitor mv = cw.visitMethod(
+							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
+							"setAccessible",
+							MethodType.methodType(
+								void.class,
+								AccessibleObject.class,
+								boolean.class
+							).toMethodDescriptorString(),
+							null,
+							null
+						);
+						mv.visitCode();
+						Label line = new Label();
+						mv.visitLabel(line);
+						mv.visitLineNumber(4, line);
+						mv.visitVarInsn(Opcodes.ALOAD, 1);
+						mv.visitVarInsn(Opcodes.ILOAD, 2);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(AccessibleObject.class),
+							"setAccessible0",
+							MethodType.methodType(
+								boolean.class,
+								boolean.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.POP);
+						mv.visitLabel(line);
+						mv.visitLineNumber(5, line);
+						mv.visitInsn(Opcodes.RETURN);
+						mv.visitMaxs(2, 3);
+						mv.visitEnd();
+					}
+
+					bridge(cw, "org/mve/util/reflect/MagicAccessor", Void.class);
+
+					byte[] code = cw.toByteArray();
+					c = INTERNAL_CLASS_LOADER.define(code);
+				}
+				ACCESSOR = (Accessor) c.getDeclaredConstructor().newInstance();
 			}
 		}
 		catch (Throwable t)
