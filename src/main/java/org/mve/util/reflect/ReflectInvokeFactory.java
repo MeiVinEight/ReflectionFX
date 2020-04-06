@@ -33,7 +33,7 @@ public class ReflectInvokeFactory
 	public static final MethodHandle DEFINE;
 	public static final ReflectInvoker<Object> METHOD_HANDLE_INVOKER;
 	public static final ReflectInvoker<Class<?>> CALLER;
-	public static final ReflectionClassLoader INTERNAL_CLASS_LOADER;
+	private static final ReflectionClassLoader INTERNAL_CLASS_LOADER;
 	private static final String MAGIC_ACCESSOR;
 	private static final ReflectInvoker<ReflectionClassLoader> CLASS_LOADER_FACTORY;
 	private static final Map<ClassLoader, ReflectionClassLoader> CLASS_LOADER_MAP = new ConcurrentHashMap<>();
@@ -284,7 +284,7 @@ public class ReflectInvokeFactory
 
 	private static <T> ReflectInvoker<T> generic(ClassLoader callerLoader, Class<T> clazz, MethodType type) throws Throwable
 	{
-		if (typeWarp(clazz) == Void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
+		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
 		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
 		String desc = type.toMethodDescriptorString();
 		final OperandStack stack = new OperandStack();
@@ -417,7 +417,6 @@ public class ReflectInvokeFactory
 	{
 		cw.visitEnd();
 		byte[] code = cw.toByteArray();
-//		Class<?> implClass = (Class<?>) DEFINE.invoke(loader, null, code, 0, code.length);
 		Class<?> implClass = getClassLoader(callerLoader).define(code);
 		return (ReflectInvoker<T>) implClass.getDeclaredConstructor().newInstance();
 	}
