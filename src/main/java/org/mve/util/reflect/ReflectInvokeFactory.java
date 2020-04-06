@@ -517,15 +517,18 @@ public class ReflectInvokeFactory
 			/*
 			 * check jdk.internal accessible
 			 */
+			CHECK:
 			{
-				MethodHandle jla_handle = TRUSTED_LOOKUP.findStaticGetter(
-					Class.forName(new String("jdk.internal.misc.SharedSecrets".getBytes())),
-					"javaLangAccess",
-					Class.forName(new String("jdk.internal.misc.JavaLangAccess".getBytes()))
-				);
-				Object jla = jla_handle.invoke();
-				MethodHandle exports = TRUSTED_LOOKUP.findVirtual(
-					Class.forName(new String("jdk.internal.misc.JavaLangAccess".getBytes())),
+				String packageName;
+				if (majorVersion == 0x34) break CHECK;
+				else if (majorVersion >= 0x35 && majorVersion <= 0x37) packageName = "jdk.internal.misc";
+				else packageName = "jdk.internal.access";
+				Class<?> sharedSecretsClass = Class.forName(packageName + ".SharedSecrets");
+				Class<?> javaLangAccessClass = Class.forName(packageName + ".JavaLangAccess");
+				MethodHandle jlaHandle = TRUSTED_LOOKUP.findStaticGetter(sharedSecretsClass, "javaLangAccess", javaLangAccessClass);
+				Object jla = jlaHandle.invoke();
+				MethodHandle handle = TRUSTED_LOOKUP.findVirtual(
+					javaLangAccessClass,
 					"addExportsToAllUnnamed",
 					MethodType.methodType(
 						void.class,
@@ -533,11 +536,7 @@ public class ReflectInvokeFactory
 						String.class
 					)
 				);
-				exports.invoke(
-					jla,
-					Class.class.getMethod("getModule").invoke(Object.class),
-					"jdk.internal.loader"
-				);
+				handle.invoke(jla, Class.class.getMethod("getModule").invoke(Object.class), "jdk.internal.loader");
 			}
 
 			/*
