@@ -8,7 +8,6 @@ import org.jetbrains.org.objectweb.asm.Opcodes;
 import org.jetbrains.org.objectweb.asm.Type;
 import org.mve.util.asm.OperandStack;
 import org.mve.util.asm.file.AccessFlag;
-import sun.misc.Unsafe;
 
 import java.io.DataInputStream;
 import java.io.InputStream;
@@ -20,9 +19,11 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 @SuppressWarnings({"unchecked"})
@@ -153,7 +154,11 @@ public class ReflectInvokeFactory
 		for (int i = 0; i < params.length; i++) stack.pop();
 		if (!isStatic) stack.pop();
 		if (returnType == void.class) { mv.visitInsn(Opcodes.ACONST_NULL); stack.push(); }
-		else warp(returnType, mv);
+		else
+		{
+			warp(returnType, mv);
+			if (returnType == long.class || returnType == double.class) stack.pop();
+		}
 		mv.visitInsn(Opcodes.ARETURN);
 		stack.pop();
 		mv.visitMaxs(stack.getMaxSize(), 2);
@@ -221,6 +226,7 @@ public class ReflectInvokeFactory
 					if (type.isPrimitive())
 					{
 						unwarp(type, mv);
+						if (type == long.class || type == double.class) stack.push();
 						if (type == byte.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "sun/misc/Unsafe", "putByteVolatile", "(Ljava/lang/Object;JB)V", false);
 						else if (type == short.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "sun/misc/Unsafe", "putShortVolatile", "(Ljava/lang/Object;JS)V", false);
 						else if (type == int.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "sun/misc/Unsafe", "putIntVolatile", "(Ljava/lang/Object;JI)V", false);
@@ -265,7 +271,11 @@ public class ReflectInvokeFactory
 			stack.push();
 			mv.visitInsn(Opcodes.AALOAD);
 			stack.pop();
-			if (type.isPrimitive()) unwarp(type, mv);
+			if (type.isPrimitive())
+			{
+				unwarp(type, mv);
+				if (type == long.class || type == double.class) stack.push();
+			}
 			else mv.visitTypeInsn(Opcodes.CHECKCAST, type.getTypeName().replace('.', '/'));
 			mv.visitFieldInsn(isStatic ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD, owner, fieldName, desc);
 			stack.pop();
@@ -275,7 +285,11 @@ public class ReflectInvokeFactory
 		if (!isStatic) arrayFirst(mv, owner, stack);
 		mv.visitFieldInsn(isStatic ? Opcodes.GETSTATIC : Opcodes.GETFIELD, owner, fieldName, desc);
 		if (isStatic) stack.push();
-		if (type.isPrimitive()) warp(type, mv);
+		if (type.isPrimitive())
+		{
+			warp(type, mv);
+			if (type == long.class || type == double.class) stack.pop();
+		}
 		mv.visitInsn(Opcodes.ARETURN);
 		stack.pop();
 		mv.visitMaxs(stack.getMaxSize(), 2);
@@ -368,7 +382,11 @@ public class ReflectInvokeFactory
 			stack.push();
 			mv.visitInsn(Opcodes.AALOAD);
 			stack.pop();
-			if (c.isPrimitive()) unwarp(c, mv);
+			if (c.isPrimitive())
+			{
+				unwarp(c, mv);
+				if (c == long.class || c == double.class) stack.push();
+			}
 			else mv.visitTypeInsn(Opcodes.CHECKCAST, c.isArray() ? getDescriptor(c) : getType(c));
 		}
 	}
@@ -490,10 +508,11 @@ public class ReflectInvokeFactory
 			/*
 			 * Unsafe
 			 */
+			sun.misc.Unsafe usf;
 			{
-				Field field = Unsafe.class.getDeclaredField("theUnsafe");
+				Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
 				field.setAccessible(true);
-				UNSAFE = (Unsafe) field.get(null);
+				usf = (sun.misc.Unsafe) field.get(null);
 			}
 
 			/*
@@ -506,9 +525,9 @@ public class ReflectInvokeFactory
 					String name = "jdk.internal.module.IllegalAccessLogger";
 					Class<?> clazz = Class.forName(name);
 					Field loggerField = clazz.getDeclaredField("logger");
-					long offset = UNSAFE.staticFieldOffset(loggerField);
-					illegalAccessLogger = UNSAFE.getObjectVolatile(clazz, offset);
-					UNSAFE.putObjectVolatile(clazz, offset, null);
+					long offset = usf.staticFieldOffset(loggerField);
+					illegalAccessLogger = usf.getObjectVolatile(clazz, offset);
+					usf.putObjectVolatile(clazz, offset, null);
 				}
 
 				{
@@ -523,8 +542,8 @@ public class ReflectInvokeFactory
 					String name = "jdk.internal.module.IllegalAccessLogger";
 					Class<?> clazz = Class.forName(name);
 					Field loggerField = clazz.getDeclaredField("logger");
-					long offset = UNSAFE.staticFieldOffset(loggerField);
-					UNSAFE.putObjectVolatile(clazz, offset, illegalAccessLogger);
+					long offset = usf.staticFieldOffset(loggerField);
+					usf.putObjectVolatile(clazz, offset, illegalAccessLogger);
 				}
 
 				if (majorVersion <= 0X34) MAGIC_ACCESSOR = "sun/reflect/MagicAccessorImpl";
@@ -554,6 +573,1352 @@ public class ReflectInvokeFactory
 					)
 				);
 				handle.invoke(jla, Class.class.getMethod("getModule").invoke(Object.class), "jdk.internal.loader");
+				handle.invoke(jla, Class.class.getMethod("getModule").invoke(Object.class), "jdk.internal.misc");
+			}
+
+			/*
+			 * Unsafe wrapper
+			 */
+			{
+				Class<?> usfClass = Class.forName(majorVersion > 0x34 ? "sun.misc.Unsafe" : "jdk.internal.misc.Unsafe");
+				String className = "org/mve/util/reflect/UnsafeWrapper";
+				Class<?> clazz;
+				try
+				{
+					clazz = Class.forName(className.replace('/', '.'));
+				}
+				catch (Throwable t)
+				{
+					ClassWriter cw = new ClassWriter(0);
+					cw.visit(
+						0x34,
+						0x21,
+						className,
+						null,
+						"java/lang/Object",
+						new String[]{getType(Unsafe.class)}
+					);
+
+					FieldVisitor fv = cw.visitField(
+						AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC,
+						"final",
+						getDescriptor(usfClass),
+						null,
+						null
+					);
+					fv.visitEnd();
+
+					BiConsumer<String[], Class<?>[]> methodConsumer = (name, arr) ->
+					{
+						String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
+						MethodVisitor mv = cw.visitMethod(
+							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
+							name[0],
+							desc,
+							name.length < 3 ? null : name[2],
+							null
+						);
+						mv.visitCode();
+						mv.visitFieldInsn(
+							Opcodes.GETSTATIC,
+							className,
+							"final",
+							getDescriptor(usfClass)
+						);
+						int size = 0;
+						for (int i = 1; i < arr.length; i++)
+						{
+							size++;
+							Class<?> type = arr[i];
+							if (type == byte.class || type == short.class || type == int.class || type == boolean.class || type == char.class) mv.visitVarInsn(Opcodes.ILOAD, size);
+							else if (type == long.class) mv.visitVarInsn(Opcodes.LLOAD, size);
+							else if (type == float.class) mv.visitVarInsn(Opcodes.FLOAD, size);
+							else if (type == double.class) mv.visitVarInsn(Opcodes.DLOAD, size);
+							else mv.visitVarInsn(Opcodes.ALOAD, size);
+							if (type == double.class || type == long.class) size++;
+						}
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(usfClass),
+							name[1],
+							desc,
+							false
+						);
+						Class<?> c = arr[0];
+						if (c == void.class) mv.visitInsn(Opcodes.RETURN);
+						else if (c == byte.class || c == short.class || c == int.class || c == char.class || c == boolean.class) mv.visitInsn(Opcodes.IRETURN);
+						else if (c == long.class) mv.visitInsn(Opcodes.LRETURN);
+						else if (c == float.class) mv.visitInsn(Opcodes.FRETURN);
+						else if (c == double.class) mv.visitInsn(Opcodes.DRETURN);
+						else mv.visitInsn(Opcodes.ARETURN);
+						mv.visitMaxs(size+1, size+1);
+						mv.visitEnd();
+					};
+
+					// implement methods
+					{
+						// byte getByte(long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getByte",
+								"getByte"
+							},
+							new Class[]{
+								byte.class,
+								long.class
+							}
+						);
+
+						// byte getByte(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getByte",
+								"getByte"
+							},
+							new Class[]{
+								byte.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// byte getByteVolatile(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getByteVolatile",
+								"getByteVolatile"
+							},
+							new Class[]{
+								byte.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// void putByte(long offset, byte b);
+						methodConsumer.accept(
+							new String[]{
+								"putByte",
+								"putByte"
+							},
+							new Class[]{
+								void.class,
+								long.class,
+								byte.class
+							}
+						);
+
+						// void putByte(Object obj, long offset, byte b);
+						methodConsumer.accept(
+							new String[]{
+								"putByte",
+								"putByte"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								byte.class
+							}
+						);
+
+						// void putByteVolatile(Object obj, long offset, byte b);
+						methodConsumer.accept(
+							new String[]{
+								"putByteVolatile",
+								"putByteVolatile"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								byte.class
+							}
+						);
+
+						// short getShort(long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getShort",
+								"getShort"
+							},
+							new Class[]{
+								short.class,
+								long.class
+							}
+						);
+
+						// short getShort(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getShort",
+								"getShort"
+							},
+							new Class[]{
+								short.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// short getShortVolatile(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getShortVolatile",
+								"getShortVolatile"
+							},
+							new Class[]{
+								short.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// void putShort(long offset, short s);
+						methodConsumer.accept(
+							new String[]{
+								"putShort",
+								"putShort"
+							},
+							new Class[]{
+								void.class,
+								long.class,
+								short.class
+							}
+						);
+
+						// void putShort(Object obj, long offset, short s);
+						methodConsumer.accept(
+							new String[]{
+								"putShort",
+								"putShort"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								short.class
+							}
+						);
+
+						// void putShortVolatile(Object obj, long offset, short s);
+						methodConsumer.accept(
+							new String[]{
+								"putShortVolatile",
+								"putShortVolatile"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								short.class
+							}
+						);
+
+						// int getInt(long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getInt",
+								"getInt"
+							},
+							new Class[]{
+								int.class,
+								long.class
+							}
+						);
+
+						// int getInt(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getInt",
+								"getInt"
+							},
+							new Class[]{
+								int.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// int getIntVolatile(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getIntVolatile",
+								"getIntVolatile"
+							},
+							new Class[]{
+								int.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// void putInt(long offset, int i);
+						methodConsumer.accept(
+							new String[]{
+								"putInt",
+								"putInt"
+							},
+							new Class[]{
+								void.class,
+								long.class,
+								int.class
+							}
+						);
+
+						// void putInt(Object obj, long offset, int i);
+						methodConsumer.accept(
+							new String[]{
+								"putInt",
+								"putInt"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								int.class
+							}
+						);
+
+						// void putIntVolatile(Object obj, long offset, int i);
+						methodConsumer.accept(
+							new String[]{
+								"putIntVolatile",
+								"putIntVolatile"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								int.class
+							}
+						);
+
+						// long getLong(long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getLong",
+								"getLong"
+							},
+							new Class[]{
+								long.class,
+								long.class
+							}
+						);
+
+						// long getLong(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getLong",
+								"getLong"
+							},
+							new Class[]{
+								long.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// long getLongVolatile(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getLongVolatile",
+								"getLongVolatile"
+							},
+							new Class[]{
+								long.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// void putLong(long offset, long l);
+						methodConsumer.accept(
+							new String[]{
+								"putLong",
+								"putLong"
+							},
+							new Class[]{
+								void.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// void putLong(Object obj, long offset, long l);
+						methodConsumer.accept(
+							new String[]{
+								"putLong",
+								"putLong"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// void putLongVolatile(Object obj, long offset, long l);
+						methodConsumer.accept(
+							new String[]{
+								"putLongVolatile",
+								"putLongVolatile"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// float getFloat(long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getFloat",
+								"getFloat"
+							},
+							new Class[]{
+								float.class,
+								long.class
+							}
+						);
+
+						// float getFloat(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getFloat",
+								"getFloat"
+							},
+							new Class[]{
+								float.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// float getFloatVolatile(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getFloatVolatile",
+								"getFloatVolatile"
+							},
+							new Class[]{
+								float.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// void putFloat(long offset, float f);
+						methodConsumer.accept(
+							new String[]{
+								"putFloat",
+								"putFloat"
+							},
+							new Class[]{
+								void.class,
+								long.class,
+								float.class
+							}
+						);
+
+						// void putFloat(Object obj, long offset, float f);
+						methodConsumer.accept(
+							new String[]{
+								"putFloat",
+								"putFloat"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								float.class
+							}
+						);
+
+						// void putFloatVolatile(Object obj, long offset, float f);
+						methodConsumer.accept(
+							new String[]{
+								"putFloatVolatile",
+								"putFloatVolatile"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								float.class
+							}
+						);
+
+						// double getDouble(long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getDouble",
+								"getDouble"
+							},
+							new Class[]{
+								double.class,
+								long.class
+							}
+						);
+
+						// double getDouble(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getDouble",
+								"getDouble"
+							},
+							new Class[]{
+								double.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// double getDoubleVolatile(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getDoubleVolatile",
+								"getDoubleVolatile"
+							},
+							new Class[]{
+								double.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// void putDouble(long offset, double d);
+						methodConsumer.accept(
+							new String[]{
+								"putDouble",
+								"putDouble"
+							},
+							new Class[]{
+								void.class,
+								long.class,
+								double.class
+							}
+						);
+
+						// void putDouble(Object obj, long offset, double d);
+						methodConsumer.accept(
+							new String[]{
+								"putDouble",
+								"putDouble"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								double.class
+							}
+						);
+
+						// void putDoubleVolatile(Object obj, long offset, double d);
+						methodConsumer.accept(
+							new String[]{
+								"putDoubleVolatile",
+								"putDoubleVolatile"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								double.class
+							}
+						);
+
+						// boolean getBoolean(long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getBoolean",
+								"getBoolean"
+							},
+							new Class[]{
+								boolean.class,
+								long.class
+							}
+						);
+
+						// boolean getBoolean(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getBoolean",
+								"getBoolean"
+							},
+							new Class[]{
+								boolean.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// boolean getBooleanVolatile(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getBooleanVolatile",
+								"getBooleanVolatile"
+							},
+							new Class[]{
+								boolean.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// void putBoolean(long offset, boolean b);
+						methodConsumer.accept(
+							new String[]{
+								"putBoolean",
+								"putBoolean"
+							},
+							new Class[]{
+								void.class,
+								long.class,
+								boolean.class
+							}
+						);
+
+						// void putBoolean(Object obj, long offset, boolean b);
+						methodConsumer.accept(
+							new String[]{
+								"putBoolean",
+								"putBoolean"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								boolean.class
+							}
+						);
+
+						// void putBooleanVolatile(Object obj, long offset, boolean b);
+						methodConsumer.accept(
+							new String[]{
+								"putBooleanVolatile",
+								"putBooleanVolatile"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								boolean.class
+							}
+						);
+
+						// char getChar(long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getChar",
+								"getChar"
+							},
+							new Class[]{
+								char.class,
+								long.class
+							}
+						);
+
+						// char getChar(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getChar",
+								"getChar"
+							},
+							new Class[]{
+								char.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// char getCharVolatile(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getCharVolatile",
+								"getCharVolatile"
+							},
+							new Class[]{
+								char.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// void putChar(long offset, char c);
+						methodConsumer.accept(
+							new String[]{
+								"putChar",
+								"putChar"
+							},
+							new Class[]{
+								void.class,
+								long.class,
+								char.class
+							}
+						);
+
+						// void putChar(Object obj, long offset, char c);
+						methodConsumer.accept(
+							new String[]{
+								"putChar",
+								"putChar"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								char.class
+							}
+						);
+
+						// void putCharVolatile(Object obj, long offset, char c);
+						methodConsumer.accept(
+							new String[]{
+								"putCharVolatile",
+								"putCharVolatile"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								char.class
+							}
+						);
+
+						// Object getObject(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getObject",
+								majorVersion > 0x34 ? "getReference" : "getObject"
+							},
+							new Class[]{
+								Object.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// Object getObjectVolatile(Object obj, long offset);
+						methodConsumer.accept(
+							new String[]{
+								"getObjectVolatile",
+								majorVersion > 0x34 ? "getReferenceVolatile" : "getObjectVolatile"
+							},
+							new Class[]{
+								Object.class,
+								Object.class,
+								long.class
+							}
+						);
+
+						// void putObject(Object obj, long offset, Object value);
+						methodConsumer.accept(
+							new String[]{
+								"putObject",
+								majorVersion > 0x34 ? "putReference" : "putObject"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								Object.class
+							}
+						);
+
+						// void putObjectVolatile(Object obj, long offset, Object value);
+						methodConsumer.accept(
+							new String[]{
+								"putObjectVolatile",
+								majorVersion > 0x34 ? "putReferenceVolatile" : "putObjectVolatile"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								Object.class
+							}
+						);
+
+						// long getAddress(long address);
+						methodConsumer.accept(
+							new String[]{
+								"getAddress",
+								"getAddress"
+							},
+							new Class[]{
+								long.class,
+								long.class
+							}
+						);
+
+						// void putAddress(long address, long value);
+						methodConsumer.accept(
+							new String[]{
+								"putAddress",
+								"putAddress"
+							},
+							new Class[]{
+								void.class,
+								long.class
+							}
+						);
+
+						// long allocateMemory(long length);
+						methodConsumer.accept(
+							new String[]{
+								"allocateMemory",
+								"allocateMemory"
+							},
+							new Class[]{
+								long.class,
+								long.class
+							}
+						);
+
+						// long reallocateMemory(long address, long length);
+						methodConsumer.accept(
+							new String[]{
+								"reallocateMemory",
+								"reallocateMemory"
+							},
+							new Class[]{
+								long.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// void setMemory(Object o, long offset, long bytes, byte value);
+						methodConsumer.accept(
+							new String[]{
+								"setMemory",
+								"setMemory"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								long.class,
+								byte.class
+							}
+						);
+
+						// void setMemory(long address, long bytes, byte value);
+						methodConsumer.accept(
+							new String[]{
+								"setMemory",
+								"setMemory"
+							},
+							new Class[]{
+								void.class,
+								long.class,
+								long.class,
+								byte.class
+							}
+						);
+
+						// void copyMemory(Object src, long secOff, Object dest, long destOff, long length);
+						methodConsumer.accept(
+							new String[]{
+								"copyMemory",
+								"copyMemory"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								Object.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// void copyMemory(long sec, long dest, long length);
+						methodConsumer.accept(
+							new String[]{
+								"copyMemory",
+								"copyMemory"
+							},
+							new Class[]{
+								void.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// void freeMemory(long address);
+						methodConsumer.accept(
+							new String[]{
+								"freeMemory",
+								"freeMemory"
+							},
+							new Class[]{
+								void.class,
+								long.class
+							}
+						);
+
+						// long staticFieldOffset(Field f);
+						methodConsumer.accept(
+							new String[]{
+								"staticFieldOffset",
+								"staticFieldOffset"
+							},
+							new Class[]{
+								long.class,
+								Field.class
+							}
+						);
+
+						// long objectFieldOffset(Field f);
+						methodConsumer.accept(
+							new String[]{
+								"objectFieldOffset",
+								"objectFieldOffset"
+							},
+							new Class[]{
+								long.class,
+								Field.class
+							}
+						);
+
+						// Object staticFieldBase(Field f);
+						methodConsumer.accept(
+							new String[]{
+								"staticFieldBase",
+								"staticFieldBase"
+							},
+							new Class[]{
+								Object.class,
+								Field.class
+							}
+						);
+
+						// boolean shouldBeInitialized(Class<?> c);
+						methodConsumer.accept(
+							new String[]{
+								"shouldBeInitialized",
+								"shouldBeInitialized",
+								"(Ljava/lang/Class<*>;)Z"
+							},
+							new Class[]{
+								boolean.class,
+								Class.class
+							}
+						);
+
+						// void ensureClassInitialized(Class<?> c);
+						methodConsumer.accept(
+							new String[]{
+								"ensureClassInitialized",
+								"ensureClassInitialized",
+								"(Ljava/lang/Class<*>;)V"
+							},
+							new Class[]{
+								void.class,
+								Class.class
+							}
+						);
+
+						// int arrayBaseOffset(Class<?> c);
+						methodConsumer.accept(
+							new String[]{
+								"arrayBaseOffset",
+								"arrayBaseOffset",
+								"(Ljava/lang/Class<8>;)I"
+							},
+							new Class[]{
+								int.class,
+								Class.class
+							}
+						);
+
+						// int arrayIndexScale(Class<?> c);
+						methodConsumer.accept(
+							new String[]{
+								"arrayIndexScale",
+								"arrayIndexScale",
+								"(Ljava/lang/Class<*>;)I"
+							},
+							new Class[]{
+								int.class,
+								Class.class
+							}
+						);
+
+						// int addressSize();
+						methodConsumer.accept(
+							new String[]{
+								"addressSize",
+								"addressSize"
+							},
+							new Class[]{
+								int.class
+							}
+						);
+
+						// int pageSize();
+						methodConsumer.accept(
+							new String[]{
+								"pageSize",
+								"pageSize"
+							},
+							new Class[]{
+								int.class
+							}
+						);
+
+						// Class<?> defineClass(String name, byte[] code, int offset, int length, ClassLoader loader, ProtectionDomain protectionDomain);
+						methodConsumer.accept(
+							new String[]{
+								"defineClass",
+								"defineClass",
+								"(Ljava/lang/String;[BIILjava/lang/ClassLoader;Ljava/security/ProtectionDomain;)Ljava/lang/Class<*>;"
+							},
+							new Class[]{
+								Class.class,
+								String.class,
+								byte[].class,
+								int.class,
+								int.class,
+								ClassLoader.class,
+								ProtectionDomain.class
+							}
+						);
+
+						// Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches);
+						methodConsumer.accept(
+							new String[]{
+								"defineAnonymousClass",
+								"defineAnonymousClass",
+								"(Ljava/lang/Class<*>;[B[Ljava/lang/Object;)Ljava/lang/Class<*>;"
+							},
+							new Class[]{
+								Class.class,
+								Class.class,
+								byte[].class,
+								Object[].class
+							}
+						);
+
+						// Object allocateInstance(Class<?> c);
+						methodConsumer.accept(
+							new String[]{
+								"allocateInstance",
+								"allocateInstance",
+								"(Ljava/lang/Class<*>;)Ljava/lang/Object;"
+							},
+							new Class[]{
+								Object.class,
+								Class.class
+							}
+						);
+
+						// void throwException(Throwable t);
+						methodConsumer.accept(
+							new String[]{
+								"throwException",
+								"throwException"
+							},
+							new Class[]{
+								void.class,
+								Throwable.class
+							}
+						);
+
+						// boolean compareAndSwapInt(Object obj, long offset, int expected, int value);
+						methodConsumer.accept(
+							new String[]{
+								"compareAndSwapInt",
+								majorVersion > 0x34 ? "compareAndSetInt" : "compareAndSwapInt"
+							},
+							new Class[]{
+								boolean.class,
+								Object.class,
+								long.class,
+								int.class,
+								int.class
+							}
+						);
+
+						// boolean compareAndSwapLong(Object obj, long offset, long expected, long value);
+						methodConsumer.accept(
+							new String[]{
+								"compareAndSwapLong",
+								majorVersion > 0x34 ? "compareAndSetLong" : "compareAndSwapLong"
+							},
+							new Class[]{
+								boolean.class,
+								Object.class,
+								long.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// boolean compareAndSwapObject(Object obj, long offset, Object expected, Object value);
+						methodConsumer.accept(
+							new String[]{
+								"compareAndSwapObject",
+								majorVersion > 0x34 ? "compareAndSetReference" : "compareAndSwapObject"
+							},
+							new Class[]{
+								boolean.class,
+								Object.class,
+								long.class,
+								Object.class,
+								Object.class
+							}
+						);
+
+						// void putOrderedInt(Object o, long offset, int x);
+						methodConsumer.accept(
+							new String[]{
+								"putOrderedInt",
+								majorVersion > 0x34 ? "putIntRelease" : "putOrderedInt"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								int.class
+							}
+						);
+
+						// void putOrderedLong(Object o, long offset, long x);
+						methodConsumer.accept(
+							new String[]{
+								"putOrderedLong",
+								majorVersion > 0x34 ? "putLongRelease" : "putOrderedLong"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// void putOrderedObject(Object o, long offset, Object x);
+						methodConsumer.accept(
+							new String[]{
+								"putOrderedObject",
+								majorVersion > 0x34 ? "putReferenceRelease" : "putOrderedObject"
+							},
+							new Class[]{
+								void.class,
+								Object.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// void unpark(Object thread);
+						methodConsumer.accept(
+							new String[]{
+								"unpark",
+								"unpark"
+							},
+							new Class[]{
+								void.class,
+								Object.class
+							}
+						);
+
+						// void park(boolean isAbsolute, long time);
+						methodConsumer.accept(
+							new String[]{
+								"park",
+								"park"
+							},
+							new Class[]{
+								void.class,
+								boolean.class,
+								long.class
+							}
+						);
+
+						// int getLoadAverage(double[] loadavg, int nelems);
+						methodConsumer.accept(
+							new String[]{
+								"getLoadAverage",
+								"getLoadAverage"
+							},
+							new Class[]{
+								int.class,
+								double[].class,
+								int.class
+							}
+						);
+
+						// int getAndAddInt(Object o, long offset, int delta);
+						methodConsumer.accept(
+							new String[]{
+								"getAndAddInt",
+								"getAndAddInt"
+							},
+							new Class[]{
+								int.class,
+								Object.class,
+								long.class,
+								int.class
+							}
+						);
+
+						// int getAndSetInt(Object o, long offset, int newValue);
+						methodConsumer.accept(
+							new String[]{
+								"getAndSetInt",
+								"getAndSetInt"
+							},
+							new Class[]{
+								int.class,
+								Object.class,
+								long.class,
+								int.class
+							}
+						);
+
+						// long getAndAddLong(Object o, long offset, long delta);
+						methodConsumer.accept(
+							new String[]{
+								"getAndAddLong",
+								"getAndAddLong"
+							},
+							new Class[]{
+								long.class,
+								Object.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// long getAndSetLong(Object o, long offset, long newValue);
+						methodConsumer.accept(
+							new String[]{
+								"getAndSetLong",
+								"getAndSetLong"
+							},
+							new Class[]{
+								long.class,
+								Object.class,
+								long.class,
+								long.class
+							}
+						);
+
+						// Object getAndSetObject(Object o, long offset, Object newValue);
+						methodConsumer.accept(
+							new String[]{
+								"getAndSetObject",
+								majorVersion > 0x34 ? "getAndSetReference" : "getAndSetObject"
+							},
+							new Class[]{
+								Object.class,
+								Object.class,
+								long.class,
+								Object.class
+							}
+						);
+
+						// void loadFence();
+						methodConsumer.accept(
+							new String[]{
+								"loadFence",
+								"loadFence"
+							},
+							new Class[]{
+								void.class
+							}
+						);
+
+						// void storeFence();
+						methodConsumer.accept(
+							new String[]{
+								"storeFence",
+								"storeFence"
+							},
+							new Class[]{
+								void.class
+							}
+						);
+
+						// void fullFence();
+						methodConsumer.accept(
+							new String[]{
+								"fullFence",
+								"fullFence"
+							},
+							new Class[]{
+								void.class
+							}
+						);
+					}
+
+					// static constructor
+					{
+						MethodVisitor mv = cw.visitMethod(
+							AccessFlag.ACC_STATIC,
+							"<clinit>",
+							"()V",
+							null,
+							null
+						);
+						mv.visitCode();
+						mv.visitFieldInsn(
+							Opcodes.GETSTATIC,
+							getType(ReflectInvokeFactory.class),
+							"TRUSTED_LOOKUP",
+							getDescriptor(MethodHandles.Lookup.class)
+						);
+						mv.visitLdcInsn(Type.getType(usfClass));
+						mv.visitLdcInsn("theUnsafe");
+						mv.visitLdcInsn(Type.getType(usfClass));
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandles.Lookup.class),
+							"findStaticGetter",
+							MethodType.methodType(
+								MethodHandle.class,
+								Class.class,
+								String.class,
+								Class.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.ICONST_0);
+						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(MethodHandle.class),
+							"invokeWithArguments",
+							MethodType.methodType(
+								Object.class,
+								Object[].class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(usfClass));
+						mv.visitFieldInsn(
+							Opcodes.PUTSTATIC,
+							className,
+							"final",
+							getDescriptor(usfClass)
+						);
+						mv.visitInsn(Opcodes.RETURN);
+						mv.visitMaxs(4, 0);
+						mv.visitEnd();
+					}
+
+					byte[] code = cw.toByteArray();
+					clazz = (Class<?>) DEFINE.invoke(ClassLoader.getSystemClassLoader(), null, code, 0, code.length);
+				}
+
+				UNSAFE = (Unsafe) usf.allocateInstance(clazz);
 			}
 
 			/*
@@ -996,14 +2361,14 @@ public class ReflectInvokeFactory
 						);
 						mv.visitLdcInsn(Type.getType(internalClassLoader));
 						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
+							Opcodes.INVOKEINTERFACE,
 							getType(Unsafe.class),
 							"allocateInstance",
 							MethodType.methodType(
 								Object.class,
 								Class.class
 							).toMethodDescriptorString(),
-							false
+							true
 						);
 						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(ReflectionClassLoader.class));
 						mv.visitVarInsn(Opcodes.ASTORE, 2);

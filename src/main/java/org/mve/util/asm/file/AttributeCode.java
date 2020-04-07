@@ -1,5 +1,7 @@
 package org.mve.util.asm.file;
 
+import java.util.Objects;
+
 public class AttributeCode extends Attribute
 {
 	private short maxStack;
@@ -69,10 +71,11 @@ public class AttributeCode extends Attribute
 
 	public void addExceptionTable(StructExceptionTable table)
 	{
-		StructExceptionTable[] exceptionTables = new StructExceptionTable[++this.exceptionTableLength];
-		System.arraycopy(this.exceptionTable, 0, exceptionTables, 0, this.attributes.length);
-		exceptionTables[this.exceptionTableLength-1] = table;
+		StructExceptionTable[] exceptionTables = new StructExceptionTable[this.exceptionTableLength+1];
+		System.arraycopy(this.exceptionTable, 0, exceptionTables, 0, this.exceptionTableLength);
+		exceptionTables[this.exceptionTableLength] = Objects.requireNonNull(table);
 		this.exceptionTable = exceptionTables;
+		this.exceptionTableLength++;
 	}
 
 	public short getAttributesCount()
@@ -108,7 +111,6 @@ public class AttributeCode extends Attribute
 	public int getLength()
 	{
 		int len = 18 + this.codeLength + (8 * this.exceptionTableLength);
-		len += (this.attributes.length * 6);
 		for (Attribute a : this.attributes) len += a.getLength();
 		return len;
 	}

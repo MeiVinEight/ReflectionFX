@@ -83,14 +83,9 @@ public class ClassField implements Binary
 		b[index++] = (byte) (this.attributeCount & 0XFF);
 		for (Attribute a : this.attributes)
 		{
-			short nameIndex = a.getAttributeNameIndex();
-			b[index++] = (byte) ((nameIndex >>> 8) & 0XFF);
-			b[index++] = (byte) (nameIndex & 0XFF);
 			int l = a.getLength();
-			b[index++] = (byte) ((l >>> 24) & 0XFF);
-			b[index++] = (byte) ((l >>> 16) & 0XFF);
-			b[index++] = (byte) ((l >>> 8) & 0XFF);
-			b[index++] = (byte) (l & 0XFF);
+			System.arraycopy(a.toByteArray(), 0, b, index, l);
+			index+=l;
 		}
 		return b;
 	}

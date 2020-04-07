@@ -1,21 +1,23 @@
 package org.mve;
 
-import org.mve.util.reflect.Accessor;
 import org.mve.util.reflect.ReflectInvokeFactory;
+import org.mve.util.reflect.Unsafe;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 
 public class Main
 {
+	private static int a;
 	public static void main(String[] args) throws Throwable
 	{
-		Accessor acc = ReflectInvokeFactory.ACCESSOR;
-		System.err.println("A");
-		Field f = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-//		ReflectInvokeFactory.ACCESSOR.setAccessible(f, true);
-//		f.setAccessible(true);
-		acc.setAccessible(f, true);
-		System.out.println(f.get(null));
+		Unsafe usf = ReflectInvokeFactory.UNSAFE;
+		Field f = Main.class.getDeclaredField("a");
+		System.out.println(usf.staticFieldBase(f));
+		System.out.println(usf.staticFieldOffset(f));
+	}
+
+	public static void a(long l1, long l2)
+	{
+		System.out.println(l1+l2);
 	}
 }
