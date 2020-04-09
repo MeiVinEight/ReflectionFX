@@ -5170,7 +5170,43 @@ public class ReflectionFactory
 						mv.visitEnd();
 					}
 
-					bridge(cw, "org/mve/util/reflect/MagicAccessor", Void.class);
+					// Class<?> defineClass(ClassLoader loader, byte[] code);
+					{
+						MethodVisitor mv = cw.visitMethod(
+							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
+							"defineClass",
+							MethodType.methodType(
+								Class.class,
+								ClassLoader.class,
+								byte[].class
+							).toMethodDescriptorString(),
+							"(Ljava/lang/ClassLoader;[B)Ljava/lang/Class<*>;",
+							null
+						);
+						mv.visitCode();
+						mv.visitVarInsn(Opcodes.ALOAD, 1);
+						mv.visitInsn(Opcodes.ACONST_NULL);
+						mv.visitVarInsn(Opcodes.ALOAD, 2);
+						mv.visitInsn(Opcodes.ICONST_0);
+						mv.visitVarInsn(Opcodes.ALOAD, 2);
+						mv.visitInsn(Opcodes.ARRAYLENGTH);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(ClassLoader.class),
+							"defineClass",
+							MethodType.methodType(
+								Class.class,
+								String.class,
+								byte[].class,
+								int.class,
+								int.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.ARETURN);
+						mv.visitMaxs(5, 3);
+						mv.visitEnd();
+					}
 
 					byte[] code = cw.toByteArray();
 					c = INTERNAL_CLASS_LOADER.define(code);

@@ -9,4 +9,6 @@ public interface Accessor
 	Class<?> forName(String name);
 
 	Class<?> forName(String name, boolean initialize, ClassLoader loader);
+
+	Class<?> defineClass(ClassLoader loader, byte[] code);
 }

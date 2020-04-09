@@ -6,6 +6,6 @@ public class Main
 {
 	public static void main(String[] args)
 	{
-		System.out.println(ReflectionFactory.ACCESSOR.forName("org.mve.Main"));
+		ReflectionFactory.ACCESSOR.defineClass(Main.class.getClassLoader(), new byte[0]);
 	}
 }
