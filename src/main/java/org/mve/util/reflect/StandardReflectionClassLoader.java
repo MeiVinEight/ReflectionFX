@@ -12,14 +12,14 @@ public class StandardReflectionClassLoader extends ClassLoader implements Reflec
 	public StandardReflectionClassLoader(ClassLoader parent) throws Throwable
 	{
 		super(parent.getParent());
-		ReflectInvokeFactory.TRUSTED_LOOKUP.findSetter(ClassLoader.class, "parent", ClassLoader.class).invoke(parent, this);
-		loader = (ClassLoader) ReflectInvokeFactory.TRUSTED_LOOKUP.findConstructor(ReflectInvokeFactory.DELEGATING_CLASS, MethodType.methodType(void.class, ClassLoader.class)).invoke(parent);
+		ReflectionFactory.TRUSTED_LOOKUP.findSetter(ClassLoader.class, "parent", ClassLoader.class).invoke(parent, this);
+		loader = (ClassLoader) ReflectionFactory.TRUSTED_LOOKUP.findConstructor(ReflectionFactory.DELEGATING_CLASS, MethodType.methodType(void.class, ClassLoader.class)).invoke(parent);
 	}
 
 	@Override
 	public final synchronized Class<?> define(byte[] code)
 	{
-		Class<?> clazz = (Class<?>) ReflectInvokeFactory.METHOD_HANDLE_INVOKER.invoke(ReflectInvokeFactory.DEFINE, loader, null, code, 0, code.length);
+		Class<?> clazz = (Class<?>) ReflectionFactory.METHOD_HANDLE_INVOKER.invoke(ReflectionFactory.DEFINE, loader, null, code, 0, code.length);
 		this.classes.put(clazz.getTypeName(), clazz);
 		return clazz;
 	}
@@ -30,8 +30,6 @@ public class StandardReflectionClassLoader extends ClassLoader implements Reflec
 		Class<?> c = this.classes.get(name);
 		if (c != null) return c;
 		c = this.findLoadedClass(name);
-		if (c != null) return c;
-		c = findSystemClass(name);
 		if (c != null) return c;
 		return this.getParent().loadClass(name);
 	}

@@ -410,7 +410,7 @@ public class ClassFile implements Binary
 			count = datain.readShort() & 0XFFFF;
 			for (int i = 0; i < count; i++)
 			{
-				ClassMethod method = new ClassMethod();
+				ClassMethod method = new ClassMethod(this);
 				method.setAccessFlag(datain.readShort());
 				method.setNameIndex(datain.readShort());
 				method.setDescriptorIndex(datain.readShort());

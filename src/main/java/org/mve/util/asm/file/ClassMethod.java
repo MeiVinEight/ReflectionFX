@@ -6,11 +6,17 @@ import java.util.Objects;
 
 public class ClassMethod implements Binary
 {
+	private final ClassFile file;
 	private short accessFlag;
 	private short nameIndex;
 	private short descriptorIndex;
 	private short attributeCount;
 	private Attribute[] attributes = new Attribute[0];
+
+	public ClassMethod(ClassFile file)
+	{
+		this.file = file;
+	}
 
 	public short getAccessFlag()
 	{
@@ -93,5 +99,18 @@ public class ClassMethod implements Binary
 			index+=l;
 		}
 		return b;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (obj == this) return true;
+		if (!(obj instanceof ClassMethod)) return false;
+		ClassMethod method = (ClassMethod) obj;
+		String name = ((ConstantUTF8)method.file.getConstantPool().getConstantPoolElement(method.getNameIndex())).getUTF8();
+		String desc = ((ConstantUTF8)method.file.getConstantPool().getConstantPoolElement(method.getDescriptorIndex())).getUTF8();
+		String thisName = ((ConstantUTF8)this.file.getConstantPool().getConstantPoolElement(this.nameIndex)).getUTF8();
+		String thisDesc = ((ConstantUTF8)this.file.getConstantPool().getConstantPoolElement(this.descriptorIndex)).getUTF8();
+		return name.equals(thisName) && desc.equals(thisDesc);
 	}
 }
