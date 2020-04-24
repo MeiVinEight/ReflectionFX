@@ -1,10 +1,9 @@
 package org.mve.util.asm.file;
 
+import org.mve.io.RandomAccessByteArray;
 import org.mve.util.Binary;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Objects;
@@ -260,188 +259,167 @@ public class ClassFile implements Binary
 
 	public ClassFile(byte[] code)
 	{
-		ByteArrayInputStream in = null;
-		try
+		RandomAccessByteArray codeAccessor = new RandomAccessByteArray(code);
+		this.header = codeAccessor.readInt();
+		if (this.header != 0XCAFEBABE) throw new ClassFormatError("Invalid file head magic value "+this.header);
+		this.minorVersion = codeAccessor.readShort();
+		this.majorVersion = codeAccessor.readShort();
+		short constantPoolSize = codeAccessor.readShort();
+		for (int i = 1; i < constantPoolSize; i++)
 		{
-			in = new ByteArrayInputStream(code);
-			DataInputStream datain = new DataInputStream(in);
-			this.header = datain.readInt();
-			if (this.header != 0XCAFEBABE) throw new ClassFormatError("Invalid file head magic value "+this.header);
-			this.minorVersion = datain.readShort();
-			this.majorVersion = datain.readShort();
-			short constantPoolSize = datain.readShort();
-			for (int i = 1; i < constantPoolSize; i++)
+			byte type = codeAccessor.readByte();
+			switch (type)
 			{
-				byte type = datain.readByte();
-				switch (type)
+				case 1:
 				{
-					case 1:
-					{
-						short length = datain.readShort();
-						byte[] bytes = new byte[length];
-						if (length != datain.read(bytes)) throw new ClassFormatError();
-						this.constantPool.addConstantPoolElement(new ConstantUTF8(length, new String(bytes)));
-						break;
-					}
-					case 3:
-					{
-						int value = datain.readInt();
-						this.constantPool.addConstantPoolElement(new ConstantInteger(value));
-						break;
-					}
-					case 4:
-					{
-						float value = datain.readFloat();
-						this.constantPool.addConstantPoolElement(new ConstantFloat(value));
-						break;
-					}
-					case 5:
-					{
-						i++;
-						long value = datain.readLong();
-						this.constantPool.addConstantPoolElement(new ConstantLong(value));
-						this.constantPool.addConstantPoolElement(new ConstantNull());
-						break;
-					}
-					case 6:
-					{
-						i++;
-						double value = datain.readDouble();
-						this.constantPool.addConstantPoolElement(new ConstantDouble(value));
-						this.constantPool.addConstantPoolElement(new ConstantNull());
-						break;
-					}
-					case 7:
-					{
-						short nameIndex = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantClass(nameIndex));
-						break;
-					}
-					case 8:
-					{
-						short stringIndex = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantString(stringIndex));
-						break;
-					}
-					case 9:
-					{
-						short classIndex = datain.readShort();
-						short nameAndTypeIndex = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantFieldReference(classIndex, nameAndTypeIndex));
-						break;
-					}
-					case 10:
-					{
-						short classIndex = datain.readShort();
-						short nameAndTypeIndex = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantMethodReference(classIndex, nameAndTypeIndex));
-						break;
-					}
-					case 11:
-					{
-						short classIndex = datain.readShort();
-						short nameAndTypeIndex = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantInterfaceMethodReference(classIndex, nameAndTypeIndex));
-						break;
-					}
-					case 12:
-					{
-						short nameIndex = datain.readShort();
-						short descriptorIndex = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantNameAndType(nameIndex, descriptorIndex));
-						break;
-					}
-					case 15:
-					{
-						byte kind = datain.readByte();
-						short index = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantMethodHandle(kind, index));
-						break;
-					}
-					case 16:
-					{
-						short index = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantMethodType(index));
-						break;
-					}
-					case 18:
-					{
-						short bootstrapMethodAttributeIndex = datain.readShort();
-						short nameAndTypeIndex = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantInvokeDynamic(bootstrapMethodAttributeIndex, nameAndTypeIndex));
-						break;
-					}
-					case 19:
-					{
-						short nameIndex = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantModule(nameIndex));
-						break;
-					}
-					case 20:
-					{
-						short index = datain.readShort();
-						this.constantPool.addConstantPoolElement(new ConstantPackage(index));
-						break;
-					}
-					default: throw new ClassFormatError("Unknown constant tag "+type);
+					short length = codeAccessor.readShort();
+					byte[] bytes = new byte[length];
+					if (length != codeAccessor.read(bytes)) throw new ClassFormatError();
+					this.constantPool.addConstantPoolElement(new ConstantUTF8(length, new String(bytes)));
+					break;
 				}
-			}
-			this.accessFlag = datain.readShort();
-			this.thisClassIndex = datain.readShort();
-			this.superClassIndex = datain.readShort();
-			this.interfaceCount = datain.readShort();
-			short[] shorts = new short[interfaceCount];
-			for (int i = 0; i < this.interfaceCount; i++) shorts[i] = datain.readShort();
-			this.interfaces = shorts;
-			int count = datain.readShort() & 0XFFFF;
-			for (int i = 0; i < count; i++)
-			{
-				ClassField field = new ClassField();
-				field.setAccessFlag(datain.readShort());
-				field.setNameIndex(datain.readShort());
-				field.setDescriptorIndex(datain.readShort());
-				int c = datain.readShort() & 0XFFFF;
-				for (int j = 0; j < c; j++)
+				case 3:
 				{
-					field.addAttribute(AttributeReader.read(this, datain));
+					int value = codeAccessor.readInt();
+					this.constantPool.addConstantPoolElement(new ConstantInteger(value));
+					break;
 				}
-				this.addField(field);
-			}
-			count = datain.readShort() & 0XFFFF;
-			for (int i = 0; i < count; i++)
-			{
-				ClassMethod method = new ClassMethod(this);
-				method.setAccessFlag(datain.readShort());
-				method.setNameIndex(datain.readShort());
-				method.setDescriptorIndex(datain.readShort());
-				int c = datain.readShort() & 0XFFFF;
-				for (int j = 0; j < c; j++)
+				case 4:
 				{
-					method.addAttribute(AttributeReader.read(this, datain));
+					float value = codeAccessor.readFloat();
+					this.constantPool.addConstantPoolElement(new ConstantFloat(value));
+					break;
 				}
-				this.addMethod(method);
+				case 5:
+				{
+					i++;
+					long value = codeAccessor.readLong();
+					this.constantPool.addConstantPoolElement(new ConstantLong(value));
+					this.constantPool.addConstantPoolElement(new ConstantNull());
+					break;
+				}
+				case 6:
+				{
+					i++;
+					double value = codeAccessor.readDouble();
+					this.constantPool.addConstantPoolElement(new ConstantDouble(value));
+					this.constantPool.addConstantPoolElement(new ConstantNull());
+					break;
+				}
+				case 7:
+				{
+					short nameIndex = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantClass(nameIndex));
+					break;
+				}
+				case 8:
+				{
+					short stringIndex = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantString(stringIndex));
+					break;
+				}
+				case 9:
+				{
+					short classIndex = codeAccessor.readShort();
+					short nameAndTypeIndex = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantFieldReference(classIndex, nameAndTypeIndex));
+					break;
+				}
+				case 10:
+				{
+					short classIndex = codeAccessor.readShort();
+					short nameAndTypeIndex = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantMethodReference(classIndex, nameAndTypeIndex));
+					break;
+				}
+				case 11:
+				{
+					short classIndex = codeAccessor.readShort();
+					short nameAndTypeIndex = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantInterfaceMethodReference(classIndex, nameAndTypeIndex));
+					break;
+				}
+				case 12:
+				{
+					short nameIndex = codeAccessor.readShort();
+					short descriptorIndex = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantNameAndType(nameIndex, descriptorIndex));
+					break;
+				}
+				case 15:
+				{
+					byte kind = codeAccessor.readByte();
+					short index = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantMethodHandle(kind, index));
+					break;
+				}
+				case 16:
+				{
+					short index = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantMethodType(index));
+					break;
+				}
+				case 18:
+				{
+					short bootstrapMethodAttributeIndex = codeAccessor.readShort();
+					short nameAndTypeIndex = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantInvokeDynamic(bootstrapMethodAttributeIndex, nameAndTypeIndex));
+					break;
+				}
+				case 19:
+				{
+					short nameIndex = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantModule(nameIndex));
+					break;
+				}
+				case 20:
+				{
+					short index = codeAccessor.readShort();
+					this.constantPool.addConstantPoolElement(new ConstantPackage(index));
+					break;
+				}
+				default: throw new ClassFormatError("Unknown constant tag "+type);
 			}
-			count = datain.readShort() & 0XFFFF;
-			for (int i = 0; i < count; i++)
-			{
-				this.addAttribute(AttributeReader.read(this, datain));
-			}
-			datain.close();
 		}
-		catch (Exception e)
+		this.accessFlag = codeAccessor.readShort();
+		this.thisClassIndex = codeAccessor.readShort();
+		this.superClassIndex = codeAccessor.readShort();
+		this.interfaceCount = codeAccessor.readShort();
+		short[] shorts = new short[interfaceCount];
+		for (int i = 0; i < this.interfaceCount; i++) shorts[i] = codeAccessor.readShort();
+		this.interfaces = shorts;
+		int count = codeAccessor.readShort() & 0XFFFF;
+		for (int i = 0; i < count; i++)
 		{
-			throw new ClassParseException(e);
+			ClassField field = new ClassField();
+			field.setAccessFlag(codeAccessor.readShort());
+			field.setNameIndex(codeAccessor.readShort());
+			field.setDescriptorIndex(codeAccessor.readShort());
+			int c = codeAccessor.readShort() & 0XFFFF;
+			for (int j = 0; j < c; j++)
+			{
+				field.addAttribute(AttributeReader.read(this, codeAccessor));
+			}
+			this.addField(field);
 		}
-		finally
+		count = codeAccessor.readShort() & 0XFFFF;
+		for (int i = 0; i < count; i++)
 		{
-			if (in != null) try
+			ClassMethod method = new ClassMethod(this);
+			method.setAccessFlag(codeAccessor.readShort());
+			method.setNameIndex(codeAccessor.readShort());
+			method.setDescriptorIndex(codeAccessor.readShort());
+			int c = codeAccessor.readShort() & 0XFFFF;
+			for (int j = 0; j < c; j++)
 			{
-				in.close();
+				method.addAttribute(AttributeReader.read(this, codeAccessor));
 			}
-			catch (Exception e)
-			{
-				e.printStackTrace();
-			}
+			this.addMethod(method);
+		}
+		count = codeAccessor.readShort() & 0XFFFF;
+		for (int i = 0; i < count; i++)
+		{
+			this.addAttribute(AttributeReader.read(this, codeAccessor));
 		}
 	}
 

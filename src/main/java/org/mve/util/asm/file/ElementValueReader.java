@@ -1,15 +1,12 @@
 package org.mve.util.asm.file;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.mve.io.RandomAccessByteArray;
 
 public class ElementValueReader
 {
-	public static ElementValue read(ClassFile file, InputStream input) throws IOException
+	public static ElementValue read(ClassFile file, RandomAccessByteArray input)
 	{
-		DataInputStream in = new DataInputStream(input);
-		byte tag = in.readByte();
+		byte tag = input.readByte();
 		switch (tag)
 		{
 			case 'B':
@@ -23,20 +20,20 @@ public class ElementValueReader
 			case 's':
 			{
 				ElementValueConstant value = new ElementValueConstant(tag);
-				value.setConstantValueIndex(in.readShort());
+				value.setConstantValueIndex(input.readShort());
 				return value;
 			}
 			case 'e':
 			{
 				ElementValueEnum value = new ElementValueEnum(tag);
-				value.setTypeNameIndex(in.readShort());
-				value.setConstNameIndex(in.readShort());
+				value.setTypeNameIndex(input.readShort());
+				value.setConstNameIndex(input.readShort());
 				return value;
 			}
 			case 'c':
 			{
 				ElementValueClass value = new ElementValueClass(tag);
-				value.setClassIndex(in.readShort());
+				value.setClassIndex(input.readShort());
 				return value;
 			}
 			case '@':
@@ -48,7 +45,7 @@ public class ElementValueReader
 			case '[':
 			{
 				ElementValueArray value = new ElementValueArray(tag);
-				short count = in.readShort();
+				short count = input.readShort();
 				for (int i = 0; i < count; i++)
 				{
 					value.addElementValue(ElementValueReader.read(file, input));

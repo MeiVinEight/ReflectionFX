@@ -1,30 +1,27 @@
 package org.mve.util.asm.file;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.mve.io.RandomAccessByteArray;
 
 public class TypeAnnotationReader
 {
-	public static StructTypeAnnotation read(ClassFile file, InputStream input) throws IOException
+	public static StructTypeAnnotation read(ClassFile file, RandomAccessByteArray input)
 	{
-		DataInputStream in = new DataInputStream(input);
 		StructTypeAnnotation annotation = new StructTypeAnnotation();
-		byte targetType = in.readByte();
+		byte targetType = input.readByte();
 		switch (targetType)
 		{
 			case 0X00:
 			case 0X01:
 			{
 				TypeAnnotationTargetTypeParameter target = new TypeAnnotationTargetTypeParameter(targetType);
-				target.setTypeParameterIndex(in.readByte());
+				target.setTypeParameterIndex(input.readByte());
 				annotation.setTypeAnnotationTarget(targetType, target);
 				break;
 			}
 			case 0X10:
 			{
 				TypeAnnotationTargetSupertype target = new TypeAnnotationTargetSupertype(targetType);
-				target.setSupertypeIndex(in.readShort());
+				target.setSupertypeIndex(input.readShort());
 				annotation.setTypeAnnotationTarget(targetType, target);
 				break;
 			}
@@ -32,8 +29,8 @@ public class TypeAnnotationReader
 			case 0X12:
 			{
 				TypeAnnotationTargetTypeParameterBound target = new TypeAnnotationTargetTypeParameterBound(targetType);
-				target.setTypeParameterIndex(in.readByte());
-				target.setBoundIndex(in.readByte());
+				target.setTypeParameterIndex(input.readByte());
+				target.setBoundIndex(input.readByte());
 				annotation.setTypeAnnotationTarget(targetType, target);
 				break;
 			}
@@ -48,14 +45,14 @@ public class TypeAnnotationReader
 			case 0X16:
 			{
 				TypeAnnotationTargetFormalParameter target = new TypeAnnotationTargetFormalParameter(targetType);
-				target.setFormalParameterIndex(in.readByte());
+				target.setFormalParameterIndex(input.readByte());
 				annotation.setTypeAnnotationTarget(targetType, target);
 				break;
 			}
 			case 0X17:
 			{
 				TypeAnnotationTargetThrows target = new TypeAnnotationTargetThrows(targetType);
-				target.setThrowsTypeIndex(in.readShort());
+				target.setThrowsTypeIndex(input.readShort());
 				annotation.setTypeAnnotationTarget(targetType, target);
 				break;
 			}
@@ -63,13 +60,13 @@ public class TypeAnnotationReader
 			case 0X41:
 			{
 				TypeAnnotationTargetLocalVariable target = new TypeAnnotationTargetLocalVariable(targetType);
-				int count = in.readShort() & 0XFFFF;
+				int count = input.readShort() & 0XFFFF;
 				for (int i = 0; i < count; i++)
 				{
 					StructLocalVariableTargetTable table = new StructLocalVariableTargetTable();
-					table.setStartPc(in.readShort());
-					table.setLength(in.readShort());
-					table.setIndex(in.readShort());
+					table.setStartPc(input.readShort());
+					table.setLength(input.readShort());
+					table.setIndex(input.readShort());
 					target.addLocalVariableTargetTable(table);
 				}
 				annotation.setTypeAnnotationTarget(targetType, target);
@@ -78,7 +75,7 @@ public class TypeAnnotationReader
 			case 0X42:
 			{
 				TypeAnnotationTargetCatch target = new TypeAnnotationTargetCatch(targetType);
-				target.setExceptionTableIndex(in.readShort());
+				target.setExceptionTableIndex(input.readShort());
 				annotation.setTypeAnnotationTarget(targetType, target);
 				break;
 			}
@@ -88,7 +85,7 @@ public class TypeAnnotationReader
 			case 0X46:
 			{
 				TypeAnnotationTargetOffset target = new TypeAnnotationTargetOffset(targetType);
-				target.setOffset(in.readShort());
+				target.setOffset(input.readShort());
 				annotation.setTypeAnnotationTarget(targetType, target);
 				break;
 			}
@@ -99,29 +96,29 @@ public class TypeAnnotationReader
 			case 0X4B:
 			{
 				TypeAnnotationTargetTypeArgument target = new TypeAnnotationTargetTypeArgument(targetType);
-				target.setOffset(in.readShort());
-				target.setTypeArgumentIndex(in.readByte());
+				target.setOffset(input.readShort());
+				target.setTypeArgumentIndex(input.readByte());
 				annotation.setTypeAnnotationTarget(targetType, target);
 				break;
 			}
 		}
 		StructTypeAnnotationPath path = new StructTypeAnnotationPath();
-		int count = in.readByte() & 0XFF;
+		int count = input.readByte() & 0XFF;
 		for (int i = 0; i < count; i++)
 		{
 			StructPath p = new StructPath();
-			p.setTypePathKind(in.readByte());
-			p.setTypeArgumentIndex(in.readByte());
+			p.setTypePathKind(input.readByte());
+			p.setTypeArgumentIndex(input.readByte());
 			path.addPath(p);
 		}
 		annotation.setTargetPath(path);
-		annotation.setTypeIndex(in.readShort());
-		count = in.readShort() & 0XFFFF;
+		annotation.setTypeIndex(input.readShort());
+		count = input.readShort() & 0XFFFF;
 		for (int i = 0; i < count; i++)
 		{
 			StructElementValuePairs pairs = new StructElementValuePairs();
-			pairs.setElementNameIndex(in.readShort());
-			pairs.setElementValue(ElementValueReader.read(file, in));
+			pairs.setElementNameIndex(input.readShort());
+			pairs.setElementValue(ElementValueReader.read(file, input));
 			annotation.addElementValuePairs(pairs);
 		}
 		return annotation;

@@ -1,15 +1,12 @@
 package org.mve.util.asm.file;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.mve.io.RandomAccessByteArray;
 
 public class VerificationReader
 {
-	public static Verification read(ClassFile file, InputStream input) throws IOException
+	public static Verification read(ClassFile file, RandomAccessByteArray input)
 	{
-		DataInputStream in = new DataInputStream(input);
-		byte typeTag = in.readByte();
+		byte typeTag = input.readByte();
 		VerificationType type = VerificationType.getType(typeTag);
 		if (type == VerificationType.ITEM_TOP)
 		{
@@ -34,13 +31,13 @@ public class VerificationReader
 		else if (type == VerificationType.ITEM_OBJECT)
 		{
 			VerificationObjectVariable ver = new VerificationObjectVariable();
-			ver.setConstantPoolIndex(in.readShort());
+			ver.setConstantPoolIndex(input.readShort());
 			return ver;
 		}
 		else if (type == VerificationType.ITEM_UNINITIALIZED)
 		{
 			VerificationUninitializedVariable ver = new VerificationUninitializedVariable();
-			ver.setOffset(in.readShort());
+			ver.setOffset(input.readShort());
 			return ver;
 		}
 		else if (type == VerificationType.ITEM_LONG)

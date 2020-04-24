@@ -1,20 +1,16 @@
 package org.mve.util.asm.file;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.mve.io.RandomAccessByteArray;
 
 public class AttributeReader
 {
-	public static Attribute read(ClassFile file, InputStream in) throws IOException
+	public static Attribute read(ClassFile file, RandomAccessByteArray in)
 	{
-		DataInputStream datain = new DataInputStream(in);
-		short nameIndex = datain.readShort();
-		int len = datain.readInt();
+		short nameIndex = in.readShort();
+		int len = in.readInt();
 		byte[] data = new byte[len];
-		if (datain.read(data) != len) throw new ClassFormatError();
-		datain = new DataInputStream(new ByteArrayInputStream(data));
+		if (in.read(data) != len) throw new ClassFormatError();
+		RandomAccessByteArray datain = new RandomAccessByteArray(data);
 		ConstantPoolElement element = file.getConstantPool().getConstantPoolElement(nameIndex);
 		if (element.getType() != ConstantPoolElementType.CONSTANT_UTF8) throw new ClassFormatError("Invalid constant pool index "+nameIndex);
 		ConstantUTF8 utf8 = (ConstantUTF8) element;
@@ -24,7 +20,6 @@ public class AttributeReader
 		{
 			AttributeConstantValue attr = new AttributeConstantValue(nameIndex);
 			attr.setValueIndex(datain.readShort());
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.CODE)
@@ -51,7 +46,6 @@ public class AttributeReader
 			{
 				attr.addAttribute(AttributeReader.read(file, datain));
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.STACK_MAP_TABLE)
@@ -62,7 +56,6 @@ public class AttributeReader
 			{
 				attr.addStackMapFrame(StackMapFrameReader.read(file, datain));
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.EXCEPTIONS)
@@ -73,7 +66,6 @@ public class AttributeReader
 			{
 				attr.addException(datain.readShort());
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.INNER_CLASSES)
@@ -89,7 +81,6 @@ public class AttributeReader
 				struct.setInnerClassAccessFlag(datain.readShort());
 				attr.addInnerClass(struct);
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.ENCLOSING_METHOD)
@@ -97,26 +88,22 @@ public class AttributeReader
 			AttributeEnclosingMethod attr = new AttributeEnclosingMethod(nameIndex);
 			attr.setClassIndex(datain.readShort());
 			attr.setMethodIndex(datain.readShort());
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.SYNTHETIC)
 		{
-			datain.close();
 			return new AttributeSynthetic(nameIndex);
 		}
 		else if (type == AttributeType.SIGNATURE)
 		{
 			AttributeSignature attr = new AttributeSignature(nameIndex);
 			attr.setSignatureIndex(datain.readShort());
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.SOURCE_FILE)
 		{
 			AttributeSourceFile attr = new AttributeSourceFile(nameIndex);
 			attr.setSourceFileIndex(datain.readShort());
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.SOURCE_DEBUG_EXTENSION)
@@ -125,7 +112,6 @@ public class AttributeReader
 			byte[] b = new byte[len];
 			if (datain.read(b) != len) throw new ClassFormatError();
 			attr.setExtension(b);
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.LINE_NUMBER_TABLE)
@@ -139,7 +125,6 @@ public class AttributeReader
 				struct.setLineNumber(datain.readShort());
 				attr.addLineNumberTable(struct);
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.LOCAL_VARIABLE_TABLE)
@@ -156,7 +141,6 @@ public class AttributeReader
 				struct.setIndex(datain.readShort());
 				attr.addLocalVariableTable(struct);
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.LOCAL_VARIABLE_TYPE_TABLE)
@@ -173,12 +157,10 @@ public class AttributeReader
 				struct.setIndex(datain.readShort());
 				attr.addLocalVariableTypeTable(struct);
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.DEPRECATED)
 		{
-			datain.close();
 			return new AttributeDeprecated(nameIndex);
 		}
 		else if (type == AttributeType.RUNTIME_VISIBLE_ANNOTATIONS)
@@ -189,7 +171,6 @@ public class AttributeReader
 			{
 				attr.addAnnotation(AnnotationReader.read(file, datain));
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.RUNTIME_INVISIBLE_ANNOTATIONS)
@@ -200,7 +181,6 @@ public class AttributeReader
 			{
 				attr.addAnnotation(AnnotationReader.read(file, datain));
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS)
@@ -217,7 +197,6 @@ public class AttributeReader
 				}
 				attr.addParameterAnnotation(struct);
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS)
@@ -234,7 +213,6 @@ public class AttributeReader
 				}
 				attr.addParameterAnnotation(struct);
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.RUNTIME_VISIBLE_TYPE_ANNOTATIONS)
@@ -245,7 +223,6 @@ public class AttributeReader
 			{
 				attr.addTypeAnnotation(TypeAnnotationReader.read(file, datain));
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS)
@@ -256,14 +233,12 @@ public class AttributeReader
 			{
 				attr.addTypeAnnotation(TypeAnnotationReader.read(file, datain));
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.ANNOTATION_DEFAULT)
 		{
 			AttributeAnnotationDefault attr = new AttributeAnnotationDefault(nameIndex);
 			attr.setDefaultValue(ElementValueReader.read(file, datain));
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.BOOTSTRAP_METHODS)
@@ -281,7 +256,6 @@ public class AttributeReader
 				}
 				attr.addBootstrapMethod(method);
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.METHOD_PARAMETERS)
@@ -295,7 +269,6 @@ public class AttributeReader
 				parameter.setAccessFlag(datain.readShort());
 				attr.addMethodParameter(parameter);
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.MODULE)
@@ -356,7 +329,6 @@ public class AttributeReader
 				}
 				attr.addModuleProvide(provide);
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.MODULE_PACKAGES)
@@ -367,21 +339,18 @@ public class AttributeReader
 			{
 				attr.addModulePackage(datain.readShort());
 			}
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.MODULE_MAIN_CLASS)
 		{
 			AttributeModuleMainClass attr = new AttributeModuleMainClass(nameIndex);
 			attr.setMainClassIndex(datain.readShort());
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.NEST_HOST)
 		{
 			AttributeNestHost attr = new AttributeNestHost(nameIndex);
 			attr.setHostClassIndex(datain.readShort());
-			datain.close();
 			return attr;
 		}
 		else if (type == AttributeType.NEST_MEMBERS)
@@ -392,7 +361,6 @@ public class AttributeReader
 			{
 				attr.addNestMember(datain.readShort());
 			}
-			datain.close();
 			return attr;
 		}
 		else throw new ClassFormatError();
