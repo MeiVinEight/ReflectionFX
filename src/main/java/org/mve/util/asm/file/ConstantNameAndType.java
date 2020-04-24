@@ -3,12 +3,12 @@ package org.mve.util.asm.file;
 public class ConstantNameAndType extends ConstantPoolElement
 {
 	private final short nameIndex;
-	private final short descriptorIndex;
+	private final short typeIndex;
 
-	public ConstantNameAndType(short nameIndex, short descriptorIndex)
+	public ConstantNameAndType(short nameIndex, short typeIndex)
 	{
 		this.nameIndex = nameIndex;
-		this.descriptorIndex = descriptorIndex;
+		this.typeIndex = typeIndex;
 	}
 
 	public short getNameIndex()
@@ -16,9 +16,9 @@ public class ConstantNameAndType extends ConstantPoolElement
 		return nameIndex;
 	}
 
-	public short getDescriptorIndex()
+	public short getTypeIndex()
 	{
-		return descriptorIndex;
+		return typeIndex;
 	}
 
 	@Override
@@ -34,8 +34,8 @@ public class ConstantNameAndType extends ConstantPoolElement
 		b[0] = this.getType().getCode();
 		b[1] = (byte) ((this.nameIndex >>> 8) & 0XFF);
 		b[2] = (byte) (this.nameIndex & 0XFF);
-		b[3] = (byte) ((this.descriptorIndex >>> 8) & 0XFF);
-		b[4] = (byte) (this.descriptorIndex & 0XFF);
+		b[3] = (byte) ((this.typeIndex >>> 8) & 0XFF);
+		b[4] = (byte) (this.typeIndex & 0XFF);
 		return b;
 	}
 }

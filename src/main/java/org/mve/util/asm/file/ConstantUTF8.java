@@ -11,6 +11,11 @@ public class ConstantUTF8 extends ConstantPoolElement
 		this.utf8 = utf8;
 	}
 
+	public ConstantUTF8(String utf8)
+	{
+		this((short) utf8.length(), utf8);
+	}
+
 	public short getLength()
 	{
 		return length;

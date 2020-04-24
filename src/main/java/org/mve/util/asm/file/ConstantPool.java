@@ -37,6 +37,7 @@ public class ConstantPool
 
 	public void addConstantPoolElement(ConstantPoolElement element)
 	{
+		if ((this.constantPoolSize & 0XFFFF) == 65535) throw new ConstantPoolOverflowException();
 		ConstantPoolElement[] arr = new ConstantPoolElement[this.constantPoolSize+1];
 		System.arraycopy(this.elements, 0, arr, 0, this.constantPoolSize);
 		arr[this.constantPoolSize] = Objects.requireNonNull(element);

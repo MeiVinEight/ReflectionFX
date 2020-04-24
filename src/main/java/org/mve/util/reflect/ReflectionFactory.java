@@ -32,51 +32,51 @@ public class ReflectionFactory
 	public static final Unsafe UNSAFE;
 	public static final MethodHandles.Lookup TRUSTED_LOOKUP;
 	public static final MethodHandle DEFINE;
-	public static final ReflectInvoker<Object> METHOD_HANDLE_INVOKER;
-	public static final ReflectInvoker<Class<?>> CALLER;
+	public static final ReflectionAccessor<Object> METHOD_HANDLE_INVOKER;
+	public static final StackAccessor STACK_ACCESSOR;
 	public static final Accessor ACCESSOR;
 	public static final Class<?> DELEGATING_CLASS;
 	private static final ReflectionClassLoader INTERNAL_CLASS_LOADER;
 	private static final String MAGIC_ACCESSOR;
-	private static final ReflectInvoker<ReflectionClassLoader> CLASS_LOADER_FACTORY;
+	private static final ReflectionAccessor<ReflectionClassLoader> CLASS_LOADER_FACTORY;
 	private static final Map<ClassLoader, ReflectionClassLoader> CLASS_LOADER_MAP = new ConcurrentHashMap<>();
 	private static int id = 0;
 
-	public static <T> ReflectInvoker<T> getReflectInvoker(Class<?> clazz, String methodName, boolean isStatic, Class<T> returnType, Class<?>... params)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String methodName, boolean isStatic, Class<T> returnType, Class<?>... params)
 	{
-		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, methodName, MethodType.methodType(returnType, params), isStatic); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (STACK_ACCESSOR.getCallerClass()::getClassLoader)), clazz, methodName, MethodType.methodType(returnType, params), isStatic); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static <T> ReflectInvoker<T> getReflectInvoker(Class<?> clazz, String fieldName, Class<T> type, boolean isStatic, boolean isFinal)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String fieldName, Class<T> type, boolean isStatic, boolean isFinal)
 	{
-		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, false); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (STACK_ACCESSOR.getCallerClass()::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, false); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static <T> ReflectInvoker<T> getReflectInvoker(Class<?> clazz, String fieldName, Class<T> type, boolean isStatic, boolean isFinal, boolean deepReflect)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String fieldName, Class<T> type, boolean isStatic, boolean isFinal, boolean deepReflect)
 	{
-		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, deepReflect); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (STACK_ACCESSOR.getCallerClass()::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, deepReflect); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static <T> ReflectInvoker<T> getReflectInvoker(Class<T> clazz)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<T> clazz)
 	{
-		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (STACK_ACCESSOR.getCallerClass()::getClassLoader)), clazz); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static <T> ReflectInvoker<T> getReflectInvoker(Class<T> clazz, boolean initialize)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<T> clazz, boolean initialize)
 	{
-		try { return initialize ? generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, MethodType.methodType(void.class)) : generic(CALLER.invoke().getClassLoader(), clazz); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return initialize ? generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (STACK_ACCESSOR.getCallerClass()::getClassLoader)), clazz, MethodType.methodType(void.class)) : generic(STACK_ACCESSOR.getCallerClass().getClassLoader(), clazz); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static <T> ReflectInvoker<T> getReflectInvoker(Class<T> clazz, Class<?>... params)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<T> clazz, Class<?>... params)
 	{
-		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader)), clazz, MethodType.methodType(void.class, params)); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (STACK_ACCESSOR.getCallerClass()::getClassLoader)), clazz, MethodType.methodType(void.class, params)); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static ReflectInvoker<Void> throwException()
+	public static ReflectionAccessor<Void> throwException()
 	{
-		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
 		ClassWriter cw = new ClassWriter(0);
-		cw.visit(52, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<Ljava/lang/Void;>;", "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		cw.visit(52, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Ljava/lang/Void;>;", "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		genericConstructor(cw, "java/lang/Object");
 		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Void;", null, null);
 		mv.visitCode();
@@ -87,14 +87,14 @@ public class ReflectionFactory
 		mv.visitInsn(Opcodes.ATHROW);
 		mv.visitMaxs(2, 2);
 		bridge(cw, className, Void.class);
-		try { return define(cw, AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader))); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
+		try { return define(cw, AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (STACK_ACCESSOR.getCallerClass()::getClassLoader))); } catch (Throwable t) { throw new ReflectionGenericException("Can not generic invoker", t); }
 	}
 
-	public static <T> ReflectInvoker<T> constant(T value)
+	public static <T> ReflectionAccessor<T> constant(T value)
 	{
-		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
 		ClassWriter cw = new ClassWriter(0);
-		cw.visit(52, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<"+getDescriptor(value.getClass())+">;", "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		cw.visit(52, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(value.getClass())+">;", "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		FieldVisitor fv = cw.visitField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL, "final", getDescriptor(value.getClass()), null, null);
 		fv.visitEnd();
 		MethodVisitor mv = cw.visitMethod(
@@ -125,8 +125,8 @@ public class ReflectionFactory
 		byte[] code = cw.toByteArray();
 		try
 		{
-			Class<?> clazz = getClassLoader(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (CALLER.invoke()::getClassLoader))).define(code);
-			return (ReflectInvoker<T>) clazz.getDeclaredConstructor(value.getClass()).newInstance(value);
+			Class<?> clazz = getClassLoader(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (STACK_ACCESSOR.getCallerClass()::getClassLoader))).define(code);
+			return (ReflectionAccessor<T>) clazz.getDeclaredConstructor(value.getClass()).newInstance(value);
 		}
 		catch (Throwable throwable)
 		{
@@ -134,16 +134,16 @@ public class ReflectionFactory
 		}
 	}
 
-	private static <T> ReflectInvoker<T> generic(ClassLoader callerLoader, Class<?> clazz, String methodName, MethodType type, boolean isStatic) throws Throwable
+	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String methodName, MethodType type, boolean isStatic) throws Throwable
 	{
-		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
 		String desc = type.toMethodDescriptorString();
 		final String owner = clazz.getTypeName().replace('.', '/');
 		Class<?> returnType = type.returnType();
 		Class<?>[] params = type.parameterArray();
 		final OperandStack stack = new OperandStack();
 		ClassWriter cw = new ClassWriter(0);
-		cw.visit(52, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<"+getDescriptor(typeWarp(returnType))+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		cw.visit(52, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(returnType))+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		genericConstructor(cw, MAGIC_ACCESSOR);
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(typeWarp(returnType)), null, null);
 		mv.visitCode();
@@ -167,15 +167,15 @@ public class ReflectionFactory
 		return define(cw, callerLoader);
 	}
 
-	private static <T> ReflectInvoker<T> generic(ClassLoader callerLoader, Class<?> clazz, String fieldName, Class<T> type, boolean isStatic, boolean isFinal, boolean deepReflect) throws Throwable
+	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String fieldName, Class<T> type, boolean isStatic, boolean isFinal, boolean deepReflect) throws Throwable
 	{
 		if (typeWarp(type) == Void.class) throw new IllegalArgumentException("illegal type: void");
-		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
 		String desc = getDescriptor(type);
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
 		ClassWriter cw = new ClassWriter(0);
-		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<"+getDescriptor(typeWarp(type))+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(type))+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		genericConstructor(cw, MAGIC_ACCESSOR);
 		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(typeWarp(type)), null, null);
 		mv.visitCode();
@@ -298,15 +298,15 @@ public class ReflectionFactory
 		return define(cw, callerLoader);
 	}
 
-	private static <T> ReflectInvoker<T> generic(ClassLoader callerLoader, Class<T> clazz, MethodType type) throws Throwable
+	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<T> clazz, MethodType type) throws Throwable
 	{
 		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
 		String desc = type.toMethodDescriptorString();
 		final OperandStack stack = new OperandStack();
 		String owner = clazz.getTypeName().replace('.', '/');
 		ClassWriter cw = new ClassWriter(0);
-		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<"+getDescriptor(clazz)+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		genericConstructor(cw, MAGIC_ACCESSOR);
 		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)"+getDescriptor(clazz), null, null);
 		mv.visitCode();
@@ -326,12 +326,12 @@ public class ReflectionFactory
 		return define(cw, callerLoader);
 	}
 
-	private static <T> ReflectInvoker<T> generic(ClassLoader callerLoader, Class<T> clazz) throws Throwable
+	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<T> clazz) throws Throwable
 	{
 		if (typeWarp(clazz) == Void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/util/reflect/ReflectInvokerImpl"+id++;
+		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
 		ClassWriter cw = new ClassWriter(0);
-		cw.visit(52, AccessFlag.ACC_STRICT | AccessFlag.ACC_PUBLIC, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<"+getDescriptor(clazz)+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectInvoker"});
+		cw.visit(52, AccessFlag.ACC_STRICT | AccessFlag.ACC_PUBLIC, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		genericConstructor(cw, MAGIC_ACCESSOR);
 		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(clazz), null, null);
 		mv.visitTypeInsn(Opcodes.NEW, clazz.getTypeName().replace('.', '/'));
@@ -344,7 +344,7 @@ public class ReflectionFactory
 
 	private static ReflectionClassLoader getClassLoader(ClassLoader callerLoader)
 	{
-		if (callerLoader == ClassLoader.getSystemClassLoader()) return INTERNAL_CLASS_LOADER;
+		if (callerLoader == ReflectionFactory.class.getClassLoader()) return INTERNAL_CLASS_LOADER;
 		return CLASS_LOADER_MAP.computeIfAbsent(callerLoader, CLASS_LOADER_FACTORY::invoke);
 	}
 
@@ -433,12 +433,12 @@ public class ReflectionFactory
 		else if (c == char.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
 	}
 
-	private static <T> ReflectInvoker<T> define(ClassWriter cw, ClassLoader callerLoader) throws Throwable
+	private static <T> ReflectionAccessor<T> define(ClassWriter cw, ClassLoader callerLoader) throws Throwable
 	{
 		cw.visitEnd();
 		byte[] code = cw.toByteArray();
 		Class<?> implClass = getClassLoader(callerLoader).define(code);
-		return (ReflectInvoker<T>) implClass.getDeclaredConstructor().newInstance();
+		return (ReflectionAccessor<T>) implClass.getDeclaredConstructor().newInstance();
 	}
 
 	private static void genericConstructor(ClassWriter cw, String superClass)
@@ -499,7 +499,6 @@ public class ReflectionFactory
 			if (url == null) throw new NullPointerException();
 			InputStream in = url.openStream();
 			if (6 != in.skip(6)) throw new UnknownError();
-//			byte[] code = IO.toByteArray(in);
 			int majorVersion = new DataInputStream(in).readShort() & 0XFFFF;
 			in.close();
 
@@ -4132,7 +4131,7 @@ public class ReflectionFactory
 					}
 
 					byte[] code = cw.toByteArray();
-					clazz = (Class<?>) DEFINE.invoke(ClassLoader.getSystemClassLoader(), null, code, 0, code.length);
+					clazz = (Class<?>) DEFINE.invoke(ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
 				}
 
 				UNSAFE = (Unsafe) usf.allocateInstance(clazz);
@@ -4154,9 +4153,9 @@ public class ReflectionFactory
 						52,
 						AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC,
 						"org/mve/util/reflect/MethodHandleInvoker",
-						"Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<Ljava/lang/Class<*>;>;",
+						"Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Ljava/lang/Class<*>;>;",
 						"java/lang/Object",
-						new String[]{"org/mve/util/reflect/ReflectInvoker"}
+						new String[]{"org/mve/util/reflect/ReflectionAccessor"}
 					);
 					genericConstructor(cw, "java/lang/Object");
 					MethodVisitor mv = cw.visitMethod(
@@ -4205,10 +4204,10 @@ public class ReflectionFactory
 					mv.visitEnd();
 					cw.visitEnd();
 					byte[] code = cw.toByteArray();
-					handleInvoker = (Class<?>) DEFINE.invoke(ReflectInvoker.class.getClassLoader(), null, code, 0, code.length);
+					handleInvoker = (Class<?>) DEFINE.invoke(ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
 				}
 //				if (handleInvoker == null) throw new UnknownError();
-				METHOD_HANDLE_INVOKER = (ReflectInvoker<Object>) handleInvoker.getDeclaredConstructor().newInstance();
+				METHOD_HANDLE_INVOKER = (ReflectionAccessor<Object>) handleInvoker.getDeclaredConstructor().newInstance();
 
 			}
 
@@ -4506,7 +4505,7 @@ public class ReflectionFactory
 					}
 
 					byte[] code = cw.toByteArray();
-					internalClassLoader = (Class<?>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ClassLoader.getSystemClassLoader(), null, code, 0, code.length);
+					internalClassLoader = (Class<?>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
 				}
 			}
 
@@ -4527,9 +4526,9 @@ public class ReflectionFactory
 						0x34,
 						0x21,
 						"org/mve/util/reflect/ClassLoaderConstructor",
-						"Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<Lorg/mve/util/reflect/ReflectionClassLoader;>;",
+						"Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Lorg/mve/util/reflect/ReflectionClassLoader;>;",
 						"java/lang/Object",
-						new String[]{"org/mve/util/reflect/ReflectInvoker"}
+						new String[]{"org/mve/util/reflect/ReflectionAccessor"}
 					);
 					MethodVisitor mv = cw.visitMethod(
 						0x01,
@@ -4953,22 +4952,22 @@ public class ReflectionFactory
 					bridge(cw, "org/mve/util/reflect/ClassLoaderConstructor", ReflectionClassLoader.class);
 					cw.visitEnd();
 					byte[] code = cw.toByteArray();
-					c = (Class<?>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ClassLoader.getSystemClassLoader(), null, code, 0, code.length);
+					c = (Class<?>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
 				}
 
-				CLASS_LOADER_FACTORY = (ReflectInvoker<ReflectionClassLoader>) c.getDeclaredConstructor().newInstance();
+				CLASS_LOADER_FACTORY = (ReflectionAccessor<ReflectionClassLoader>) c.getDeclaredConstructor().newInstance();
 			}
 
-			INTERNAL_CLASS_LOADER = CLASS_LOADER_FACTORY.invoke(ClassLoader.getSystemClassLoader());
+			INTERNAL_CLASS_LOADER = CLASS_LOADER_FACTORY.invoke(ReflectionFactory.class.getClassLoader());
 
 			/*
 			 * caller class
 			 */
 			{
-				Class<? extends ReflectInvoker<Class<?>>> c;
+				Class<? extends StackAccessor> c;
 				try
 				{
-					c = (Class<? extends ReflectInvoker<Class<?>>>) Class.forName("org.mve.util.reflect.CallerClassGetter");
+					c = (Class<? extends StackAccessor>) Class.forName("org.mve.util.reflect.ThreadStackAccessor");
 				}
 				catch (Throwable t)
 				{
@@ -4976,44 +4975,91 @@ public class ReflectionFactory
 					cw.visit(
 						0x34,
 						0x21,
-						"org/mve/util/reflect/CallerClassGetter",
-						"Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<Ljava/lang/Class<*>;>;",
+						"org/mve/util/reflect/ThreadStackAccessor",
+						null,
 						getType(SecurityManager.class),
-						new String[]{getType(ReflectInvoker.class)}
+						new String[]{getType(StackAccessor.class)}
 					);
+					cw.visitSource("ThreadStackAccessor.java", null);
+
 					genericConstructor(cw, getType(SecurityManager.class));
-					MethodVisitor mv = cw.visitMethod(
-						AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-						"invoke",
-						MethodType.methodType(
-							Class.class,
-							Object[].class
-						).toMethodDescriptorString(),
-						"([Ljava/lang/Object;)Ljava/lang/Class<*>;",
-						null
-					);
-					mv.visitCode();
-					mv.visitVarInsn(Opcodes.ALOAD, 0);
-					mv.visitMethodInsn(
-						Opcodes.INVOKEVIRTUAL,
-						getType(SecurityManager.class),
-						"getClassContext",
-						MethodType.methodType(
-							Class[].class
-						).toMethodDescriptorString(),
-						false
-					);
-					mv.visitInsn(Opcodes.ICONST_3);
-					mv.visitInsn(Opcodes.AALOAD);
-					mv.visitInsn(Opcodes.ARETURN);
-					mv.visitMaxs(2, 2);
-					mv.visitEnd();
-					bridge(cw, "org/mve/util/reflect/CallerClassGetter", Class.class);
+
+					/*
+					 * Class<?> getCallerClass();
+					 */
+					{
+						MethodVisitor mv = cw.visitMethod(
+							AccessFlag.ACC_PUBLIC,
+							"getCallerClass",
+							"()Ljava/lang/Class;",
+							"()Ljava/lang/Class<*>;",
+							null
+						);
+						mv.visitCode();
+						mv.visitVarInsn(Opcodes.ALOAD, 0);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEINTERFACE,
+							getType(StackAccessor.class),
+							"getStackClassContext",
+							"()[Ljava/lang/Class;",
+							true
+						);
+						mv.visitInsn(Opcodes.ICONST_2);
+						mv.visitInsn(Opcodes.AALOAD);
+						mv.visitInsn(Opcodes.ARETURN);
+						mv.visitMaxs(2, 1);
+						mv.visitEnd();
+					}
+
+					/*
+					 * Class<?>[] getStackClassContext();
+					 */
+					{
+						MethodVisitor mv = cw.visitMethod(
+							AccessFlag.ACC_PUBLIC,
+							"getStackClassContext",
+							MethodType.methodType(
+								Class[].class
+							).toMethodDescriptorString(),
+							"()[Ljava/lang/Class<*>;",
+							null
+						);
+						mv.visitVarInsn(Opcodes.ALOAD, 0);
+						mv.visitMethodInsn(
+							Opcodes.INVOKEVIRTUAL,
+							getType(SecurityManager.class),
+							"getClassContext",
+							MethodType.methodType(
+								Class[].class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitInsn(Opcodes.DUP);
+						mv.visitInsn(Opcodes.ARRAYLENGTH);
+						mv.visitInsn(Opcodes.ICONST_1);
+						mv.visitInsn(Opcodes.SWAP);
+						mv.visitMethodInsn(
+							Opcodes.INVOKESTATIC,
+							getType(Arrays.class),
+							"copyOfRange",
+							MethodType.methodType(
+								Object[].class,
+								Object[].class,
+								int.class,
+								int.class
+							).toMethodDescriptorString(),
+							false
+						);
+						mv.visitTypeInsn(Opcodes.CHECKCAST, "[Ljava/lang/Class;");
+						mv.visitInsn(Opcodes.ARETURN);
+						mv.visitMaxs(3, 1);
+						mv.visitEnd();
+					}
 					cw.visitEnd();
 					byte[] code = cw.toByteArray();
-					c = (Class<? extends ReflectInvoker<Class<?>>>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ClassLoader.getSystemClassLoader(), null, code, 0, code.length);
+					c = (Class<? extends StackAccessor>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
 				}
-				CALLER = c.getDeclaredConstructor().newInstance();
+				STACK_ACCESSOR = c.getDeclaredConstructor().newInstance();
 			}
 
 			/*
@@ -5033,7 +5079,7 @@ public class ReflectionFactory
 						0x34,
 						0x21,
 						"org/mve/util/reflect/MagicAccessor",
-						"Ljava/lang/Object;Lorg/mve/util/reflect/ReflectInvoker<Ljava/lang/Void;>;",
+						null,
 						MAGIC_ACCESSOR,
 						new String[]{getType(Accessor.class)}
 					);
@@ -5093,13 +5139,13 @@ public class ReflectionFactory
 							Opcodes.GETSTATIC,
 							getType(ReflectionFactory.class),
 							"CALLER",
-							getDescriptor(ReflectInvoker.class)
+							getDescriptor(ReflectionAccessor.class)
 						);
 						mv.visitInsn(Opcodes.ICONST_0);
 						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
 						mv.visitMethodInsn(
 							Opcodes.INVOKEINTERFACE,
-							getType(ReflectInvoker.class),
+							getType(ReflectionAccessor.class),
 							"invoke",
 							MethodType.methodType(
 								Object.class,

@@ -4,8 +4,16 @@ import org.mve.util.reflect.ReflectionFactory;
 
 public class Main
 {
-	public static void main(String[] args)
+	public static void a()
 	{
-		ReflectionFactory.ACCESSOR.defineClass(Main.class.getClassLoader(), new byte[0]);
+		System.out.println(ReflectionFactory.STACK_ACCESSOR.getCallerClass());
+	}
+
+	public static class A
+	{
+		public static void main(String[] args)
+		{
+			Main.a();
+		}
 	}
 }
