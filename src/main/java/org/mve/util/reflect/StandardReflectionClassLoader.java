@@ -20,8 +20,14 @@ public class StandardReflectionClassLoader extends ClassLoader implements Reflec
 	public final synchronized Class<?> define(byte[] code)
 	{
 		Class<?> clazz = (Class<?>) ReflectionFactory.METHOD_HANDLE_INVOKER.invoke(ReflectionFactory.DEFINE, loader, null, code, 0, code.length);
-		this.classes.put(clazz.getTypeName(), clazz);
+		this.ensure(clazz);
 		return clazz;
+	}
+
+	@Override
+	public void ensure(Class<?> clazz)
+	{
+		this.classes.putIfAbsent(clazz.getTypeName(), clazz);
 	}
 
 	@Override
