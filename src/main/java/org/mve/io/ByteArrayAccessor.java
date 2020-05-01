@@ -24,9 +24,9 @@ public interface ByteArrayAccessor
 
 	void insert(byte[] b, int off, int len);
 
-	void insertByte(byte b);
+	void insertByte(int b);
 
-	void insertShort(short s);
+	void insertShort(int s);
 
 	void insertInt(int i);
 

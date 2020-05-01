@@ -1,13 +1,14 @@
 package org.mve.util.asm.attribute;
 
 import org.mve.io.RandomAccessByteArray;
-import org.mve.util.asm.FindableConstantPool;
+import org.mve.util.asm.ConstantPoolFinder;
 import org.mve.util.asm.Marker;
 import org.mve.util.asm.Opcodes;
 import org.mve.util.asm.Type;
 import org.mve.util.asm.file.Attribute;
 import org.mve.util.asm.file.AttributeCode;
 import org.mve.util.asm.file.AttributeType;
+import org.mve.util.asm.file.ConstantPool;
 import org.mve.util.asm.file.StructExceptionTable;
 import org.mve.util.asm.instruction.ConstantInstruction;
 import org.mve.util.asm.instruction.FieldInstruction;
@@ -141,9 +142,9 @@ public class AttributeCodeWriter implements AttributeWriter
 	}
 
 	@Override
-	public Attribute getAttribute(FindableConstantPool pool)
+	public Attribute getAttribute(ConstantPool pool)
 	{
-		AttributeCode code = new AttributeCode((short) pool.findUTF8(AttributeType.CODE.getName()));
+		AttributeCode code = new AttributeCode((short) ConstantPoolFinder.findUTF8(pool, AttributeType.CODE.getName()));
 		code.setMaxStack((short) this.maxStack);
 		code.setMaxLocals((short) this.maxLocals);
 
@@ -170,13 +171,13 @@ public class AttributeCodeWriter implements AttributeWriter
 					if (value instanceof Number)
 					{
 						Number number = (Number) value;
-						if (number instanceof Long) index = pool.findLong(number.longValue());
-						else if (number instanceof Double) index = pool.findDouble(number.doubleValue());
-						else if (number instanceof Float) index = pool.findFloat(number.floatValue());
-						else index = pool.findInteger(number.intValue());
+						if (number instanceof Long) index = ConstantPoolFinder.findLong(pool, number.longValue());
+						else if (number instanceof Double) index = ConstantPoolFinder.findDouble(pool, number.doubleValue());
+						else if (number instanceof Float) index = ConstantPoolFinder.findFloat(pool, number.floatValue());
+						else index = ConstantPoolFinder.findInteger(pool, number.intValue());
 					}
-					else if (value instanceof String) index = pool.findString(value.toString());
-					else if (value instanceof Type) index = pool.findClass(((Type)value).getType());
+					else if (value instanceof String) index = ConstantPoolFinder.findString(pool, value.toString());
+					else if (value instanceof Type) index = ConstantPoolFinder.findClass(pool, ((Type)value).getType());
 					if (insn.opcode == Opcodes.LDC) arr.write(index);
 					else arr.writeShort(index);
 				}
@@ -188,17 +189,17 @@ public class AttributeCodeWriter implements AttributeWriter
 				}
 				else if (instruction instanceof TypeInstruction)
 				{
-					arr.writeShort(pool.findClass(((TypeInstruction)instruction).type));
+					arr.writeShort(ConstantPoolFinder.findClass(pool, ((TypeInstruction)instruction).type));
 				}
 				else if (instruction instanceof FieldInstruction)
 				{
 					FieldInstruction insn = (FieldInstruction) instruction;
-					arr.writeShort(pool.findField(insn.type, insn.name, insn.desc));
+					arr.writeShort(ConstantPoolFinder.findField(pool, insn.type, insn.name, insn.desc));
 				}
 				else if (instruction instanceof MethodInstruction)
 				{
 					MethodInstruction insn = (MethodInstruction) instruction;
-					arr.writeShort(pool.findMethod(insn.type, insn.name, insn.desc, insn.isAbstract));
+					arr.writeShort(ConstantPoolFinder.findMethod(pool, insn.type, insn.name, insn.desc, insn.isAbstract));
 					if (insn instanceof InterfaceMethodInstruction)
 					{
 						arr.write(((InterfaceMethodInstruction)insn).count);

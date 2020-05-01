@@ -443,14 +443,14 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	}
 
 	@Override
-	public void insertByte(byte b)
+	public void insertByte(int b)
 	{
 		this.shiftRight(this.pointer, 1);
 		this.writeByte(b);
 	}
 
 	@Override
-	public void insertShort(short s)
+	public void insertShort(int s)
 	{
 		this.shiftRight(this.pointer, 2);
 		this.writeShort(s);

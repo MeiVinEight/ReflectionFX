@@ -132,38 +132,35 @@ public class ClassWriter
 
 	public ClassFile toClassFile()
 	{
-		FindableConstantPool findable = new FindableConstantPool();
 		ClassFile file = new ClassFile();
+		ConstantPool pool = file.getConstantPool();
 		file.setHeader(0xCAFEBABE);
 		file.setMajorVersion((short) this.majorVersion);
 		file.setAccessFlag((short) this.accessFlag);
-		file.setThisClassIndex((short) findable.findClass(this.name));
-		file.setSuperClassIndex((short) findable.findClass(this.superName));
-		if (this.interfaces != null) for (String str : this.interfaces) file.addInterface((short) findable.findClass(str));
+		file.setThisClassIndex((short) ConstantPoolFinder.findClass(pool, this.name));
+		file.setSuperClassIndex((short) ConstantPoolFinder.findClass(pool, this.superName));
+		if (this.interfaces != null) for (String str : this.interfaces) file.addInterface((short) ConstantPoolFinder.findClass(pool, str));
 		for (FieldWriter writer : this.fields)
 		{
 			ClassField field = new ClassField();
 			field.setAccessFlag((short) writer.getAccessFlag());
-			field.setNameIndex((short) findable.findUTF8(writer.getName()));
-			field.setDescriptorIndex((short) findable.findUTF8(writer.getDesc()));
+			field.setNameIndex((short) ConstantPoolFinder.findUTF8(pool, writer.getName()));
+			field.setDescriptorIndex((short) ConstantPoolFinder.findUTF8(pool, writer.getDesc()));
 			AttributeWriter[] attrs = writer.getAttributes();
-			for (AttributeWriter attr : attrs) field.addAttribute(attr.getAttribute(findable));
+			for (AttributeWriter attr : attrs) field.addAttribute(attr.getAttribute(pool));
 			file.addField(field);
 		}
 		for (MethodWriter writer : this.methods)
 		{
 			ClassMethod method = new ClassMethod();
 			method.setAccessFlag((short) writer.getAccessFlag());
-			method.setNameIndex((short) findable.findUTF8(writer.getName()));
-			method.setDescriptorIndex((short) findable.findUTF8(writer.getDesc()));
+			method.setNameIndex((short) ConstantPoolFinder.findUTF8(pool, writer.getName()));
+			method.setDescriptorIndex((short) ConstantPoolFinder.findUTF8(pool, writer.getDesc()));
 			AttributeWriter[] attrs = writer.getAttributes();
-			for (AttributeWriter attr : attrs) method.addAttribute(attr.getAttribute(findable));
+			for (AttributeWriter attr : attrs) method.addAttribute(attr.getAttribute(pool));
 			file.addMethod(method);
 		}
-		for (AttributeWriter attr : this.attributes) file.addAttribute(attr.getAttribute(findable));
-
-		ConstantPool pool = file.getConstantPool();
-		for (int i=1; i<findable.getConstantPoolSize(); i++) pool.addConstantPoolElement(findable.getConstantPoolElement(i));
+		for (AttributeWriter attr : this.attributes) file.addAttribute(attr.getAttribute(pool));
 
 		return file;
 	}

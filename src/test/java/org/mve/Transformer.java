@@ -1,7 +1,13 @@
 package org.mve;
 
+import org.mve.io.RandomAccessByteArray;
+import org.mve.util.asm.ConstantPoolFinder;
+import org.mve.util.asm.Opcodes;
+import org.mve.util.asm.file.AttributeCode;
 import org.mve.util.asm.file.ClassFile;
+import org.mve.util.asm.file.ClassMethod;
 import org.mve.util.asm.file.ConstantClass;
+import org.mve.util.asm.file.ConstantNameAndType;
 import org.mve.util.asm.file.ConstantPool;
 import org.mve.util.asm.file.ConstantUTF8;
 
@@ -16,7 +22,6 @@ import java.util.function.Function;
 public class Transformer
 {
 	private static final List<Function<String, Boolean>> FILTERS = new LinkedList<>();
-	public static boolean flag = false;
 
 	public static void premain(String agentArgs, Instrumentation instrumentation)
 	{
@@ -30,21 +35,21 @@ public class Transformer
 				ConstantClass clazz = (ConstantClass) pool.getConstantPoolElement(file.getThisClassIndex());
 				ConstantUTF8 utf = (ConstantUTF8) pool.getConstantPoolElement(clazz.getNameIndex());
 				String name = utf.getUTF8();
-				String simpleName = filter(name);
-				if (simpleName != null)
-				{
-					try
-					{
-						FileOutputStream out = new FileOutputStream(simpleName+".class");
-						out.write(classfileBuffer);
-						out.flush();
-						out.close();
-					}
-					catch (Exception e)
-					{
-						e.printStackTrace();
-					}
-				}
+//				String simpleName = filter(name);
+//				if (simpleName != null)
+//				{
+//					try
+//					{
+//						FileOutputStream out = new FileOutputStream(simpleName+".class");
+//						out.write(classfileBuffer);
+//						out.flush();
+//						out.close();
+//					}
+//					catch (Exception e)
+//					{
+//						e.printStackTrace();
+//					}
+//				}
 				return classfileBuffer;
 			}
 		});

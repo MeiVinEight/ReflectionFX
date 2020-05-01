@@ -1,9 +1,9 @@
 package org.mve.util.asm.attribute;
 
-import org.mve.util.asm.FindableConstantPool;
 import org.mve.util.asm.file.Attribute;
+import org.mve.util.asm.file.ConstantPool;
 
 public interface AttributeWriter
 {
-	Attribute getAttribute(FindableConstantPool pool);
+	Attribute getAttribute(ConstantPool pool);
 }
