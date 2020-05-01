@@ -24,6 +24,24 @@ public interface ByteArrayAccessor
 
 	void insert(byte[] b, int off, int len);
 
+	void insertByte(byte b);
+
+	void insertShort(short s);
+
+	void insertInt(int i);
+
+	void insertLong(long l);
+
+	void insertFloat(float f);
+
+	void insertDouble(double d);
+
+	void insertBoolean(boolean b);
+
+	void insertChar(char c);
+
+	void insertUTF(String str);
+
 	int delete();
 
 	int delete(byte[] b);
@@ -33,6 +51,8 @@ public interface ByteArrayAccessor
 	int available();
 
 	int length();
+
+	int offset();
 
 	byte[] toByteArray();
 }

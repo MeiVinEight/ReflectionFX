@@ -2,6 +2,9 @@ package org.mve.util.reflect;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public interface Accessor
 {
@@ -22,4 +25,18 @@ public interface Accessor
 	<T> T construct(Class<?> target, Class<?>[] paramTypes, Object[] params);
 
 	Object invokeMethodHandle(MethodHandle handle, Object... args);
+
+	Field getField(Class<?> target, String name);
+
+	Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes);
+
+	<T> Constructor<T> getConstructor(Class<?> target, Class<?>... parameterTypes);
+
+	Field[] getFields(Class<?> clazz);
+
+	Method[] getMethods(Class<?> clazz);
+
+	<T> Constructor<T>[] getConstructors(Class<?> target);
+
+	void throwException(Throwable t);
 }

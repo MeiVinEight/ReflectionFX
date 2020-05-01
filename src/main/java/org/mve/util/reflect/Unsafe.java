@@ -6,6 +6,7 @@ import java.security.ProtectionDomain;
 
 public interface Unsafe
 {
+	int getJavaVMVersion();
 	byte getByte(long offset);
 	byte getByte(Object obj, long offset);
 	byte getByteVolatile(Object obj, long offset);
@@ -82,7 +83,7 @@ public interface Unsafe
 	int pageSize();
 	Class<?> defineClass(String name, byte[] code, int offset, int length, ClassLoader loader, ProtectionDomain protectionDomain);
 	Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches);
-	Object allocateInstance(Class<?> c) throws InstantiationException;
+	Object allocateInstance(Class<?> c);
 	void throwException(Throwable t);
 	boolean compareAndSwapInt(Object obj, long offset, int expected, int value);
 	boolean compareAndSetInt(Object obj, long offset, int expected, int value);

@@ -104,9 +104,9 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	{
 		this.ensureAvailable(4);
 		int i=0;
-		i = i | this.readShort();
+		i = i | (this.readShort()) & 0XFFFF;
 		i = i << 16;
-		i = i | this.readShort();
+		i = i | (this.readShort()) & 0XFFFF;
 		return i;
 	}
 
@@ -115,9 +115,9 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	{
 		this.ensureAvailable(8);
 		long l = 0;
-		l = l | this.readInt();
+		l = l | (this.readInt()) & 0XFFFFFFFFL;
 		l = l << 32;
-		l = l | this.readInt();
+		l = l | (this.readInt()) & 0XFFFFFFFFL;
 		return l;
 	}
 
@@ -247,7 +247,8 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	@Override
 	public int skip(int n)
 	{
-		int skipped = Math.max(0, this.pointer + Math.min(this.length - this.pointer, n));
+		int skipped = Math.min(this.length - this.pointer, n);
+		if ((this.pointer + n) < 0) skipped = -this.pointer;
 		this.pointer += skipped;
 		return skipped;
 	}
@@ -277,7 +278,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	@Override
 	public int read()
 	{
-		return this.length > this.pointer ? this.arr[this.pointer++] : -1;
+		return this.length > this.pointer ? this.arr[this.pointer++] & 0XFF : -1;
 	}
 
 	@Override
@@ -442,6 +443,83 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	}
 
 	@Override
+	public void insertByte(byte b)
+	{
+		this.shiftRight(this.pointer, 1);
+		this.writeByte(b);
+	}
+
+	@Override
+	public void insertShort(short s)
+	{
+		this.shiftRight(this.pointer, 2);
+		this.writeShort(s);
+	}
+
+	@Override
+	public void insertInt(int i)
+	{
+		this.shiftRight(this.pointer, 4);
+		this.writeInt(i);
+	}
+
+	@Override
+	public void insertLong(long l)
+	{
+		this.shiftRight(this.pointer, 8);
+		this.writeLong(l);
+	}
+
+	@Override
+	public void insertFloat(float f)
+	{
+		this.shiftRight(this.pointer, 4);
+		this.writeFloat(f);
+	}
+
+	@Override
+	public void insertDouble(double d)
+	{
+		this.shiftRight(this.pointer, 8);
+		this.writeDouble(d);
+	}
+
+	@Override
+	public void insertBoolean(boolean b)
+	{
+		this.shiftRight(pointer, 1);
+		this.writeBoolean(b);
+	}
+
+	@Override
+	public void insertChar(char c)
+	{
+		this.shiftRight(this.pointer, 2);
+		this.writeChar(c);
+	}
+
+	@Override
+	public void insertUTF(String str)
+	{
+		int strlen = str.length();
+		int utflen = 0;
+		int c;
+
+		for (int i=0; i<strlen; i++)
+		{
+			c = str.charAt(i);
+			if ((c >= 0X0001) && (c <= 0X007F)) utflen++;
+			else if (c > 0X07FF) utflen += 3;
+			else  utflen += 2;
+		}
+
+		if (utflen > 65535) throw new RuntimeException(new UTFDataFormatException("encoded string too long: " + utflen + " bytes"));
+
+		this.shiftRight(this.pointer, 2 + strlen);
+		this.writeUTF(str);
+	}
+
+	@Override
 	public int delete()
 	{
 		int b = this.arr[this.pointer] & 0XFF;
@@ -478,6 +556,12 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	}
 
 	@Override
+	public int offset()
+	{
+		return this.pointer;
+	}
+
+	@Override
 	public byte[] toByteArray()
 	{
 		return Arrays.copyOf(this.arr, this.length);
@@ -485,7 +569,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 
 	private void shiftRight(int start, int off)
 	{
-		int dataSize = this.length - this.pointer;
+		int dataSize = this.length - start;
 		this.ensureCapacity(this.length + off);
 		for (int i = dataSize-1; i > -1; i--) this.arr[start + i + off] = this.arr[start + i];
 	}

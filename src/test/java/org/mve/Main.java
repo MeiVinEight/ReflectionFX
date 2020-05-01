@@ -1,10 +1,10 @@
 package org.mve;
 
+import org.mve.test.Test;
 import org.mve.util.reflect.ReflectionAccessor;
 import org.mve.util.reflect.ReflectionFactory;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
@@ -12,65 +12,44 @@ public class Main
 {
 	public static void main(String[] args) throws Throwable
 	{
-		ReflectionAccessor<Void> accessor = ReflectionFactory.getReflectionAccessor(
-			Main.class,
-			"method",
-			true,
-			false,
-			false,
-			void.class
-		);
-		ReflectionFactory.getReflectionAccessor(
-			sun.reflect.ReflectionFactory.class,
-			"noInflation",
-			boolean.class,
-			true,
-			false
-		).invoke(true);
-		Method method = Main.class.getDeclaredMethod("method");
-		method.setAccessible(true);
-		MethodHandle handle = MethodHandles.lookup().findStatic(
-			Main.class,
-			"method",
-			MethodType.methodType(void.class)
-		);
+		MethodHandle handle = ReflectionFactory.TRUSTED_LOOKUP.findStatic(Test.class, "method", MethodType.methodType(void.class, Object.class));
+		Method method = ReflectionFactory.ACCESSOR.getMethod(Test.class, "method", Object.class);
+		ReflectionFactory.ACCESSOR.setAccessible(method, true);
+		ReflectionAccessor<Void> accessor = ReflectionFactory.getReflectionAccessor(Test.class, "method", true, false, false, void.class, Object.class);
+		Object obj = new Object();
 		long time;
-		for (int i = 0; i < 10; i++)
+		for (int j = 0; j < 10; j++)
 		{
 			time = System.nanoTime();
-			for (int j = 0; j < 1000000; j++)
+			for (int i = 0; i < 1000000; i++)
 			{
-				method.invoke(null);
+				method.invoke(null, obj);
 			}
 			System.out.print(System.nanoTime() - time);
 			System.out.print(' ');
 
 			time = System.nanoTime();
-			for (int j = 0; j < 1000000; j++)
+			for (int i = 0; i < 1000000; i++)
 			{
-				handle.invoke();
+				handle.invoke(obj);
 			}
 			System.out.print(System.nanoTime() - time);
 			System.out.print(' ');
 
 			time = System.nanoTime();
-			for (int j = 0; j < 1000000; j++)
+			for (int i = 0; i < 1000000; i++)
 			{
-				accessor.invoke();
+				accessor.invoke(obj);
 			}
 			System.out.print(System.nanoTime() - time);
 			System.out.print(' ');
 
 			time = System.nanoTime();
-			for (int j = 0; j < 1000000; j++)
+			for (int i = 0; i < 1000000; i++)
 			{
-				method();
+				Test.invoke(obj);
 			}
 			System.out.println(System.nanoTime() - time);
 		}
-	}
-
-	private static void method()
-	{
 	}
 }

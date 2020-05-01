@@ -22,7 +22,7 @@ public class Opcodes
 	public static final int SIPUSH			= 0x11;
 	public static final int LDC				= 0x12;
 	public static final int LDC_W			= 0x13;
-	public static final int LDC2_2			= 0x14;
+	public static final int LDC2_W			= 0x14;
 	public static final int ILOAD			= 0x15;
 	public static final int LLOAD			= 0x16;
 	public static final int FLOAD			= 0x17;
@@ -203,4 +203,13 @@ public class Opcodes
 	public static final int IFNONNULL		= 0xC7;
 	public static final int GOTO_W			= 0xC8;
 	public static final int JSR_W			= 0xC9;
+
+	public static final int ARRAY_TYPE_BOOLEAN	= 4;
+	public static final int ARRAY_TYPE_CHAR		= 5;
+	public static final int ARRAY_TYPE_FLOAT	= 6;
+	public static final int ARRAY_TYPE_DOUBLE	= 7;
+	public static final int ARRAY_TYPE_BYTE		= 8;
+	public static final int ARRAY_TYPE_SHORT	= 9;
+	public static final int ARRAY_TYPE_INT		= 10;
+	public static final int ARRAY_TYPE_LONG		= 11;
 }

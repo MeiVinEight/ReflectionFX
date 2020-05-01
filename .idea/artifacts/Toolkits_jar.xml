@@ -3,7 +3,6 @@
     <output-path>$PROJECT_DIR$/out/artifacts/Toolkits_jar</output-path>
     <root id="archive" name="Toolkits.jar">
       <element id="module-output" name="Toolkits" />
-      <element id="extracted-dir" path="$APPLICATION_HOME_DIR$/lib/asm-all-7.0.1.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

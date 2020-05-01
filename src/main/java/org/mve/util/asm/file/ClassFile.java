@@ -247,7 +247,7 @@ public class ClassFile implements Binary
 	private short thisClassIndex;
 	private short superClassIndex;
 	private short interfaceCount;
-	private short[] interfaces;
+	private short[] interfaces = new short[0];
 	private short fieldCount;
 	private ClassField[] fields = new ClassField[0];
 	private short methodCount;
@@ -405,7 +405,7 @@ public class ClassFile implements Binary
 		count = codeAccessor.readShort() & 0XFFFF;
 		for (int i = 0; i < count; i++)
 		{
-			ClassMethod method = new ClassMethod(this);
+			ClassMethod method = new ClassMethod();
 			method.setAccessFlag(codeAccessor.readShort());
 			method.setNameIndex(codeAccessor.readShort());
 			method.setDescriptorIndex(codeAccessor.readShort());
@@ -421,6 +421,11 @@ public class ClassFile implements Binary
 		{
 			this.addAttribute(AttributeReader.read(this, codeAccessor));
 		}
+	}
+
+	public void setHeader(int header)
+	{
+		this.header = header;
 	}
 
 	public int getHeader()

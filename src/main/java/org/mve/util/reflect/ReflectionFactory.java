@@ -1,12 +1,12 @@
 package org.mve.util.reflect;
 
-import org.jetbrains.org.objectweb.asm.ClassWriter;
-import org.jetbrains.org.objectweb.asm.FieldVisitor;
-import org.jetbrains.org.objectweb.asm.Label;
-import org.jetbrains.org.objectweb.asm.MethodVisitor;
-import org.jetbrains.org.objectweb.asm.Opcodes;
-import org.jetbrains.org.objectweb.asm.Type;
+import org.mve.util.asm.ClassWriter;
+import org.mve.util.asm.Marker;
+import org.mve.util.asm.MethodWriter;
+import org.mve.util.asm.Opcodes;
 import org.mve.util.asm.OperandStack;
+import org.mve.util.asm.Type;
+import org.mve.util.asm.attribute.AttributeCodeWriter;
 import org.mve.util.asm.file.AccessFlag;
 
 import java.io.DataInputStream;
@@ -17,6 +17,8 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -26,114 +28,119 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 @SuppressWarnings({"unchecked"})
 public class ReflectionFactory
 {
 	public static final Unsafe UNSAFE;
 	public static final MethodHandles.Lookup TRUSTED_LOOKUP;
-	public static final MethodHandle DEFINE;
 	public static final ReflectionAccessor<Object> METHOD_HANDLE_INVOKER;
 	public static final Accessor ACCESSOR;
-	public static final Class<?> DELEGATING_CLASS;
 	private static final ReflectionClassLoader INTERNAL_CLASS_LOADER;
 	private static final String MAGIC_ACCESSOR;
-	private static final ReflectionAccessor<ReflectionClassLoader> CLASS_LOADER_FACTORY;
 	private static final Map<ClassLoader, ReflectionClassLoader> CLASS_LOADER_MAP = new ConcurrentHashMap<>();
 	private static int id = 0;
 
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String methodName, boolean isStatic, boolean isAbstract, boolean special, Class<?> returnType, Class<?>... params)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String methodName, boolean isStatic, boolean special, boolean isAbstract, Class<?> returnType, Class<?>... params)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader)), clazz, methodName, MethodType.methodType(returnType, params), isStatic, isAbstract, special);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, methodName, MethodType.methodType(returnType, params), isStatic, special, isAbstract);
 	}
 
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String methodName, boolean isStatic, boolean isAbstract, boolean special, MethodType type)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String methodName, boolean isStatic, boolean special, boolean isAbstract, MethodType type)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader)), clazz, methodName, type, isStatic, isAbstract, special);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, methodName, type, isStatic, special, isAbstract);
+	}
+
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Method method)
+	{
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>)(method.getDeclaringClass()::getClassLoader)), method.getDeclaringClass(), method.getName(), MethodType.methodType(method.getReturnType(), method.getParameterTypes()), Modifier.isStatic(method.getModifiers()), false, Modifier.isAbstract(method.getModifiers()));
+	}
+
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Method method, boolean special)
+	{
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>)(method.getDeclaringClass()::getClassLoader)), method.getDeclaringClass(), method.getName(), MethodType.methodType(method.getReturnType(), method.getParameterTypes()), Modifier.isStatic(method.getModifiers()), special, Modifier.isAbstract(method.getModifiers()));
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, false);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, false);
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, deepReflect);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, deepReflect);
+	}
+
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Field field)
+	{
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (field.getDeclaringClass()::getClassLoader)), field.getDeclaringClass(), field.getName(), field.getType(), Modifier.isStatic(field.getModifiers()), Modifier.isFinal(field.getModifiers()), false);
+	}
+
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Field field, boolean deepReflect)
+	{
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (field.getDeclaringClass()::getClassLoader)), field.getDeclaringClass(), field.getName(), field.getType(), Modifier.isStatic(field.getModifiers()), Modifier.isFinal(field.getModifiers()), deepReflect);
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader)), clazz);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz);
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, boolean initialize)
 	{
-		return initialize ? generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader)), clazz, MethodType.methodType(void.class)) : generic(ACCESSOR.getCallerClass().getClassLoader(), clazz);
+		return initialize ? generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, MethodType.methodType(void.class)) : generic(ACCESSOR.getCallerClass().getClassLoader(), clazz);
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, Class<?>... params)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader)), clazz, MethodType.methodType(void.class, params));
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, MethodType.methodType(void.class, params));
+	}
+
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Constructor<?> ctr)
+	{
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ctr.getDeclaringClass()::getClassLoader)), ctr.getDeclaringClass(), MethodType.methodType(void.class, ctr.getParameterTypes()));
 	}
 
 	public static ReflectionAccessor<Void> throwException()
 	{
 		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
-		ClassWriter cw = new ClassWriter(0);
-		cw.visit(52, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Ljava/lang/Void;>;", "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		genericConstructor(cw, "java/lang/Object");
-		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Void;", null, null);
-		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
-		mv.visitInsn(Opcodes.ICONST_0);
-		mv.visitInsn(Opcodes.AALOAD);
-		mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Throwable");
-		mv.visitInsn(Opcodes.ATHROW);
-		mv.visitMaxs(2, 2);
-		bridge(cw, className, Void.class);
-		return define(cw, AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader)), Throwable.class);
+		ClassWriter cw = new ClassWriter();
+		cw.set(0x34, 0x21, className, "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Ljava/lang/Void;>;");
+		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		code.addInstruction(Opcodes.ALOAD_1);
+		code.addInstruction(Opcodes.ICONST_0);
+		code.addInstruction(Opcodes.AALOAD);
+		code.addTypeInstruction(Opcodes.CHECKCAST, "java/lang/Throwable");
+		code.addInstruction(Opcodes.ATHROW);
+		code.setMaxs(2, 2);
+		return (ReflectionAccessor<Void>) UNSAFE.allocateInstance(ACCESSOR.defineClass(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader)), cw.toByteArray()));
 	}
 
 	public static <T> ReflectionAccessor<T> constant(T value)
 	{
 		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
-		ClassWriter cw = new ClassWriter(0);
-		cw.visit(52, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(value.getClass())+">;", "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		FieldVisitor fv = cw.visitField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL, "final", getDescriptor(value.getClass()), null, null);
-		fv.visitEnd();
-		MethodVisitor mv = cw.visitMethod(
-			AccessFlag.ACC_PUBLIC,
-			"<init>",
-			MethodType.methodType(void.class, value.getClass()).toMethodDescriptorString(),
-			null,
-			null
-		);
-		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
-		mv.visitFieldInsn(Opcodes.PUTFIELD, className, "final", getDescriptor(value.getClass()));
-		mv.visitInsn(Opcodes.RETURN);
-		mv.visitMaxs(2, 2);
-		mv.visitEnd();
-		mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(value.getClass()), null, null);
-		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitFieldInsn(Opcodes.GETFIELD, className, "final", getDescriptor(value.getClass()));
-		mv.visitInsn(Opcodes.ARETURN);
-		mv.visitMaxs(1, 2);
-		mv.visitEnd();
-		bridge(cw, className, value.getClass());
-		cw.visitEnd();
-		byte[] code = cw.toByteArray();
-		Class<?> clazz = getClassLoader(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader))).define(code);
-		return ACCESSOR.construct(clazz, new Class[]{value.getClass()}, new Object[]{value});
+		ClassWriter cw = new ClassWriter();
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(value.getClass())+">;");
+		cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL, "0", "Ljava/lang/Object;");
+		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "<init>", "(Ljava/lang/Object;)V").addCode();
+		code.addInstruction(Opcodes.ALOAD_0);
+		code.addInstruction(Opcodes.DUP);
+		code.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+		code.addInstruction(Opcodes.ALOAD_1);
+		code.addFieldInstruction(Opcodes.PUTFIELD, className, "0", "Ljava/lang/Object;");
+		code.addInstruction(Opcodes.RETURN);
+		code.setMaxs(2, 2);
+		code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		code.addInstruction(Opcodes.ALOAD_0);
+		code.addFieldInstruction(Opcodes.GETFIELD, className, "0", "Ljava/lang/Object;");
+		code.addInstruction(Opcodes.ARETURN);
+		code.setMaxs(1, 2);
+		return ACCESSOR.construct(getClassLoader(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader))).define(cw.toByteArray()), new Class[]{Object.class}, new Object[]{value});
 	}
 
-	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean isAbstract, boolean special)
+	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean special, boolean isAbstract)
 	{
 		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
 		String desc = type.toMethodDescriptorString();
@@ -141,30 +148,25 @@ public class ReflectionFactory
 		Class<?> returnType = type.returnType();
 		Class<?>[] params = type.parameterArray();
 		final OperandStack stack = new OperandStack();
-		ClassWriter cw = new ClassWriter(0);
-		cw.visit(52, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(returnType))+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		genericConstructor(cw, MAGIC_ACCESSOR);
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(typeWarp(returnType)), null, null);
-		mv.visitCode();
-		if (!isStatic) arrayFirst(mv, owner, stack);
-		pushArguments(params, mv, isStatic ? 0 : 1, stack);
-		int invoke = special ? Opcodes.INVOKESPECIAL : isAbstract ? Opcodes.INVOKEINTERFACE : isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL;
-		if (isStatic) mv.visitMethodInsn(Opcodes.INVOKESTATIC, owner, methodName, desc, false);
-		else mv.visitMethodInsn(invoke, owner, methodName, desc, false);
-		for (int i = 0; i < params.length; i++) stack.pop();
-		if (!isStatic) stack.pop();
-		if (returnType == void.class) { mv.visitInsn(Opcodes.ACONST_NULL); stack.push(); }
-		else
+		ClassWriter cw = new ClassWriter();
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(returnType))+">;");
+		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		if (!isStatic) arrayFirst(code, stack);
+		pushArguments(params, code, isStatic ? 0 : 1, stack);
+		int invoke = isStatic ? Opcodes.INVOKESTATIC : special ? Opcodes.INVOKESPECIAL : isAbstract ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL;
+		code.addMethodInstruction(invoke, owner, methodName, desc, isAbstract);
+		for (Class<?> c : params)
 		{
-			warp(returnType, mv);
-			if (returnType == long.class || returnType == double.class) stack.pop();
+			stack.pop();
+			if (c == long.class || c == double.class) stack.pop();
 		}
-		mv.visitInsn(Opcodes.ARETURN);
-		stack.pop();
-		mv.visitMaxs(stack.getMaxSize(), 2);
-		mv.visitEnd();
-		bridge(cw, className, typeWarp(returnType));
-		return define(cw, callerLoader, clazz);
+		if (!isStatic) stack.pop();
+		if (returnType == void.class) { code.addInstruction(Opcodes.ACONST_NULL); stack.push(); }
+		else warp(returnType, code, stack);
+		code.addInstruction(Opcodes.ARETURN);
+		code.setMaxs(stack.getMaxSize(), 2);
+		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(getClassLoader(callerLoader).define(cw.toByteArray()));
 	}
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect)
@@ -174,128 +176,118 @@ public class ReflectionFactory
 		String desc = getDescriptor(type);
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
-		ClassWriter cw = new ClassWriter(0);
-		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(type))+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		genericConstructor(cw, MAGIC_ACCESSOR);
-		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(typeWarp(type)), null, null);
-		mv.visitCode();
-		Label label = new Label();
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
+		ClassWriter cw = new ClassWriter();
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(type))+">;");
+		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		Marker marker = new Marker();
+		code.addInstruction(Opcodes.ALOAD_1);
 		stack.push();
-		mv.visitJumpInsn(Opcodes.IFNULL, label);
+		code.addJumpInstruction(Opcodes.IFNULL, marker);
 		stack.pop();
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
+		code.addInstruction(Opcodes.ALOAD_1);
 		stack.push();
-		mv.visitInsn(Opcodes.ARRAYLENGTH);
-		mv.visitInsn(isStatic ? Opcodes.ICONST_1 : Opcodes.ICONST_2);
+		code.addInstruction(Opcodes.ARRAYLENGTH);
+		code.addInstruction(isStatic ? Opcodes.ICONST_1 : Opcodes.ICONST_2);
 		stack.push();
-		mv.visitJumpInsn(Opcodes.IF_ICMPLT, label);
+		code.addJumpInstruction(Opcodes.IF_ICMPLT, marker);
 		stack.pop();
 		stack.pop();
 		if (type.isPrimitive())
 		{
-			mv.visitVarInsn(Opcodes.ALOAD, 1);
+			code.addInstruction(Opcodes.ALOAD_1);
 			stack.push();
-			mv.visitInsn(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
+			code.addInstruction(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
 			stack.push();
-			mv.visitInsn(Opcodes.AALOAD);
+			code.addInstruction(Opcodes.AALOAD);
 			stack.pop();
-			mv.visitJumpInsn(Opcodes.IFNULL, label);
+			code.addJumpInstruction(Opcodes.IFNULL, marker);
 			stack.pop();
 		}
 		if (isFinal)
 		{
 			if (deepReflect)
 			{
-				try
+				Field field1 = ACCESSOR.getField(clazz, fieldName);
+				long offset = isStatic ? UNSAFE.staticFieldOffset(field1) : UNSAFE.objectFieldOffset(field1);
+				code.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class));
+				stack.push();
+				if (isStatic) { code.addConstantInstruction(Opcodes.LDC, new Type(clazz)); stack.push(); }
+				else arrayFirst(code, stack);
+				code.addConstantInstruction(Opcodes.LDC2_W, offset);
+				stack.push();
+				code.addInstruction(Opcodes.ALOAD_1);
+				stack.push();
+				code.addInstruction(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
+				stack.push();
+				code.addInstruction(Opcodes.AALOAD);
+				stack.pop();
+				if (type.isPrimitive())
 				{
-					Field field1 = clazz.getDeclaredField(fieldName);
-					long offset = isStatic ? UNSAFE.staticFieldOffset(field1) : UNSAFE.objectFieldOffset(field1);
-					mv.visitFieldInsn(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class));
-					stack.push();
-					if (isStatic) { mv.visitLdcInsn(Type.getType(clazz)); stack.push(); }
-					else arrayFirst(mv, owner, stack);
-					mv.visitLdcInsn(offset);
-					stack.push();
-					mv.visitVarInsn(Opcodes.ALOAD, 1);
-					stack.push();
-					mv.visitInsn(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
-					stack.push();
-					mv.visitInsn(Opcodes.AALOAD);
-					stack.pop();
-					if (type.isPrimitive())
-					{
-						unwarp(type, mv);
-						if (type == long.class || type == double.class) stack.push();
-						if (type == byte.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getDescriptor(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", false);
-						else if (type == short.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getDescriptor(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", false);
-						else if (type == int.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getDescriptor(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", false);
-						else if (type == long.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getDescriptor(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", false);
-						else if (type == float.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getDescriptor(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", false);
-						else if (type == double.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getDescriptor(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", false);
-						else if (type == boolean.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getDescriptor(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", false);
-						else if (type == char.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getDescriptor(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", false);
-					}
-					else mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getDescriptor(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", false);
-					stack.pop();
-					stack.pop();
-					stack.pop();
-					stack.pop();
+					unwarp(type, code, stack);
+					if (type == long.class || type == double.class) stack.push();
+					if (type == byte.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", true);
+					else if (type == short.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", true);
+					else if (type == int.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", true);
+					else if (type == long.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", true);
+					else if (type == float.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", true);
+					else if (type == double.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", true);
+					else if (type == boolean.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", true);
+					else if (type == char.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", true);
 				}
-				catch (Throwable t)
-				{
-					throw new ReflectionGenericException("Can not generic invoker", t);
-				}
+				else code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
+				stack.pop();
+				stack.pop();
+				stack.pop();
 			}
 			else
 			{
-				mv.visitTypeInsn(Opcodes.NEW, "java/lang/UnsupportedOperationException");
+				code.addTypeInstruction(Opcodes.NEW, "java/lang/UnsupportedOperationException");
 				stack.push();
-				mv.visitInsn(Opcodes.DUP);
+				code.addInstruction(Opcodes.DUP);
 				stack.push();
-				mv.visitLdcInsn("Field is final");
+				code.addConstantInstruction(Opcodes.LDC, "Field is final");
 				stack.push();
-				mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "(Ljava/lang/String;)V", false);
+				code.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "(Ljava/lang/String;)V", false);
 				stack.pop();
 				stack.pop();
-				mv.visitInsn(Opcodes.ATHROW);
-				stack.pop();
+				code.addInstruction(Opcodes.ATHROW);
 			}
+			stack.pop();
 		}
 		else
 		{
-			if (!isStatic) arrayFirst(mv, owner, stack);
-			mv.visitVarInsn(Opcodes.ALOAD, 1);
+			if (!isStatic) arrayFirst(code, stack);
+			code.addInstruction(Opcodes.ALOAD_1);
 			stack.push();
-			mv.visitInsn(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
+			code.addInstruction(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
 			stack.push();
-			mv.visitInsn(Opcodes.AALOAD);
+			code.addInstruction(Opcodes.AALOAD);
 			stack.pop();
 			if (type.isPrimitive())
 			{
-				unwarp(type, mv);
+				unwarp(type, code, stack);
 				if (type == long.class || type == double.class) stack.push();
 			}
-			else mv.visitTypeInsn(Opcodes.CHECKCAST, type.getTypeName().replace('.', '/'));
-			mv.visitFieldInsn(isStatic ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD, owner, fieldName, desc);
+			code.addFieldInstruction(isStatic ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD, owner, fieldName, desc);
 			stack.pop();
 			if (!isStatic) stack.pop();
 		}
-		mv.visitLabel(label);
-		if (!isStatic) arrayFirst(mv, owner, stack);
-		mv.visitFieldInsn(isStatic ? Opcodes.GETSTATIC : Opcodes.GETFIELD, owner, fieldName, desc);
+		code.mark(marker);
+		if (!isStatic) arrayFirst(code, stack);
+		code.addFieldInstruction(isStatic ? Opcodes.GETSTATIC : Opcodes.GETFIELD, owner, fieldName, desc);
 		if (isStatic) stack.push();
 		if (type.isPrimitive())
 		{
-			warp(type, mv);
+			warp(type, code, stack);
 			if (type == long.class || type == double.class) stack.pop();
 		}
-		mv.visitInsn(Opcodes.ARETURN);
+		code.addInstruction(Opcodes.ARETURN);
 		stack.pop();
-		mv.visitMaxs(stack.getMaxSize(), 2);
-		mv.visitEnd();
-		bridge(cw, className, typeWarp(type));
-		return define(cw, callerLoader, clazz);
+		code.setMaxs(stack.getMaxSize(), 2);
+
+		byte[] classcode = cw.toByteArray();
+		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(getClassLoader(callerLoader).define(classcode));
 	}
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, MethodType type)
@@ -305,102 +297,90 @@ public class ReflectionFactory
 		String desc = type.toMethodDescriptorString();
 		final OperandStack stack = new OperandStack();
 		String owner = clazz.getTypeName().replace('.', '/');
-		ClassWriter cw = new ClassWriter(0);
-		cw.visit(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		genericConstructor(cw, MAGIC_ACCESSOR);
-		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)"+getDescriptor(clazz), null, null);
-		mv.visitCode();
-		mv.visitTypeInsn(Opcodes.NEW, owner);
+		ClassWriter cw = new ClassWriter();
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;");
+		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		code.addTypeInstruction(Opcodes.NEW, owner);
 		stack.push();
-		mv.visitInsn(Opcodes.DUP);
+		code.addInstruction(Opcodes.DUP);
 		stack.push();
-		pushArguments(type.parameterArray(), mv, 0, stack);
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, "<init>", desc, false);
-		for (int i = 0; i < type.parameterArray().length; i++) stack.pop();
+		pushArguments(type.parameterArray(), code, 0, stack);
+		code.addMethodInstruction(Opcodes.INVOKESPECIAL, owner, "<init>", desc, false);
+		for (Class<?> c : type.parameterArray())
+		{
+			stack.pop();
+			if (c == long.class || c == double.class) stack.pop();
+		}
 		stack.pop();
-		mv.visitInsn(Opcodes.ARETURN);
-		stack.pop();
-		mv.visitMaxs(stack.getMaxSize(), 2);
-		mv.visitEnd();
-		bridge(cw, className, clazz);
-		return define(cw, callerLoader, clazz);
+		code.addInstruction(Opcodes.ARETURN);
+		code.setMaxs(stack.getMaxSize(), 2);
+		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(getClassLoader(callerLoader).define(cw.toByteArray()));
 	}
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz)
 	{
 		if (typeWarp(clazz) == Void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
 		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
-		ClassWriter cw = new ClassWriter(0);
-		cw.visit(52, AccessFlag.ACC_STRICT | AccessFlag.ACC_PUBLIC, className, "Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;", MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		genericConstructor(cw, MAGIC_ACCESSOR);
-		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)"+getDescriptor(clazz), null, null);
-		mv.visitTypeInsn(Opcodes.NEW, clazz.getTypeName().replace('.', '/'));
-		mv.visitInsn(Opcodes.ARETURN);
-		mv.visitMaxs(1, 2);
-		mv.visitEnd();
-		bridge(cw, className, clazz);
-		return define(cw, callerLoader, clazz);
+		ClassWriter cw = new ClassWriter();
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;");
+		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		code.addTypeInstruction(Opcodes.NEW, getType(clazz));
+		code.addInstruction(Opcodes.ARETURN);
+		code.setMaxs(1, 2);
+		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(getClassLoader(callerLoader).define(cw.toByteArray()));
 	}
 
 	private static ReflectionClassLoader getClassLoader(ClassLoader callerLoader)
 	{
-		if (callerLoader == ReflectionFactory.class.getClassLoader()) return INTERNAL_CLASS_LOADER;
-		return CLASS_LOADER_MAP.computeIfAbsent(callerLoader, CLASS_LOADER_FACTORY::invoke);
+		boolean isFactoryCL = callerLoader == ReflectionFactory.class.getClassLoader();
+		boolean isAppCL = callerLoader == ClassLoader.getSystemClassLoader();
+		boolean isExtCL = callerLoader == ClassLoader.getSystemClassLoader().getParent();
+		boolean isBSCL = callerLoader == null;
+		if (isFactoryCL || isAppCL || isExtCL || isBSCL) return INTERNAL_CLASS_LOADER;
+		return CLASS_LOADER_MAP.computeIfAbsent(callerLoader, StandardReflectionClassLoader::new);
 	}
 
-	private static void bridge(ClassWriter cw, String className, Class<?> returnType)
+	private static void arrayFirst(AttributeCodeWriter code, OperandStack stack)
 	{
-		if (returnType == Object.class) return;
-		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_BRIDGE | AccessFlag.ACC_SYNTHETIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;", null, null);
-		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, "invoke", "([Ljava/lang/Object;)"+getDescriptor(returnType), false);
-		mv.visitInsn(Opcodes.ARETURN);
-		mv.visitMaxs(2, 2);
-		mv.visitEnd();
-	}
-
-	private static void arrayFirst(MethodVisitor mv, String type, OperandStack stack)
-	{
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
+		code.addInstruction(Opcodes.ALOAD_1);
 		stack.push();
-		mv.visitInsn(Opcodes.ICONST_0);
+		code.addInstruction(Opcodes.ICONST_0);
 		stack.push();
-		mv.visitInsn(Opcodes.AALOAD);
+		code.addInstruction(Opcodes.AALOAD);
 		stack.pop();
-		mv.visitTypeInsn(Opcodes.CHECKCAST, type);
 	}
 
-	private static void pushArguments(Class<?>[] arguments, MethodVisitor mv, int start, OperandStack stack)
+	private static void pushArguments(Class<?>[] paramTypes, AttributeCodeWriter code, int start, OperandStack stack)
 	{
-		for (Class<?> c : arguments)
+		for (Class<?> c : paramTypes)
 		{
-			mv.visitVarInsn(Opcodes.ALOAD, 1);
+			code.addInstruction(Opcodes.ALOAD_1);
 			stack.push();
-			mv.visitIntInsn(Opcodes.BIPUSH, start++);
+			code.addNumberInstruction(Opcodes.BIPUSH, start++);
 			stack.push();
-			mv.visitInsn(Opcodes.AALOAD);
+			code.addInstruction(Opcodes.AALOAD);
 			stack.pop();
 			if (c.isPrimitive())
 			{
-				unwarp(c, mv);
+				unwarp(c, code, stack);
 				if (c == long.class || c == double.class) stack.push();
 			}
-			else mv.visitTypeInsn(Opcodes.CHECKCAST, c.isArray() ? getDescriptor(c) : getType(c));
 		}
 	}
 
-	private static void warp(Class<?> c, MethodVisitor mv)
+	private static void warp(Class<?> c, AttributeCodeWriter code, OperandStack stack)
 	{
-		if (c == byte.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false);
-		else if (c == short.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false);
-		else if (c == int.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
-		else if (c == long.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false);
-		else if (c == float.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false);
-		else if (c == double.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false);
-		else if (c == boolean.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
-		else if (c == char.class) mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false);
+		if (c == byte.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false);
+		else if (c == short.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false);
+		else if (c == int.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
+		else if (c == long.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false);
+		else if (c == float.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false);
+		else if (c == double.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false);
+		else if (c == boolean.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
+		else if (c == char.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false);
+		if (c == long.class || c == double.class) stack.pop();
 	}
 
 	private static Class<?> typeWarp(Class<?> type)
@@ -417,42 +397,18 @@ public class ReflectionFactory
 		else return type;
 	}
 
-	private static void unwarp(Class<?> c, MethodVisitor mv)
+	private static void unwarp(Class<?> c, AttributeCodeWriter code, OperandStack stack)
 	{
-		if (c == boolean.class) mv.visitTypeInsn(Opcodes.CHECKCAST, getType(Boolean.class));
-		else if (c == char.class) mv.visitTypeInsn(Opcodes.CHECKCAST, getType(Character.class));
-		else mv.visitTypeInsn(Opcodes.CHECKCAST, getType(Number.class));
+		if (c == byte.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "byteValue", "()B", false);
+		else if (c == short.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "shortValue", "()S", false);
+		else if (c == int.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "intValue", "()I", false);
+		else if (c == long.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "longValue", "()J", false);
+		else if (c == float.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "floatValue", "()F", false);
+		else if (c == double.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "doubleValue", "()D", false);
+		else if (c == boolean.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false);
+		else if (c == char.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
 
-		if (c == byte.class)mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "byteValue", "()B", false);
-		else if (c == short.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "shortValue", "()S", false);
-		else if (c == int.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "intValue", "()I", false);
-		else if (c == long.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "longValue", "()J", false);
-		else if (c == float.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "floatValue", "()F", false);
-		else if (c == double.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "doubleValue", "()D", false);
-		else if (c == boolean.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false);
-		else if (c == char.class) mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
-	}
-
-	private static <T> ReflectionAccessor<T> define(ClassWriter cw, ClassLoader callerLoader, Class<?> target)
-	{
-		cw.visitEnd();
-		byte[] code = cw.toByteArray();
-		ReflectionClassLoader loader = getClassLoader(callerLoader);
-		loader.ensure(target);
-		Class<?> implClass = loader.define(code);
-//		return (ReflectionAccessor<T>) implClass.getDeclaredConstructor().newInstance();
-		return ACCESSOR.construct(implClass);
-	}
-
-	private static void genericConstructor(ClassWriter cw, String superClass)
-	{
-		MethodVisitor mv = cw.visitMethod(AccessFlag.ACC_PUBLIC, "<init>", "()V", null, null);
-		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass, "<init>", "()V", false);
-		mv.visitInsn(Opcodes.RETURN);
-		mv.visitMaxs(1, 1);
-		mv.visitEnd();
+		if (c == long.class || c == double.class) stack.push();
 	}
 
 	private static String getType(Class<?> clazz)
@@ -498,7 +454,7 @@ public class ReflectionFactory
 			int majorVersion = new DataInputStream(in).readShort() & 0XFFFF;
 			in.close();
 
-			DELEGATING_CLASS = Class.forName(majorVersion > 0x34 ? "jdk.internal.reflect.DelegatingClassLoader" : "sun.reflect.DelegatingClassLoader");
+			final MethodHandle DEFINE;
 
 			/*
 			 * Unsafe
@@ -558,15 +514,7 @@ public class ReflectionFactory
 				Class<?> javaLangAccessClass = Class.forName(packageName + ".JavaLangAccess");
 				MethodHandle jlaHandle = TRUSTED_LOOKUP.findStaticGetter(sharedSecretsClass, "javaLangAccess", javaLangAccessClass);
 				Object jla = jlaHandle.invoke();
-				MethodHandle handle = TRUSTED_LOOKUP.findVirtual(
-					javaLangAccessClass,
-					"addExportsToAllUnnamed",
-					MethodType.methodType(
-						void.class,
-						Class.forName("java.lang.Module"),
-						String.class
-					)
-				);
+				MethodHandle handle = TRUSTED_LOOKUP.findVirtual(javaLangAccessClass, "addExportsToAllUnnamed", MethodType.methodType(void.class, Class.forName("java.lang.Module"), String.class));
 				handle.invoke(jla, Class.class.getMethod("getModule").invoke(Object.class), "jdk.internal.loader");
 				handle.invoke(jla, Class.class.getMethod("getModule").invoke(Object.class), "jdk.internal.misc");
 			}
@@ -584,103 +532,63 @@ public class ReflectionFactory
 				}
 				catch (Throwable t)
 				{
-					ClassWriter cw = new ClassWriter(0);
-					cw.visit(
-						0x34,
-						0x21,
-						className,
-						null,
-						"java/lang/Object",
-						new String[]{getType(Unsafe.class)}
-					);
-
-					FieldVisitor fv = cw.visitField(
-						AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC,
-						"final",
-						getDescriptor(usfClass),
-						null,
-						null
-					);
-					fv.visitEnd();
+					ClassWriter cw = new ClassWriter();
+					cw.set(0x34, 0x21, className, "java/lang/Object", new String[]{getType(Unsafe.class)});
+					cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "final", getDescriptor(usfClass));
 
 					// implement methods
 					{
 						Consumer<ClassWriter> implement = (cw1) ->
 						{
+							{
+								AttributeCodeWriter code = cw1.addMethod(AccessFlag.ACC_PUBLIC, "getJavaVMVersion", "()I").addCode();
+								code.addNumberInstruction(Opcodes.BIPUSH, majorVersion);
+								code.addInstruction(Opcodes.IRETURN);
+								code.setMaxs(1, 1);
+							}
 							BiConsumer<String[], Class<?>[]> method = (name, arr) ->
 							{
 								String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
-								MethodVisitor mv = cw.visitMethod(
-									AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-									name[0],
-									desc,
-									name.length < 3 ? null : name[2],
-									null
-								);
-								mv.visitCode();
-								mv.visitFieldInsn(
-									Opcodes.GETSTATIC,
-									className,
-									"final",
-									getDescriptor(usfClass)
-								);
+								MethodWriter mw = cw1.addMethod(AccessFlag.ACC_PUBLIC, name[0], desc);
+								if (name.length == 3) mw.addSignature(name[2]);
+								AttributeCodeWriter code = mw.addCode();
+								code.addFieldInstruction(Opcodes.GETSTATIC, className, "final", getDescriptor(usfClass));
 								int size = 0;
 								for (int i = 1; i < arr.length; i++)
 								{
 									size++;
 									Class<?> type = arr[i];
-									if (type == byte.class || type == short.class || type == int.class || type == boolean.class || type == char.class) mv.visitVarInsn(Opcodes.ILOAD, size);
-									else if (type == long.class) mv.visitVarInsn(Opcodes.LLOAD, size);
-									else if (type == float.class) mv.visitVarInsn(Opcodes.FLOAD, size);
-									else if (type == double.class) mv.visitVarInsn(Opcodes.DLOAD, size);
-									else mv.visitVarInsn(Opcodes.ALOAD, size);
+									if (type == byte.class || type == short.class || type == int.class || type == boolean.class || type == char.class) code.addLocalVariableInstruction(Opcodes.ILOAD, size);
+									else if (type == long.class) code.addLocalVariableInstruction(Opcodes.LLOAD, size);
+									else if (type == float.class) code.addLocalVariableInstruction(Opcodes.FLOAD, size);
+									else if (type == double.class) code.addLocalVariableInstruction(Opcodes.DLOAD, size);
+									else code.addLocalVariableInstruction(Opcodes.ALOAD, size);
 									if (type == double.class || type == long.class) size++;
 								}
-								mv.visitMethodInsn(
-									Opcodes.INVOKEVIRTUAL,
-									getType(usfClass),
-									name[1],
-									desc,
-									false
-								);
+								code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(usfClass), name[1], desc, false);
 								Class<?> c = arr[0];
-								if (c == void.class) mv.visitInsn(Opcodes.RETURN);
-								else if (c == byte.class || c == short.class || c == int.class || c == char.class || c == boolean.class) mv.visitInsn(Opcodes.IRETURN);
-								else if (c == long.class) mv.visitInsn(Opcodes.LRETURN);
-								else if (c == float.class) mv.visitInsn(Opcodes.FRETURN);
-								else if (c == double.class) mv.visitInsn(Opcodes.DRETURN);
-								else mv.visitInsn(Opcodes.ARETURN);
-								mv.visitMaxs(size+1, size+1);
-								mv.visitEnd();
+								if (c == void.class) code.addInstruction(Opcodes.RETURN);
+								else if (c == byte.class || c == short.class || c == int.class || c == char.class || c == boolean.class) code.addInstruction(Opcodes.IRETURN);
+								else if (c == long.class) code.addInstruction(Opcodes.LRETURN);
+								else if (c == float.class) code.addInstruction(Opcodes.FRETURN);
+								else if (c == double.class) code.addInstruction(Opcodes.DRETURN);
+								else code.addInstruction(Opcodes.ARETURN);
+								code.setMaxs(size+1, size+1);
 							};
 							BiConsumer<String[], Class<?>[]> unsupported = (name, arr) ->
 							{
 								String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
-								MethodVisitor mv =cw.visitMethod(
-									AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-									name[0],
-									desc,
-									name.length < 2 ? null : name[1],
-									null
-								);
+								MethodWriter mw = cw1.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, name[0], desc);
+								if (name.length == 2) mw.addSignature(name[1]);
+								AttributeCodeWriter code = mw.addCode();
 								int size = arr.length;
 								for (Class<?> c : arr) if (c == long.class || c == double.class) size++;
-								mv.visitTypeInsn(Opcodes.NEW, getType(UnsupportedOperationException.class));
-								mv.visitInsn(Opcodes.DUP);
-								mv.visitLdcInsn("Method "+name[0]+desc+" is unsupported at JVM version "+majorVersion);
-								mv.visitMethodInsn(
-									Opcodes.INVOKESPECIAL,
-									getType(UnsupportedOperationException.class),
-									"<init>",
-									MethodType.methodType(
-										void.class,
-										String.class
-									).toMethodDescriptorString(),
-									false
-								);
-								mv.visitInsn(Opcodes.ATHROW);
-								mv.visitMaxs(3, size);
-								mv.visitEnd();
+								code.addTypeInstruction(Opcodes.NEW, getType(UnsupportedOperationException.class));
+								code.addInstruction(Opcodes.DUP);
+								code.addConstantInstruction(Opcodes.LDC_W, "Method "+name[0]+desc+" is unsupported at JVM version "+majorVersion);
+								code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(UnsupportedOperationException.class), "<init>", MethodType.methodType(void.class, String.class).toMethodDescriptorString(), false);
+								code.addInstruction(Opcodes.ATHROW);
+								code.setMaxs(3, size);
 							};
 							BiConsumer<String[], Class<?>[]> v35method = (name, arr) ->
 							{
@@ -785,7 +693,7 @@ public class ReflectionFactory
 							method.accept(new String[]{"staticFieldBase", "staticFieldBase"}, new Class[]{Object.class, Field.class});
 							method.accept(new String[]{"shouldBeInitialized", "shouldBeInitialized", "(Ljava/lang/Class<*>;)Z"}, new Class[]{boolean.class, Class.class});
 							method.accept(new String[]{"ensureClassInitialized", "ensureClassInitialized", "(Ljava/lang/Class<*>;)V"}, new Class[]{void.class, Class.class});
-							method.accept(new String[]{"arrayBaseOffset", "arrayBaseOffset", "(Ljava/lang/Class<8>;)I"}, new Class[]{int.class, Class.class});
+							method.accept(new String[]{"arrayBaseOffset", "arrayBaseOffset", "(Ljava/lang/Class<*>;)I"}, new Class[]{int.class, Class.class});
 							method.accept(new String[]{"arrayIndexScale", "arrayIndexScale", "(Ljava/lang/Class<*>;)I"}, new Class[]{int.class, Class.class});
 							method.accept(new String[]{"addressSize", "addressSize"}, new Class[]{int.class});
 							method.accept(new String[]{"pageSize", "pageSize"}, new Class[]{int.class});
@@ -1220,57 +1128,20 @@ public class ReflectionFactory
 
 					// static constructor
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_STATIC,
-							"<clinit>",
-							"()V",
-							null,
-							null
-						);
-						mv.visitCode();
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectionFactory.class),
-							"TRUSTED_LOOKUP",
-							getDescriptor(MethodHandles.Lookup.class)
-						);
-						mv.visitLdcInsn(Type.getType(usfClass));
-						mv.visitLdcInsn("theUnsafe");
-						mv.visitLdcInsn(Type.getType(usfClass));
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandles.Lookup.class),
-							"findStaticGetter",
-							MethodType.methodType(
-								MethodHandle.class,
-								Class.class,
-								String.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandle.class),
-							"invokeWithArguments",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(usfClass));
-						mv.visitFieldInsn(
-							Opcodes.PUTSTATIC,
-							className,
-							"final",
-							getDescriptor(usfClass)
-						);
-						mv.visitInsn(Opcodes.RETURN);
-						mv.visitMaxs(4, 0);
-						mv.visitEnd();
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_STATIC, "<clinit>", "()V");
+						AttributeCodeWriter code = mw.addCode();
+						code.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "TRUSTED_LOOKUP", getDescriptor(MethodHandles.Lookup.class));
+						code.addConstantInstruction(Opcodes.LDC, new Type(usfClass));
+						code.addConstantInstruction(Opcodes.LDC_W, "theUnsafe");
+						code.addConstantInstruction(Opcodes.LDC, new Type(usfClass));
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(MethodHandles.Lookup.class), "findStaticGetter", MethodType.methodType(MethodHandle.class, Class.class, String.class, Class.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addTypeInstruction(Opcodes.ANEWARRAY, getType(Object.class));
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+						code.addTypeInstruction(Opcodes.CHECKCAST, getType(usfClass));
+						code.addFieldInstruction(Opcodes.PUTSTATIC, className, "final", getDescriptor(usfClass));
+						code.addInstruction(Opcodes.RETURN);
+						code.setMaxs(4, 0);
 					}
 
 					byte[] code = cw.toByteArray();
@@ -1291,848 +1162,46 @@ public class ReflectionFactory
 				}
 				catch (Throwable t)
 				{
-					ClassWriter cw = new ClassWriter(0);
-					cw.visit(
-						52,
-						AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC,
-						"org/mve/util/reflect/MethodHandleInvoker",
-						"Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Ljava/lang/Class<*>;>;",
-						"java/lang/Object",
-						new String[]{"org/mve/util/reflect/ReflectionAccessor"}
-					);
-					genericConstructor(cw, "java/lang/Object");
-					MethodVisitor mv = cw.visitMethod(
-						AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS,
-						"invoke",
-						"([Ljava/lang/Object;)Ljava/lang/Object;",
-						null,
-						null
-					);
-					mv.visitCode();
-					mv.visitVarInsn(Opcodes.ALOAD, 1);
-					mv.visitInsn(Opcodes.ICONST_0);
-					mv.visitInsn(Opcodes.AALOAD);
-					mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/invoke/MethodHandle");
-					mv.visitVarInsn(Opcodes.ALOAD, 1);
-					mv.visitInsn(Opcodes.ICONST_1);
-					mv.visitVarInsn(Opcodes.ALOAD, 1);
-					mv.visitInsn(Opcodes.ARRAYLENGTH);
-					mv.visitMethodInsn(
-						Opcodes.INVOKESTATIC,
-						Arrays
-							.class
-							.getTypeName()
-							.replace('.', '/'),
-						"copyOfRange",
-						MethodType.methodType(
-							Object[].class,
-							Object[].class,
-							int.class,
-							int.class
-						).toMethodDescriptorString(),
-						false
-					);
-					mv.visitMethodInsn(
-						Opcodes.INVOKEVIRTUAL,
-						getType(MethodHandle.class),
-						"invokeWithArguments",
-						MethodType.methodType(
-							Object.class,
-							Object[].class
-						).toMethodDescriptorString(),
-						false
-					);
-					mv.visitInsn(Opcodes.ARETURN);
-					mv.visitMaxs(4, 2);
-					mv.visitEnd();
-					cw.visitEnd();
+					ClassWriter cw = new ClassWriter();
+					cw.set(52, AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC, "org/mve/util/reflect/MethodHandleInvoker", "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+					cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Ljava/lang/Class<*>;>;");
+					/*
+					 * void MethodHandleInvoker();
+					 */
+					{
+						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "<init>", "()V").addCode();
+						code.addInstruction(Opcodes.ALOAD_0);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+						code.addInstruction(Opcodes.RETURN);
+						code.setMaxs(1, 1);
+					}
+					/*
+					 * Object invoke(Object...);
+					 */
+					{
+						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addInstruction(Opcodes.AALOAD);
+						code.addTypeInstruction(Opcodes.CHECKCAST, getType(MethodHandle.class));
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_1);
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ARRAYLENGTH);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, Arrays.class.getTypeName().replace('.', '/'), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(4, 2);
+					}
 					byte[] code = cw.toByteArray();
-					handleInvoker = (Class<?>) DEFINE.invoke(ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
+//					handleInvoker = (Class<?>) DEFINE.invoke(ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
+					handleInvoker = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 				}
 				METHOD_HANDLE_INVOKER = (ReflectionAccessor<Object>) handleInvoker.getDeclaredConstructor().newInstance();
 
 			}
 
-			/*
-			 * ClassLoader class
-			 */
-			Class<?> internalClassLoader;
-			{
-				String internal_classloader_name = "org/mve/util/reflect/ClassLoader";
-				String superClass = majorVersion > 0x34 ? "jdk/internal/loader/BuiltinClassLoader" : "java/lang/ClassLoader";
-				try
-				{
-					internalClassLoader = Class.forName(internal_classloader_name.replace('/', '.'));
-				}
-				catch (Throwable t)
-				{
-					/*
-					 * has no constructor
-					 */
-					ClassWriter cw = new ClassWriter(0);
-					cw.visitSource("ClassLoader.java", null);
-					cw.visit(
-						0x34,
-						AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER,
-						internal_classloader_name,
-						null,
-						superClass,
-						new String[]{getType(ReflectionClassLoader.class)}
-					);
-					/*
-					 * fields
-					 */
-					{
-						/*
-						 * private final Map<String, Class<?>> class
-						 */
-						FieldVisitor fv = cw.visitField(
-							AccessFlag.ACC_PRIVATE | AccessFlag.ACC_SYNTHETIC | AccessFlag.ACC_FINAL,
-							"class",
-							getDescriptor(Map.class),
-							"Ljava/util/Map<Ljava/lang/String;Ljava/lang/Class<*>;>;",
-							null
-						);
-						fv.visitEnd();
-
-						/*
-						 * private final ClassLoader this
-						 */
-						fv = cw.visitField(
-							AccessFlag.ACC_FINAL | AccessFlag.ACC_SYNTHETIC | AccessFlag.ACC_PRIVATE,
-							"this",
-							getDescriptor(ClassLoader.class),
-							null,
-							null
-						);
-						fv.visitEnd();
-					}
-
-					/*
-					 * implement method define
-					 *   Class<?> define(byte[])
-					 */
-					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SYNTHETIC | AccessFlag.ACC_SYNCHRONIZED,
-							"define",
-							MethodType.methodType(
-								Class.class,
-								byte[].class
-							).toMethodDescriptorString(),
-							"("
-								.concat(getDescriptor(byte[].class))
-								.concat(")L")
-								.concat(getType(Class.class))
-								.concat("<*>;"),
-							null
-						);
-						mv.visitCode();
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectionFactory.class),
-							"DEFINE",
-							getDescriptor(MethodHandle.class)
-						);
-						mv.visitInsn(Opcodes.ICONST_5);
-						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
-						// class loader
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						mv.visitFieldInsn(
-							Opcodes.GETFIELD,
-							internal_classloader_name,
-							"this",
-							getDescriptor(ClassLoader.class)
-						);
-						mv.visitInsn(Opcodes.AASTORE);
-						// null
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitInsn(Opcodes.ACONST_NULL);
-						mv.visitInsn(Opcodes.AASTORE);
-						// code
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_2);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.AASTORE);
-						// 0
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_3);
-						mv.visitInsn(Opcodes.ICONST_0);
-						warp(int.class, mv);
-						mv.visitInsn(Opcodes.AASTORE);
-						// code.length
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_4);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.ARRAYLENGTH);
-						warp(int.class, mv);
-						mv.visitInsn(Opcodes.AASTORE);
-						// invoke method
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandle.class),
-							"invokeWithArguments",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(Class.class));
-						mv.visitVarInsn(Opcodes.ASTORE, 2);
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							internal_classloader_name,
-							"ensure",
-							MethodType.methodType(
-								void.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(5, 3);
-						mv.visitEnd();
-					}
-
-					/*
-					 * void ensure(Class<?> clazz);
-					 */
-					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-							"ensure",
-							MethodType.methodType(
-								void.class,
-								Class.class
-							).toMethodDescriptorString(),
-							"(Ljava/lang/Class<*>;)V",
-							null
-						);
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						mv.visitFieldInsn(
-							Opcodes.GETFIELD,
-							internal_classloader_name,
-							"class",
-							getDescriptor(Map.class)
-						);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitMethodInsn(
-							Opcodes.INVOKESPECIAL,
-							getType(Class.class),
-							"getTypeName",
-							MethodType.methodType(
-								String.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.SWAP);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(Map.class),
-							"putIfAbsent",
-							MethodType.methodType(
-								Object.class,
-								Object.class,
-								Object.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.POP);
-						mv.visitInsn(Opcodes.RETURN);
-						mv.visitMaxs(3, 2);
-						mv.visitEnd();
-					}
-
-					/*
-					 * loadClassOrNull / findClass
-					 * 		9+				8
-					 *
-					 * 9+	Class<?> loadClassOrNull(String,boolean)
-					 * 8	Class<?> findClass(String)
-					 */
-					{
-						boolean flag = (majorVersion > 0x34);
-						String methodName = flag ? "loadClassOrNull" : "findClass";
-						String desc = flag ? "(Ljava/lang/String;Z)Ljava/lang/Class;" : "(Ljava/lang/String;)Ljava/lang/Class;";
-						String signature = flag ? "(Ljava/lang/String;Z)Ljava/lang/Class<*>;" : "(Ljava/lang/String;)Ljava/lang/Class<*>;";
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-							methodName,
-							desc,
-							signature,
-							null
-						);
-						mv.visitCode();
-						Label ret = new Label();
-						Label line = new Label();
-						mv.visitLabel(line);
-						mv.visitLineNumber(10, line);
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(ClassLoader.class),
-							"findLoadedClass",
-							MethodType.methodType(
-								Class.class,
-								String.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitJumpInsn(Opcodes.IFNONNULL, ret);
-						mv.visitInsn(Opcodes.POP);
-						mv.visitLabel(line);
-						mv.visitLineNumber(11, line);
-
-
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						mv.visitFieldInsn(
-							Opcodes.GETFIELD,
-							internal_classloader_name,
-							"class",
-							getDescriptor(Map.class)
-						);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEINTERFACE,
-							getType(Map.class),
-							"get",
-							MethodType.methodType(
-								Object.class,
-								Object.class
-							).toMethodDescriptorString(),
-							true
-						);
-						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(Class.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitJumpInsn(Opcodes.IFNONNULL, ret);
-
-
-						mv.visitLabel(line);
-						mv.visitLineNumber(12, line);
-						mv.visitFrame(			// FRAME
-							Opcodes.F_SAME1,
-							0,
-							null,
-							1,
-							new Object[]{"java/lang/Class"}
-						);
-						mv.visitInsn(Opcodes.POP);
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(ClassLoader.class),
-							"getParent",
-							MethodType.methodType(
-								ClassLoader.class
-							).toMethodDescriptorString(),
-							false
-						);
-						Label tryLabel = new Label();
-						mv.visitLabel(tryLabel);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(ClassLoader.class),
-							"loadClass",
-							MethodType.methodType(
-								Class.class,
-								String.class
-							).toMethodDescriptorString(),
-							false
-						);
-						Label catchLabel = new Label();
-						mv.visitJumpInsn(Opcodes.GOTO, ret);
-						mv.visitFrame(			// FRAME
-							Opcodes.F_SAME1,
-							0,
-							null,
-							1,
-							new Object[]{"java/lang/Throwable"}
-						);
-						Label tLabel = new Label();
-						mv.visitLabel(tLabel);
-						mv.visitLabel(catchLabel);
-						mv.visitInsn(Opcodes.POP);
-						mv.visitInsn(Opcodes.ACONST_NULL);
-						mv.visitFrame(			// FRAME
-							Opcodes.F_SAME1,
-							0,
-							null,
-							1,
-							new Object[]{"java/lang/Class"}
-						);
-						mv.visitLabel(ret);
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitTryCatchBlock(tryLabel, catchLabel, tLabel, "java/lang/Throwable");
-						mv.visitMaxs(2, flag ? 3 : 2);
-						mv.visitEnd();
-					}
-
-					byte[] code = cw.toByteArray();
-					internalClassLoader = (Class<?>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
-				}
-			}
-
-			/*
-			 * class loader constructor
-			 */
-			{
-				Class<?> c;
-				try
-				{
-					c = Class.forName("org/mve/util/reflect/ClassLoaderConstructor");
-				}
-				catch (Throwable t)
-				{
-					ClassWriter cw = new ClassWriter(0);
-					genericConstructor(cw, "java/lang/Object");
-					cw.visit(
-						0x34,
-						0x21,
-						"org/mve/util/reflect/ClassLoaderConstructor",
-						"Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Lorg/mve/util/reflect/ReflectionClassLoader;>;",
-						"java/lang/Object",
-						new String[]{"org/mve/util/reflect/ReflectionAccessor"}
-					);
-					MethodVisitor mv = cw.visitMethod(
-						0x01,
-						"invoke",
-						MethodType.methodType(
-							ReflectionClassLoader.class,
-							Object[].class
-						).toMethodDescriptorString(),
-						null,
-						null
-					);
-					mv.visitCode();
-					if (majorVersion > 0x34)
-					{
-						mv.visitLdcInsn("jdk.internal.loader.BuiltinClassLoader");
-						mv.visitMethodInsn(
-							Opcodes.INVOKESTATIC,
-							getType(Class.class),
-							"forName",
-							MethodType.methodType(
-								Class.class,
-								String.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitInsn(Opcodes.AALOAD);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(Class.class),
-							"isInstance",
-							MethodType.methodType(
-								boolean.class,
-								Object.class
-							).toMethodDescriptorString(),
-							false
-						);
-						Label l1 = new Label();
-						mv.visitJumpInsn(Opcodes.IFEQ, l1);
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectionFactory.class),
-							"UNSAFE",
-							getDescriptor(Unsafe.class)
-						);
-						mv.visitLdcInsn(Type.getType(internalClassLoader));
-						mv.visitMethodInsn(
-							Opcodes.INVOKEINTERFACE,
-							getType(Unsafe.class),
-							"allocateInstance",
-							MethodType.methodType(
-								Object.class,
-								Class.class
-							).toMethodDescriptorString(),
-							true
-						);
-						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(ReflectionClassLoader.class));
-						mv.visitVarInsn(Opcodes.ASTORE, 2);
-
-						/*
-						 * TRUSTED_LOOKUP.findSetter(clazz, "parent", clazz);
-						 */
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectionFactory.class),
-							"TRUSTED_LOOKUP",
-							getDescriptor(MethodHandles.Lookup.class)
-						);	// lookup
-						mv.visitLdcInsn(Type.getType(ClassLoader.class));
-						mv.visitLdcInsn("parent");
-						mv.visitLdcInsn(Type.getType(ClassLoader.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandles.Lookup.class),
-							"findSetter",
-							MethodType.methodType(
-								MethodHandle.class,
-								Class.class,
-								String.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.DUP);
-
-						/*
-						 * handle.invoke(loader, ((ClassLoader)args[0]).getParent());
-						 */
-						mv.visitInsn(Opcodes.ICONST_2);
-						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-						mv.visitInsn(Opcodes.AASTORE);
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitInsn(Opcodes.AALOAD);
-						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(ClassLoader.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(ClassLoader.class),
-							"getParent",
-							MethodType.methodType(
-								ClassLoader.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.AASTORE);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandle.class),
-							"invokeWithArguments",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.POP);
-
-						/*
-						 * handle.invoke(args[0], loader);
-						 */
-						Function<MethodVisitor, Void> f = (mv1) ->
-						{
-							mv1.visitInsn(Opcodes.ICONST_2);
-							mv1.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
-							mv1.visitInsn(Opcodes.DUP);
-							mv1.visitInsn(Opcodes.ICONST_0);
-							mv1.visitVarInsn(Opcodes.ALOAD, 1);
-							mv1.visitInsn(Opcodes.ICONST_0);
-							mv1.visitInsn(Opcodes.AALOAD);
-							mv1.visitInsn(Opcodes.AASTORE);
-							mv1.visitInsn(Opcodes.DUP);
-							mv1.visitInsn(Opcodes.ICONST_1);
-							mv1.visitVarInsn(Opcodes.ALOAD, 2);
-							mv1.visitInsn(Opcodes.AASTORE);
-							mv1.visitMethodInsn(
-								Opcodes.INVOKEVIRTUAL,
-								getType(MethodHandle.class),
-								"invokeWithArguments",
-								MethodType.methodType(
-									Object.class,
-									Object[].class
-								).toMethodDescriptorString(),
-								false
-							);
-							mv1.visitInsn(Opcodes.POP);
-							return null;
-						};
-
-						f.apply(mv);
-
-						/*
-						 * TRUSTED_LOOKUP.findSetter(clazz, "parent", clazz);
-						 */
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectionFactory.class),
-							"TRUSTED_LOOKUP",
-							getDescriptor(MethodHandles.Lookup.class)
-						);	// lookup
-						mv.visitLdcInsn("jdk.internal.loader.BuiltinClassLoader");
-						mv.visitMethodInsn(
-							Opcodes.INVOKESTATIC,
-							getType(Class.class),
-							"forName",
-							MethodType.methodType(
-								Class.class,
-								String.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitLdcInsn("parent");
-						mv.visitLdcInsn("jdk.internal.loader.BuiltinClassLoader");
-						mv.visitMethodInsn(
-							Opcodes.INVOKESTATIC,
-							getType(Class.class),
-							"forName",
-							MethodType.methodType(
-								Class.class,
-								String.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandles.Lookup.class),
-							"findSetter",
-							MethodType.methodType(
-								MethodHandle.class,
-								Class.class,
-								String.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-
-						f.apply(mv);
-
-						/*
-						 * TRUSTED_LOOKUP.findSetter(internalClassLoader, "this", ClassLoader.class)
-						 * 		.invoke(TRUSTED_LOOKUP.findConstructor(clazz, MethodType.methodType(void.class, ClassLoader.class)).invoke(args[0]))
-						 */
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectionFactory.class),
-							"TRUSTED_LOOKUP",
-							getDescriptor(MethodHandles.Lookup.class)
-						);
-						mv.visitLdcInsn(Type.getType(internalClassLoader));
-						mv.visitLdcInsn("this");
-						mv.visitLdcInsn(Type.getType(ClassLoader.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandles.Lookup.class),
-							"findSetter",
-							MethodType.methodType(
-								MethodHandle.class,
-								Class.class,
-								String.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ICONST_2);
-						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-						mv.visitInsn(Opcodes.AASTORE);
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectionFactory.class),
-							"TRUSTED_LOOKUP",
-							getDescriptor(MethodHandles.Lookup.class)
-						);
-						mv.visitLdcInsn(DELEGATING_CLASS.getTypeName());
-						mv.visitMethodInsn(
-							Opcodes.INVOKESTATIC,
-							getType(Class.class),
-							"forName",
-							MethodType.methodType(
-								Class.class,
-								String.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(Void.class),
-							"TYPE",
-							getDescriptor(Class.class)
-						);
-						mv.visitLdcInsn(Type.getType(ClassLoader.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKESTATIC,
-							getType(MethodType.class),
-							"methodType",
-							MethodType.methodType(
-								MethodType.class,
-								Class.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandles.Lookup.class),
-							"findConstructor",
-							MethodType.methodType(
-								MethodHandle.class,
-								Class.class,
-								MethodType.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitInsn(Opcodes.AALOAD);
-						mv.visitInsn(Opcodes.AASTORE);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandle.class),
-							"invokeWithArguments",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.AASTORE);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandle.class),
-							"invokeWithArguments",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.POP);
-
-						/*
-						 * TRUSTED_LOOKUP.findSetter(internalClassLoader, "class", Map.class)
-						 * 		.invoke(loader, new ConcurrentHashMap());
-						 */
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							getType(ReflectionFactory.class),
-							"TRUSTED_LOOKUP",
-							getDescriptor(MethodHandles.Lookup.class)
-						);
-						mv.visitLdcInsn(Type.getType(internalClassLoader));
-						mv.visitLdcInsn("class");
-						mv.visitLdcInsn(Type.getType(Map.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandles.Lookup.class),
-							"findSetter",
-							MethodType.methodType(
-								MethodHandle.class,
-								Class.class,
-								String.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ICONST_2);
-						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-						mv.visitInsn(Opcodes.AASTORE);
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitTypeInsn(Opcodes.NEW, getType(ConcurrentHashMap.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitMethodInsn(
-							Opcodes.INVOKESPECIAL,
-							getType(ConcurrentHashMap.class),
-							"<init>",
-							"()V",
-							false
-						);
-						mv.visitInsn(Opcodes.AASTORE);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandle.class),
-							"invokeWithArguments",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.POP);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-
-						Label l2 = new Label();
-						mv.visitJumpInsn(Opcodes.GOTO, l2);
-						mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-						mv.visitLabel(l1);
-
-						/*
-						 * standard class loader
-						 */
-						mv.visitTypeInsn(Opcodes.NEW, getType(StandardReflectionClassLoader.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitInsn(Opcodes.AALOAD);
-						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(ClassLoader.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKESPECIAL,
-							getType(StandardReflectionClassLoader.class),
-							"<init>",
-							MethodType.methodType(
-								void.class,
-								ClassLoader.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitLabel(l2);
-						mv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[]{"org/mve/util/reflect/ReflectionClassLoader"});
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(10, 3);
-					}
-					else
-					{
-						mv.visitTypeInsn(Opcodes.NEW, getType(StandardReflectionClassLoader.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitInsn(Opcodes.AALOAD);
-						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(ClassLoader.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKESPECIAL,
-							getType(StandardReflectionClassLoader.class),
-							"<init>",
-							MethodType.methodType(
-								void.class,
-								ClassLoader.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(4, 2);
-					}
-					mv.visitEnd();
-					bridge(cw, "org/mve/util/reflect/ClassLoaderConstructor", ReflectionClassLoader.class);
-					cw.visitEnd();
-					byte[] code = cw.toByteArray();
-					c = (Class<?>) METHOD_HANDLE_INVOKER.invoke(DEFINE, ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
-				}
-
-				CLASS_LOADER_FACTORY = (ReflectionAccessor<ReflectionClassLoader>) c.getDeclaredConstructor().newInstance();
-			}
-
-			INTERNAL_CLASS_LOADER = CLASS_LOADER_FACTORY.invoke(ReflectionFactory.class.getClassLoader());
+			INTERNAL_CLASS_LOADER = new StandardReflectionClassLoader(ReflectionFactory.class.getClassLoader());
 
 			/*
 			 * accessor
@@ -2146,449 +1215,351 @@ public class ReflectionFactory
 				catch (Throwable t)
 				{
 					String className = "org/mve/util/reflect/MagicAccessor";
-					ClassWriter cw = new ClassWriter(0);
-					cw.visitSource("MagicAccessor.java", null);
-					cw.visit(
-						0x34,
-						AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER | AccessFlag.ACC_FINAL,
-						className,
-						null,
-						MAGIC_ACCESSOR,
-						new String[]{getType(Accessor.class)}
-					);
-
-					FieldVisitor fv = cw.visitField(
-						AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL,
-						"0",
-						getDescriptor(SecurityManager.class),
-						null,
-						null
-					);
-					fv.visitEnd();
-
-					genericConstructor(cw, MAGIC_ACCESSOR);
+					ClassWriter cw = new ClassWriter();
+					cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER | AccessFlag.ACC_FINAL, className, MAGIC_ACCESSOR, new String[]{getType(Accessor.class)});
+					cw.addSource("MagicAccessor.java");
+					cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "0", getDescriptor(SecurityManager.class));
 
 					/*
 					 * <clinit>
 					 */
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_STATIC,
-							"<clinit>",
-							"()V",
-							null,
-							null
-						);
-						mv.visitCode();
-						mv.visitTypeInsn(Opcodes.NEW, getType(SecurityManager.class));
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitMethodInsn(
-							Opcodes.INVOKESPECIAL,
-							getType(SecurityManager.class),
-							"<init>",
-							"()V",
-							false
-						);
-						mv.visitFieldInsn(
-							Opcodes.PUTSTATIC,
-							className,
-							"0",
-							getDescriptor(SecurityManager.class)
-						);
-						mv.visitInsn(Opcodes.RETURN);
-						mv.visitMaxs(2, 0);
+						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_STATIC, "<clinit>", "()V").addCode();
+						code.addTypeInstruction(Opcodes.NEW, getType(SecurityManager.class));
+						code.addInstruction(Opcodes.DUP);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(SecurityManager.class), "<init>", "()V", false);
+						code.addFieldInstruction(Opcodes.PUTSTATIC, className, "0", getDescriptor(SecurityManager.class));
+						code.addInstruction(Opcodes.RETURN);
+						code.setMaxs(2, 0);
 					}
 
 					/*
 					 * void setAccessible(AccessibleObject acc, boolean flag);
 					 */
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-							"setAccessible",
-							MethodType.methodType(
-								void.class,
-								AccessibleObject.class,
-								boolean.class
-							).toMethodDescriptorString(),
-							null,
-							null
-						);
-						mv.visitCode();
-						Label line = new Label();
-						mv.visitLabel(line);
-						mv.visitLineNumber(4, line);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitVarInsn(Opcodes.ILOAD, 2);
-						mv.visitFieldInsn(
-							Opcodes.PUTFIELD,
-							getType(AccessibleObject.class),
-							"override",
-							getDescriptor(boolean.class)
-						);
-						mv.visitLabel(line);
-						mv.visitLineNumber(5, line);
-						mv.visitInsn(Opcodes.RETURN);
-						mv.visitMaxs(2, 3);
-						mv.visitEnd();
+						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "setAccessible", MethodType.methodType(void.class, AccessibleObject.class, boolean.class).toMethodDescriptorString()).addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ILOAD_2);
+						code.addFieldInstruction(Opcodes.PUTFIELD, getType(AccessibleObject.class), "override", getDescriptor(boolean.class));
+						code.addInstruction(Opcodes.RETURN);
+						code.setMaxs(2, 3);
 					}
 
 					// Class<?> forName(String name);
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-							"forName",
-							MethodType.methodType(
-								Class.class,
-								String.class
-							).toMethodDescriptorString(),
-							"(Ljava/lang/String;)Ljava/lang/Class<*>;",
-							null
-						);
-						mv.visitCode();
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitVarInsn(Opcodes.ALOAD, 0);
-						mv.visitMethodInsn(
-							Opcodes.INVOKESPECIAL,
-							className,
-							"getCallerClass",
-							MethodType.methodType(
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitFieldInsn(
-							Opcodes.GETFIELD,
-							getType(Class.class),
-							"classLoader",
-							getDescriptor(ClassLoader.class)
-						);
-						mv.visitInsn(Opcodes.SWAP);
-						mv.visitMethodInsn(
-							Opcodes.INVOKESTATIC,
-							getType(Class.class),
-							"forName0",
-							MethodType.methodType(
-								Class.class,
-								String.class,
-								boolean.class,
-								ClassLoader.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(4, 2);
-						mv.visitEnd();
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "forName", MethodType.methodType(Class.class, String.class).toMethodDescriptorString());
+						mw.addSignature("(Ljava/lang/String;)Ljava/lang/Class<*>;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_1);
+						code.addInstruction(Opcodes.ALOAD_0);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.DUP);
+						code.addFieldInstruction(Opcodes.GETFIELD, getType(Class.class), "classLoader", getDescriptor(ClassLoader.class));
+						code.addInstruction(Opcodes.SWAP);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Class.class), "forName0", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(4, 2);
 					}
 
 					// Class<?> forName(String name, boolean initialize, ClassLoader loader);
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-							"forName",
-							MethodType.methodType(
-								Class.class,
-								String.class,
-								boolean.class,
-								ClassLoader.class
-							).toMethodDescriptorString(),
-							"(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class<*>;",
-							null
-						);
-						mv.visitCode();
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitVarInsn(Opcodes.ILOAD, 2);
-						mv.visitVarInsn(Opcodes.ALOAD, 3);
-						mv.visitInsn(Opcodes.ACONST_NULL);
-						mv.visitMethodInsn(
-							Opcodes.INVOKESTATIC,
-							getType(Class.class),
-							"forName0",
-							MethodType.methodType(
-								Class.class,
-								String.class,
-								boolean.class,
-								ClassLoader.class,
-								Class.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(4, 4);
-						mv.visitEnd();
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString());
+						mw.addSignature("(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class<*>;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ILOAD_2);
+						code.addInstruction(Opcodes.ALOAD_3);
+						code.addInstruction(Opcodes.ACONST_NULL);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Class.class), "forName0", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(4, 4);
 					}
 
 					// Class<?> defineClass(ClassLoader loader, byte[] code);
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-							"defineClass",
-							MethodType.methodType(
-								Class.class,
-								ClassLoader.class,
-								byte[].class
-							).toMethodDescriptorString(),
-							"(Ljava/lang/ClassLoader;[B)Ljava/lang/Class<*>;",
-							null
-						);
-						mv.visitCode();
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.ACONST_NULL);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-						mv.visitInsn(Opcodes.ARRAYLENGTH);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(ClassLoader.class),
-							"defineClass",
-							MethodType.methodType(
-								Class.class,
-								String.class,
-								byte[].class,
-								int.class,
-								int.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(5, 3);
-						mv.visitEnd();
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "defineClass", MethodType.methodType(Class.class, ClassLoader.class, byte[].class).toMethodDescriptorString());
+						mw.addSignature("(Ljava/lang/ClassLoader;[B)Ljava/lang/Class<*>;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ACONST_NULL);
+						code.addInstruction(Opcodes.ALOAD_2);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addInstruction(Opcodes.ALOAD_2);
+						code.addInstruction(Opcodes.ARRAYLENGTH);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(ClassLoader.class), "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(5, 3);
 					}
 
 					/*
 					 * Class<?> getCallerClass();
 					 */
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-							"getCallerClass",
-							MethodType.methodType(
-								Class.class
-							).toMethodDescriptorString(),
-							"()Ljava/lang/Class<*>;",
-							null
-						);
-						mv.visitCode();
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							className,
-							"0",
-							getDescriptor(SecurityManager.class)
-						);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(SecurityManager.class),
-							"getClassContext",
-							MethodType.methodType(
-								Class[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ICONST_2);
-						mv.visitInsn(Opcodes.AALOAD);
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(2, 1);
-						mv.visitEnd();
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString());
+						mw.addSignature("()Ljava/lang/Class<*>;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addFieldInstruction(Opcodes.GETSTATIC, className, "0", getDescriptor(SecurityManager.class));
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ICONST_2);
+						code.addInstruction(Opcodes.AALOAD);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(2, 1);
 					}
 
 					/*
 					 * Class<?>[] getClassContext();
 					 */
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_FINAL | AccessFlag.ACC_PUBLIC,
-							"getClassContext",
-							MethodType.methodType(
-								Class[].class
-							).toMethodDescriptorString(),
-							"()[Ljava/lang/Class<*>;",
-							null
-						);
-						mv.visitCode();
-						mv.visitFieldInsn(
-							Opcodes.GETSTATIC,
-							className,
-							"0",
-							getDescriptor(SecurityManager.class)
-						);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(SecurityManager.class),
-							"getClassContext",
-							MethodType.methodType(
-								Class[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ARRAYLENGTH);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitInsn(Opcodes.SWAP);
-						mv.visitMethodInsn(
-							Opcodes.INVOKESTATIC,
-							getType(Arrays.class),
-							"copyOfRange",
-							MethodType.methodType(
-								Object[].class,
-								Object[].class,
-								int.class,
-								int.class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitTypeInsn(Opcodes.CHECKCAST, getType(Class[].class));
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(3, 1);
-						mv.visitEnd();
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_FINAL | AccessFlag.ACC_PUBLIC, "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString());
+						mw.addSignature("()[Ljava/lang/Class<*>;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addFieldInstruction(Opcodes.GETSTATIC, className, "0", getDescriptor(SecurityManager.class));
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.DUP);
+						code.addInstruction(Opcodes.ARRAYLENGTH);
+						code.addInstruction(Opcodes.ICONST_1);
+						code.addInstruction(Opcodes.SWAP);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false);
+						code.addTypeInstruction(Opcodes.CHECKCAST, getType(Class[].class));
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(3, 1);
 					}
 
 					/*
 					 * <T> T construct(Class<?> target);
 					 */
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-							"construct",
-							MethodType.methodType(
-								Object.class,
-								Class.class
-							).toMethodDescriptorString(),
-							"<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;)TT;",
-							null
-						);
-						mv.visitCode();
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Class.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(Class.class),
-							"getDeclaredConstructor",
-							MethodType.methodType(
-								Constructor.class,
-								Class[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitFieldInsn(
-							Opcodes.PUTFIELD,
-							getType(AccessibleObject.class),
-							"override",
-							getDescriptor(boolean.class)
-						);
-						mv.visitInsn(Opcodes.ICONST_0);
-						mv.visitTypeInsn(Opcodes.ANEWARRAY, getType(Object.class));
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(Constructor.class),
-							"newInstance",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(3, 2);
-						mv.visitEnd();
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "construct", MethodType.methodType(Object.class, Class.class).toMethodDescriptorString());
+						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;)TT;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addTypeInstruction(Opcodes.ANEWARRAY, getType(Class.class));
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(Class.class), "getDeclaredConstructor", MethodType.methodType(Constructor.class, Class[].class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.DUP);
+						code.addInstruction(Opcodes.ICONST_1);
+						code.addFieldInstruction(Opcodes.PUTFIELD, getType(AccessibleObject.class), "override", getDescriptor(boolean.class));
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addTypeInstruction(Opcodes.ANEWARRAY, getType(Object.class));
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(Constructor.class), "newInstance", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(3, 2);
 					}
 
 					/*
 					 * <T> T construct(Class<?> target, Class<?>[] paramTypes, Object[] params);
 					 */
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL,
-							"construct",
-							MethodType.methodType(
-								Object.class,
-								Class.class,
-								Class[].class,
-								Object[].class
-							).toMethodDescriptorString(),
-							"<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;Ljava/lang/Class<*>;[Ljava/lang/Object;)TT;",
-							null
-						);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(Class.class),
-							"getDeclaredConstructor",
-							MethodType.methodType(
-								Constructor.class,
-								Class[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.DUP);
-						mv.visitInsn(Opcodes.ICONST_1);
-						mv.visitFieldInsn(
-							Opcodes.PUTFIELD,
-							getType(AccessibleObject.class),
-							"override",
-							getDescriptor(boolean.class)
-						);
-						mv.visitVarInsn(Opcodes.ALOAD, 3);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(Constructor.class),
-							"newInstance",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(3, 4);
-						mv.visitEnd();
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "construct", MethodType.methodType(Object.class, Class.class, Class[].class, Object[].class).toMethodDescriptorString());
+						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;Ljava/lang/Class<*>;[Ljava/lang/Object;)TT;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ALOAD_2);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(Class.class), "getDeclaredConstructor", MethodType.methodType(Constructor.class, Class[].class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.DUP);
+						code.addInstruction(Opcodes.ICONST_1);
+						code.addFieldInstruction(Opcodes.PUTFIELD, getType(AccessibleObject.class), "override", getDescriptor(boolean.class));
+						code.addInstruction(Opcodes.ALOAD_3);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(Constructor.class), "newInstance", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(3, 4);
 					}
 
 					/*
 					 * Object invokeMethodHandle(MethodHandle handle, Object... args);
 					 */
 					{
-						MethodVisitor mv = cw.visitMethod(
-							AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS,
-							"invokeMethodHandle",
-							MethodType.methodType(
-								Object.class,
-								MethodHandle.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							null,
-							null
-						);
-						mv.visitVarInsn(Opcodes.ALOAD, 1);
-						mv.visitVarInsn(Opcodes.ALOAD, 2);
-						mv.visitMethodInsn(
-							Opcodes.INVOKEVIRTUAL,
-							getType(MethodHandle.class),
-							"invokeWithArguments",
-							MethodType.methodType(
-								Object.class,
-								Object[].class
-							).toMethodDescriptorString(),
-							false
-						);
-						mv.visitInsn(Opcodes.ARETURN);
-						mv.visitMaxs(2, 3);
-						mv.visitEnd();
+						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invokeMethodHandle", MethodType.methodType(Object.class, MethodHandle.class, Object[].class).toMethodDescriptorString()).addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ALOAD_2);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(2, 3);
 					}
 
-					cw.visitEnd();
+					/*
+					 *Field getField(Class<?> target, String name);
+					 */
+					{
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class, Class.class, String.class).toMethodDescriptorString());
+						mw.addSignature("(Ljava/lang/Class<*>;Ljava/lang/String;)Ljava/lang/reflect/Field;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredFields0", MethodType.methodType(Field[].class, boolean.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ALOAD_2);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Class.class), "searchFields", MethodType.methodType(Field.class, Field[].class, String.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.DUP);
+						Marker marker = new Marker();
+						code.addJumpInstruction(Opcodes.IFNONNULL, marker);
+						code.addInstruction(Opcodes.POP);
+						code.addTypeInstruction(Opcodes.NEW, getType(NoSuchFieldException.class));
+						code.addInstruction(Opcodes.DUP);
+						code.addInstruction(Opcodes.ALOAD_2);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(NoSuchFieldException.class), "<init>", MethodType.methodType(void.class, String.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ATHROW);
+						code.mark(marker);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(3, 3);
+					}
+					/*
+					 * Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes);
+					 */
+					{
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "getMethod", "(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;");
+						mw.addSignature("(Ljava/lang/Class<*>;Ljava/lang/String;[Ljava/lang/Class<*>;)Ljava/lang/reflect/Method;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredMethods0", "(Z)[Ljava/lang/reflect/Method;", false);
+						code.addInstruction(Opcodes.ALOAD_2);
+						code.addInstruction(Opcodes.ALOAD_3);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Class.class), "searchMethods", MethodType.methodType(Method.class, Method[].class, String.class, Class[].class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.DUP);
+						Marker marker = new Marker();
+						code.addJumpInstruction(Opcodes.IFNONNULL, marker);
+						code.addInstruction(Opcodes.POP);
+						code.addTypeInstruction(Opcodes.NEW, getType(NoSuchMethodException.class));
+						code.addInstruction(Opcodes.DUP);
+						code.addTypeInstruction(Opcodes.NEW, getType(StringBuilder.class));
+						code.addInstruction(Opcodes.DUP);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(StringBuilder.class), "<init>", "()V", false);
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getName", "()Ljava/lang/String;", false);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
+						code.addConstantInstruction(Opcodes.LDC, ".");
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ALOAD_2);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ALOAD_3);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Class.class), "argumentTypesToString", MethodType.methodType(String.class, Class[].class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(NoSuchMethodException.class), "<init>", "(Ljava/lang/String;)V", false);
+						code.addInstruction(Opcodes.ATHROW);
+						code.mark(marker);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(4, 4);
+					}
+
+					/*
+					 * <T> Constructor<T> getConstructor(Class<?> target, Class<?> parameterTypes);
+					 */
+					{
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "getConstructor", MethodType.methodType(Constructor.class, Class.class, Class[].class).toMethodDescriptorString());
+						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;[Ljava/lang/Class<*>;)Ljava/lang/reflect/Constructor<TT;>;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredConstructors0", MethodType.methodType(Constructor[].class, boolean.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.DUP);
+						code.addInstruction(Opcodes.ASTORE_3);
+						code.addInstruction(Opcodes.ARRAYLENGTH);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addLocalVariableInstruction(Opcodes.ISTORE, 4);
+						Marker m1 = new Marker();
+						code.mark(m1);
+						code.addInstruction(Opcodes.DUP);
+						code.addLocalVariableInstruction(Opcodes.ILOAD, 4);
+						Marker m2 = new Marker();
+						code.addJumpInstruction(Opcodes.IF_ICMPLE, m2);
+						code.addInstruction(Opcodes.ALOAD_3);
+						code.addLocalVariableInstruction(Opcodes.ILOAD, 4);
+						code.addInstruction(Opcodes.AALOAD);
+						code.addInstruction(Opcodes.DUP);
+						code.addInstruction(Opcodes.ALOAD_2);
+						code.addInstruction(Opcodes.SWAP);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Constructor.class), "getParameterTypes", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Class.class), "arrayContentsEq", MethodType.methodType(boolean.class, Object[].class, Object[].class).toMethodDescriptorString(), false);
+						Marker m3 = new Marker();
+						code.addJumpInstruction(Opcodes.IFEQ, m3);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Constructor.class), "copy", MethodType.methodType(Constructor.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.SWAP);
+						code.addInstruction(Opcodes.POP);
+						code.addInstruction(Opcodes.ARETURN);
+						code.mark(m3);
+						code.addInstruction(Opcodes.POP);
+						code.addIincInstruction(4, 1);
+						code.addJumpInstruction(Opcodes.GOTO, m1);
+						code.mark(m2);
+						code.addInstruction(Opcodes.POP);
+						code.addTypeInstruction(Opcodes.NEW, getType(NoSuchMethodException.class));
+						code.addInstruction(Opcodes.DUP);
+						code.addTypeInstruction(Opcodes.NEW, getType(StringBuilder.class));
+						code.addInstruction(Opcodes.DUP);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(StringBuilder.class), "<init>", "()V", false);
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getName", "()Ljava/lang/String;", false);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
+						code.addConstantInstruction(Opcodes.LDC, ".<init>");
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ALOAD_2);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Class.class), "argumentTypesToString", MethodType.methodType(String.class, Class[].class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(NoSuchMethodException.class), "<init>", "(Ljava/lang/String;)V", false);
+						code.addInstruction(Opcodes.ATHROW);
+						code.setMaxs(4, 5);
+					}
+
+					/*
+					 * Field[] getFields(Class<?>);
+					 */
+					{
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString());
+						mw.addSignature("(Ljava/lang/Class<*>;)[Ljava/lang/reflect/Field;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredFields0", MethodType.methodType(Field[].class, boolean.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(2, 2);
+					}
+
+					/*
+					 * Method[] getMethods(Class<?>);
+					 */
+					{
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getMethods", MethodType.methodType(Method[].class, Class.class).toMethodDescriptorString());
+						mw.addSignature("(Ljava/lang/Class<*>;)[Ljava/lang/reflect/Method;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredMethods0", MethodType.methodType(Method[].class, boolean.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(2, 2);
+					}
+
+					/*
+					 * <T> Constructor<T>[] getConstructors(Class<?> target);
+					 */
+					{
+						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getConstructors", MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString());
+						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;)[Ljava/lang/reflect/Constructor<TT;>;");
+						AttributeCodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredConstructors0", MethodType.methodType(Constructor[].class, boolean.class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(2, 2);
+					}
+
+					/*
+					 * void throwException(Throwable t);
+					 */
+					{
+						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "throwException", "(Ljava/lang/Throwable;)V").addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ATHROW);
+						code.setMaxs(1, 2);
+					}
 
 					byte[] code = cw.toByteArray();
 					c = INTERNAL_CLASS_LOADER.define(code);
 				}
-				ACCESSOR = (Accessor) c.getDeclaredConstructor().newInstance();
+				ACCESSOR = (Accessor) UNSAFE.allocateInstance(c);
 			}
 		}
 		catch (Throwable t)

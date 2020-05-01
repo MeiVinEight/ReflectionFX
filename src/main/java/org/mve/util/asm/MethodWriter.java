@@ -1,28 +1,23 @@
 package org.mve.util.asm;
 
+import org.mve.util.asm.attribute.AttributeCodeWriter;
+import org.mve.util.asm.attribute.AttributeSignatureWriter;
+import org.mve.util.asm.attribute.AttributeWriter;
+
+import java.util.Arrays;
+
 public class MethodWriter
 {
-	private String name;
 	private int accessFlag;
-	private Class<?> returnType;
-	private Class<?> parameters;
+	private String name;
+	private String desc;
+	private AttributeWriter[] attributes = new AttributeWriter[0];
 
-	public MethodWriter(String name, int accessFlag, Class<?> returnType, Class<?> parameters)
+	public void set(int accessFlag, String name, String desc)
 	{
-		this.name = name;
 		this.accessFlag = accessFlag;
-		this.returnType = returnType;
-		this.parameters = parameters;
-	}
-
-	public String getName()
-	{
-		return name;
-	}
-
-	public void setName(String name)
-	{
 		this.name = name;
+		this.desc = desc;
 	}
 
 	public int getAccessFlag()
@@ -35,23 +30,50 @@ public class MethodWriter
 		this.accessFlag = accessFlag;
 	}
 
-	public Class<?> getReturnType()
+	public String getName()
 	{
-		return returnType;
+		return name;
 	}
 
-	public void setReturnType(Class<?> returnType)
+	public void setName(String name)
 	{
-		this.returnType = returnType;
+		this.name = name;
 	}
 
-	public Class<?> getParameters()
+	public String getDesc()
 	{
-		return parameters;
+		return desc;
 	}
 
-	public void setParameters(Class<?> parameters)
+	public void setDesc(String desc)
 	{
-		this.parameters = parameters;
+		this.desc = desc;
+	}
+
+	public void addAttribute(AttributeWriter writer)
+	{
+		int i = this.attributes.length;
+		this.attributes = Arrays.copyOf(this.attributes, i+1);
+		this.attributes[i] = writer;
+	}
+
+	public AttributeWriter[] getAttributes()
+	{
+		return Arrays.copyOf(this.attributes, this.attributes.length);
+	}
+
+	public AttributeCodeWriter addCode()
+	{
+		AttributeCodeWriter writer = new AttributeCodeWriter();
+		this.addAttribute(writer);
+		return writer;
+	}
+
+	public AttributeSignatureWriter addSignature(String signature)
+	{
+		if (signature == null) return null;
+		AttributeSignatureWriter writer = new AttributeSignatureWriter(signature);
+		this.addAttribute(writer);
+		return writer;
 	}
 }

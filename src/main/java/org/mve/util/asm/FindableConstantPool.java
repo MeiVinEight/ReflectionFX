@@ -9,13 +9,13 @@ import org.mve.util.asm.file.ConstantInterfaceMethodReference;
 import org.mve.util.asm.file.ConstantLong;
 import org.mve.util.asm.file.ConstantMethodReference;
 import org.mve.util.asm.file.ConstantNameAndType;
+import org.mve.util.asm.file.ConstantNull;
 import org.mve.util.asm.file.ConstantPool;
 import org.mve.util.asm.file.ConstantPoolElement;
 import org.mve.util.asm.file.ConstantString;
 import org.mve.util.asm.file.ConstantUTF8;
 
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Modifier;
+import java.util.Objects;
 
 public class FindableConstantPool extends ConstantPool
 {
@@ -32,7 +32,7 @@ public class FindableConstantPool extends ConstantPool
 		return (this.getConstantPoolSize() & 0XFFFF) - 1;
 	}
 
-	public int find(int num)
+	public int findInteger(int num)
 	{
 		int size = this.getConstantPoolSize() & 0XFFFF;
 		for (int i=0; i< size; i++)
@@ -45,7 +45,7 @@ public class FindableConstantPool extends ConstantPool
 		return size;
 	}
 
-	public int find(float num)
+	public int findFloat(float num)
 	{
 		int size = this.getConstantPoolSize() & 0XFFFF;
 		for (int i=0; i< size; i++)
@@ -58,7 +58,7 @@ public class FindableConstantPool extends ConstantPool
 		return size;
 	}
 
-	public int find(long num)
+	public int findLong(long num)
 	{
 		int size = this.getConstantPoolSize() & 0XFFFF;
 		for (int i = 0; i < size; i++)
@@ -68,10 +68,12 @@ public class FindableConstantPool extends ConstantPool
 		}
 		ConstantLong constant = new ConstantLong(num);
 		this.addConstantPoolElement(constant);
-		return size;
+		int ret = this.getConstantPoolSize() & 0XFFFF;
+		this.addConstantPoolElement(new ConstantNull());
+		return ret - 1;
 	}
 
-	public int find(double num)
+	public int findDouble(double num)
 	{
 		int size = this.getConstantPoolSize() & 0XFFFF;
 		for (int i = 0; i < size; i++)
@@ -81,10 +83,12 @@ public class FindableConstantPool extends ConstantPool
 		}
 		ConstantDouble constant = new ConstantDouble(num);
 		this.addConstantPoolElement(constant);
-		return size;
+		int ret = this.getConstantPoolSize() & 0XFFFF;
+		this.addConstantPoolElement(new ConstantNull());
+		return ret - 1;
 	}
 
-	public int find(String string)
+	public int findString(String string)
 	{
 		int size = this.getConstantPoolSize() & 0XFFFF;
 		for (int i = 0; i < size; i++)
@@ -98,7 +102,7 @@ public class FindableConstantPool extends ConstantPool
 		return (this.getConstantPoolSize() & 0XFFFF) - 1;
 	}
 
-	public int find(java.lang.Class<?> clazz)
+	public int findClass(String type)
 	{
 		int size = this.getConstantPoolSize() & 0XFFFF;
 		for (int i = 0; i < size; i++)
@@ -108,18 +112,19 @@ public class FindableConstantPool extends ConstantPool
 			{
 				ConstantClass constant = (ConstantClass) element;
 				int nameIndex = constant.getNameIndex() & 0XFFFF;
-				String classname = Type.getName(clazz);
-				if (((ConstantUTF8)this.getConstantPoolElement(nameIndex)).getUTF8().equals(classname)) return i;
+				if (((ConstantUTF8)this.getConstantPoolElement(nameIndex)).getUTF8().equals(type)) return i;
 			}
 		}
-		int nameIndex = this.findUTF8(Type.getName(clazz));
+		int nameIndex = this.findUTF8(type);
 		ConstantClass constantClass = new ConstantClass((short) nameIndex);
 		this.addConstantPoolElement(constantClass);
 		return (this.getConstantPoolSize() & 0XFFFF) - 1;
 	}
 
-	public int find(NameAndType nameAndType)
+	public int findNameAndType(String name, String type)
 	{
+		Objects.requireNonNull(name);
+		Objects.requireNonNull(type);
 		int size = this.getConstantPoolSize() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
@@ -127,23 +132,20 @@ public class FindableConstantPool extends ConstantPool
 			if (element instanceof ConstantNameAndType)
 			{
 				ConstantNameAndType constantNameAndType = (ConstantNameAndType) element;
-				String name = ((ConstantUTF8)this.getConstantPoolElement(constantNameAndType.getNameIndex() & 0XFFFF)).getUTF8();
-				String type = ((ConstantUTF8)this.getConstantPoolElement(constantNameAndType.getTypeIndex() & 0XFFFF)).getUTF8();
-				if (name.equals(nameAndType.getName()) && type.equals(nameAndType.getType())) return i;
+				String name1 = ((ConstantUTF8)this.getConstantPoolElement(constantNameAndType.getNameIndex() & 0XFFFF)).getUTF8();
+				String type1 = ((ConstantUTF8)this.getConstantPoolElement(constantNameAndType.getTypeIndex() & 0XFFFF)).getUTF8();
+				if (name1.equals(name) && type1.equals(type)) return i;
 			}
 		}
-		int nameIndex = this.findUTF8(nameAndType.getName());
-		int typeIndex = this.findUTF8(nameAndType.getType());
+		int nameIndex = this.findUTF8(name);
+		int typeIndex = this.findUTF8(type);
 		ConstantNameAndType constantNameAndType = new ConstantNameAndType((short) nameIndex, (short) typeIndex);
 		this.addConstantPoolElement(constantNameAndType);
 		return (this.getConstantPoolSize() & 0XFFFF) - 1;
 	}
 
-	public int find(java.lang.reflect.Field field)
+	public int findField(String type, String name, String desc)
 	{
-		Class<?> clazz = field.getDeclaringClass();
-		String name = field.getName();
-		String type = Type.getDescription(field.getType());
 		int size = this.getConstantPoolSize() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
@@ -156,28 +158,23 @@ public class FindableConstantPool extends ConstantPool
 				ConstantClass fieldClass = (ConstantClass) this.getConstantPoolElement(fieldClassIndex);
 				ConstantNameAndType nameAndType = (ConstantNameAndType) this.getConstantPoolElement(nameAndTypeIndex);
 				if (
-					((ConstantUTF8)this.getConstantPoolElement(fieldClass.getNameIndex() & 0XFFFF)).getUTF8().equals(Type.getName(clazz)) &&
+					((ConstantUTF8)this.getConstantPoolElement(fieldClass.getNameIndex() & 0XFFFF)).getUTF8().equals(type) &&
 					(
 						((ConstantUTF8)this.getConstantPoolElement(nameAndType.getNameIndex() & 0XFFFF)).getUTF8().equals(name) &&
-						((ConstantUTF8)this.getConstantPoolElement(nameAndType.getTypeIndex() & 0XFFFF)).getUTF8().equals(type)
+						((ConstantUTF8)this.getConstantPoolElement(nameAndType.getTypeIndex() & 0XFFFF)).getUTF8().equals(desc)
 					)
 				) return i;
 			}
 		}
-		NameAndType nameAndType = new NameAndType(name, type);
-		int classIndex = this.find(clazz);
-		int nameAndTypeIndex = this.find(nameAndType);
+		int classIndex = this.findClass(type);
+		int nameAndTypeIndex = this.findNameAndType(name, desc);
 		ConstantFieldReference fieldReference = new ConstantFieldReference((short) classIndex, (short) nameAndTypeIndex);
 		this.addConstantPoolElement(fieldReference);
 		return (this.getConstantPoolSize() & 0XFFFF) - 1;
 	}
 
-	public int find(java.lang.reflect.Method method)
+	public int findMethod(String type, String name, String desc, boolean isAbstract)
 	{
-		boolean isAbstract = Modifier.isAbstract(method.getModifiers());
-		Class<?> clazz = method.getDeclaringClass();
-		String name = method.getName();
-		String type = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
 		int size = this.getConstantPoolSize() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
@@ -192,10 +189,10 @@ public class FindableConstantPool extends ConstantPool
 					ConstantClass methodClass = (ConstantClass) this.getConstantPoolElement(methodClassIndex);
 					ConstantNameAndType nameAndType = (ConstantNameAndType) this.getConstantPoolElement(nameAndTypeIndex);
 					if (
-						((ConstantUTF8)this.getConstantPoolElement(methodClass.getNameIndex() & 0XFFFF)).getUTF8().equals(Type.getName(clazz)) &&
+						((ConstantUTF8)this.getConstantPoolElement(methodClass.getNameIndex() & 0XFFFF)).getUTF8().equals(type) &&
 							(
 								((ConstantUTF8)this.getConstantPoolElement(nameAndType.getNameIndex() & 0XFFFF)).getUTF8().equals(name) &&
-								((ConstantUTF8)this.getConstantPoolElement(nameAndType.getTypeIndex() & 0XFFFF)).getUTF8().equals(type)
+								((ConstantUTF8)this.getConstantPoolElement(nameAndType.getTypeIndex() & 0XFFFF)).getUTF8().equals(desc)
 							)
 					) return i;
 				}
@@ -210,18 +207,17 @@ public class FindableConstantPool extends ConstantPool
 					ConstantClass methodClass = (ConstantClass) this.getConstantPoolElement(methodClassIndex);
 					ConstantNameAndType nameAndType = (ConstantNameAndType) this.getConstantPoolElement(nameAndTypeIndex);
 					if (
-						((ConstantUTF8)this.getConstantPoolElement(methodClass.getNameIndex() & 0XFFFF)).getUTF8().equals(Type.getName(clazz)) &&
+						((ConstantUTF8)this.getConstantPoolElement(methodClass.getNameIndex() & 0XFFFF)).getUTF8().equals(type) &&
 							(
 								((ConstantUTF8)this.getConstantPoolElement(nameAndType.getNameIndex() & 0XFFFF)).getUTF8().equals(name) &&
-								((ConstantUTF8)this.getConstantPoolElement(nameAndType.getTypeIndex() & 0XFFFF)).getUTF8().equals(type)
+								((ConstantUTF8)this.getConstantPoolElement(nameAndType.getTypeIndex() & 0XFFFF)).getUTF8().equals(desc)
 							)
 					) return i;
 				}
 			}
 		}
-		NameAndType nameAndType = new NameAndType(name, type);
-		int classIndex = this.find(clazz);
-		int nameAndTypeIndex = this.find(nameAndType);
+		int classIndex = this.findClass(type);
+		int nameAndTypeIndex = this.findNameAndType(name, desc);
 		ConstantPoolElement element = isAbstract ? new ConstantInterfaceMethodReference((short) classIndex, (short) nameAndTypeIndex) : new ConstantMethodReference((short) classIndex, (short) nameAndTypeIndex);
 		this.addConstantPoolElement(element);
 		return (this.getConstantPoolSize() & 0XFFFF) - 1;

@@ -1,15 +1,30 @@
 package org.mve.util.asm;
 
+import org.mve.util.asm.attribute.AttributeWriter;
+
+import java.util.Arrays;
+
 public class FieldWriter
 {
-	private String name;
-	private Class<?> type;
 	private int accessFlag;
+	private String name;
+	private String desc;
+	private AttributeWriter[] attributes = new AttributeWriter[0];
 
-	public FieldWriter(String name, Class<?> type, int accessFlag)
+	public void set(int accessFlag, String name, String desc)
 	{
+		this.accessFlag = accessFlag;
 		this.name = name;
-		this.type = type;
+		this.desc = desc;
+	}
+
+	public int getAccessFlag()
+	{
+		return accessFlag;
+	}
+
+	public void setAccessFlag(int accessFlag)
+	{
 		this.accessFlag = accessFlag;
 	}
 
@@ -23,23 +38,25 @@ public class FieldWriter
 		this.name = name;
 	}
 
-	public Class<?> getType()
+	public String getDesc()
 	{
-		return type;
+		return desc;
 	}
 
-	public void setType(Class<?> type)
+	public void setDesc(String desc)
 	{
-		this.type = type;
+		this.desc = desc;
 	}
 
-	public int getAccessFlag()
+	public void addAttribute(AttributeWriter writer)
 	{
-		return accessFlag;
+		int i = this.attributes.length;
+		this.attributes = Arrays.copyOf(this.attributes, i+1);
+		this.attributes[i] = writer;
 	}
 
-	public void setAccessFlag(int accessFlag)
+	public AttributeWriter[] getAttributes()
 	{
-		this.accessFlag = accessFlag;
+		return Arrays.copyOf(this.attributes, this.attributes.length);
 	}
 }
