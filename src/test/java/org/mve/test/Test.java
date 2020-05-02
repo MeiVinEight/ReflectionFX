@@ -1,20 +1,27 @@
 package org.mve.test;
 
+
 import org.mve.util.SystemUtil;
 import org.mve.util.reflect.ReflectionFactory;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
 public class Test
 {
-	private static void method(Object o)
+	private static void method()
 	{
-		SystemUtil.printStackTrace();
-		System.out.println();
-		Class<?>[] cs = ReflectionFactory.ACCESSOR.getClassContext();
-		for (Class<?> c : cs) System.out.println(c);
+		new Throwable().printStackTrace(System.out);
 	}
 
 	public static void invoke(Object... obj)
 	{
-		method(obj);
+		method();
+	}
+
+	public static MethodHandle get() throws Throwable
+	{
+		return MethodHandles.lookup().findStatic(Test.class, "method", MethodType.methodType(void.class));
 	}
 }

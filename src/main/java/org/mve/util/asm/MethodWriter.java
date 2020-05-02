@@ -1,7 +1,7 @@
 package org.mve.util.asm;
 
-import org.mve.util.asm.attribute.AttributeCodeWriter;
-import org.mve.util.asm.attribute.AttributeSignatureWriter;
+import org.mve.util.asm.attribute.CodeWriter;
+import org.mve.util.asm.attribute.SignatureWriter;
 import org.mve.util.asm.attribute.AttributeWriter;
 
 import java.util.Arrays;
@@ -13,11 +13,12 @@ public class MethodWriter
 	private String desc;
 	private AttributeWriter[] attributes = new AttributeWriter[0];
 
-	public void set(int accessFlag, String name, String desc)
+	public MethodWriter set(int accessFlag, String name, String desc)
 	{
 		this.accessFlag = accessFlag;
 		this.name = name;
 		this.desc = desc;
+		return this;
 	}
 
 	public int getAccessFlag()
@@ -50,11 +51,12 @@ public class MethodWriter
 		this.desc = desc;
 	}
 
-	public void addAttribute(AttributeWriter writer)
+	public MethodWriter addAttribute(AttributeWriter writer)
 	{
 		int i = this.attributes.length;
 		this.attributes = Arrays.copyOf(this.attributes, i+1);
 		this.attributes[i] = writer;
+		return this;
 	}
 
 	public AttributeWriter[] getAttributes()
@@ -62,17 +64,17 @@ public class MethodWriter
 		return Arrays.copyOf(this.attributes, this.attributes.length);
 	}
 
-	public AttributeCodeWriter addCode()
+	public CodeWriter addCode()
 	{
-		AttributeCodeWriter writer = new AttributeCodeWriter();
+		CodeWriter writer = new CodeWriter();
 		this.addAttribute(writer);
 		return writer;
 	}
 
-	public AttributeSignatureWriter addSignature(String signature)
+	public SignatureWriter addSignature(String signature)
 	{
 		if (signature == null) return null;
-		AttributeSignatureWriter writer = new AttributeSignatureWriter(signature);
+		SignatureWriter writer = new SignatureWriter(signature);
 		this.addAttribute(writer);
 		return writer;
 	}

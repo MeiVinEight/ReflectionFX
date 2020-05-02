@@ -1,7 +1,7 @@
 package org.mve.util.asm;
 
-import org.mve.util.asm.attribute.AttributeSignatureWriter;
-import org.mve.util.asm.attribute.AttributeSourceWriter;
+import org.mve.util.asm.attribute.SignatureWriter;
+import org.mve.util.asm.attribute.SourceWriter;
 import org.mve.util.asm.attribute.AttributeWriter;
 import org.mve.util.asm.file.ClassField;
 import org.mve.util.asm.file.ClassFile;
@@ -21,13 +21,14 @@ public class ClassWriter
 	private MethodWriter[] methods = new MethodWriter[0];
 	private AttributeWriter[] attributes = new AttributeWriter[0];
 
-	public void set(int major, int accessFlag, String name, String superName, String[] interfaces)
+	public ClassWriter set(int major, int accessFlag, String name, String superName, String[] interfaces)
 	{
 		this.majorVersion = major;
 		this.accessFlag = accessFlag;
 		this.name = name;
 		this.superName = superName;
 		this.interfaces = interfaces;
+		return this;
 	}
 
 	public int getAccessFlag()
@@ -80,11 +81,12 @@ public class ClassWriter
 		this.interfaces = interfaces;
 	}
 
-	public void addField(FieldWriter writer)
+	public ClassWriter addField(FieldWriter writer)
 	{
 		int i = this.fields.length;
 		this.fields = Arrays.copyOf(this.fields, i+1);
 		this.fields[i] = writer;
+		return this;
 	}
 
 	public FieldWriter addField(int accessFlag, String name, String desc)
@@ -95,11 +97,12 @@ public class ClassWriter
 		return fw;
 	}
 
-	public void addMethod(MethodWriter writer)
+	public ClassWriter addMethod(MethodWriter writer)
 	{
 		int i = this.methods.length;
 		this.methods = Arrays.copyOf(this.methods, i+1);
 		this.methods[i] = writer;
+		return this;
 	}
 
 	public MethodWriter addMethod(int accessFlag, String name, String desc)
@@ -110,24 +113,37 @@ public class ClassWriter
 		return writer;
 	}
 
-	public void addAttribute(AttributeWriter writer)
+	public ClassWriter addAttribute(AttributeWriter writer)
 	{
 		int i = this.attributes.length;
 		this.attributes = Arrays.copyOf(this.attributes, i+1);
 		this.attributes[i] = writer;
+		return this;
 	}
 
 	public void addSignature(String signature)
 	{
-		this.addAttribute(new AttributeSignatureWriter(signature));
+		this.addAttribute(new SignatureWriter(signature));
 	}
 
-	public AttributeSourceWriter addSource(String name)
+	public SourceWriter addSource(String name)
 	{
 		if (name == null) return null;
-		AttributeSourceWriter writer = new AttributeSourceWriter(name);
+		SourceWriter writer = new SourceWriter(name);
 		this.addAttribute(writer);
 		return writer;
+	}
+
+	public void reset()
+	{
+		this.majorVersion = 0;
+		this.accessFlag = 0;
+		this.name = null;
+		this.superName = null;
+		this.interfaces = new String[0];
+		this.fields = new FieldWriter[0];
+		this.methods = new MethodWriter[0];
+		this.attributes = new AttributeWriter[0];
 	}
 
 	public ClassFile toClassFile()

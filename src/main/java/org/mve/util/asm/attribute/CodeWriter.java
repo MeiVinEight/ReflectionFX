@@ -24,7 +24,7 @@ import org.mve.util.asm.instruction.TypeInstruction;
 
 import java.util.Arrays;
 
-public class AttributeCodeWriter implements AttributeWriter
+public class CodeWriter implements AttributeWriter
 {
 	private int maxStack;
 	private int maxLocals;
@@ -53,18 +53,20 @@ public class AttributeCodeWriter implements AttributeWriter
 		this.maxLocals = maxLocals;
 	}
 
-	public void setMaxs(int stack, int locals)
+	public CodeWriter setMaxs(int stack, int locals)
 	{
 		this.maxStack = stack;
 		this.maxLocals = locals;
+		return this;
 	}
 
-	public void mark(Marker marker)
+	public CodeWriter mark(Marker marker)
 	{
 		marker.mark(this.addr);
+		return this;
 	}
 
-	private void addInstruction(Instruction insn)
+	private CodeWriter addInstruction(Instruction insn)
 	{
 		boolean wide = false;
 		if (this.instructions.length > 0 && this.instructions[this.instructions.length-1].opcode == Opcodes.WIDE) wide = true;
@@ -86,52 +88,53 @@ public class AttributeCodeWriter implements AttributeWriter
 			if (insn instanceof InterfaceMethodInstruction) addr += 2;
 		}
 		else if (insn instanceof IincInstruction) addr += wide ? 4 : 2;
+		return this;
 	}
 
-	public void addConstantInstruction(int opcode, Object value)
+	public CodeWriter addConstantInstruction(int opcode, Object value)
 	{
-		this.addInstruction(new ConstantInstruction(opcode, value));
+		return this.addInstruction(new ConstantInstruction(opcode, value));
 	}
 
-	public void addFieldInstruction(int opcode, String type, String name, String desc)
+	public CodeWriter addFieldInstruction(int opcode, String type, String name, String desc)
 	{
-		this.addInstruction(new FieldInstruction(opcode, type, name, desc));
+		return this.addInstruction(new FieldInstruction(opcode, type, name, desc));
 	}
 
-	public void addJumpInstruction(int opcode, Marker marker)
+	public CodeWriter addJumpInstruction(int opcode, Marker marker)
 	{
-		this.addInstruction(new JumpInstruction(opcode, marker));
+		return this.addInstruction(new JumpInstruction(opcode, marker));
 	}
 
-	public void addLocalVariableInstruction(int opcode, int index)
+	public CodeWriter addLocalVariableInstruction(int opcode, int index)
 	{
-		this.addInstruction(new LocalVariableInstruction(opcode, index));
+		return this.addInstruction(new LocalVariableInstruction(opcode, index));
 	}
 
-	public void addMethodInstruction(int opcode, String type, String name, String desc, boolean isAbstract)
+	public CodeWriter addMethodInstruction(int opcode, String type, String name, String desc, boolean isAbstract)
 	{
-		if (isAbstract) this.addInstruction(new InterfaceMethodInstruction(opcode, type, name, desc, Type.getArgumentsAndReturnSizes(desc) >> 2));
-		else this.addInstruction(new MethodInstruction(opcode, type, name, desc, isAbstract));
+		if (isAbstract) return this.addInstruction(new InterfaceMethodInstruction(opcode, type, name, desc, Type.getArgumentsAndReturnSizes(desc) >> 2));
+		else return this.addInstruction(new MethodInstruction(opcode, type, name, desc, isAbstract));
 	}
 
-	public void addNumberInstruction(int opcode, int num)
+	public CodeWriter addNumberInstruction(int opcode, int num)
 	{
-		this.addInstruction(new NumberInstruction(opcode, num));
+		return this.addInstruction(new NumberInstruction(opcode, num));
 	}
 
-	public void addInstruction(int opcode)
+	public CodeWriter addInstruction(int opcode)
 	{
-		this.addInstruction(new SimpleInstruction(opcode));
+		return this.addInstruction(new SimpleInstruction(opcode));
 	}
 
-	public void addTypeInstruction(int opcode, String type)
+	public CodeWriter addTypeInstruction(int opcode, String type)
 	{
-		this.addInstruction(new TypeInstruction(opcode, type));
+		return this.addInstruction(new TypeInstruction(opcode, type));
 	}
 
-	public void addIincInstruction(int indexbyte, int constbyte)
+	public CodeWriter addIincInstruction(int indexbyte, int constbyte)
 	{
-		this.addInstruction(new IincInstruction(indexbyte, constbyte));
+		return this.addInstruction(new IincInstruction(indexbyte, constbyte));
 	}
 
 	public void addAttribute(AttributeWriter writer)

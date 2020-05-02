@@ -1,12 +1,15 @@
 package org.mve.util.reflect;
 
+import org.mve.util.asm.AnnotationWriter;
 import org.mve.util.asm.ClassWriter;
 import org.mve.util.asm.Marker;
 import org.mve.util.asm.MethodWriter;
 import org.mve.util.asm.Opcodes;
 import org.mve.util.asm.OperandStack;
 import org.mve.util.asm.Type;
-import org.mve.util.asm.attribute.AttributeCodeWriter;
+import org.mve.util.asm.attribute.CodeWriter;
+import org.mve.util.asm.attribute.RuntimeVisibleAnnotationsWriter;
+import org.mve.util.asm.attribute.SourceWriter;
 import org.mve.util.asm.file.AccessFlag;
 
 import java.io.DataInputStream;
@@ -103,28 +106,28 @@ public class ReflectionFactory
 
 	public static ReflectionAccessor<Void> throwException()
 	{
-		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
-		ClassWriter cw = new ClassWriter();
+		String className = "org/mve/util/reflect/Throwable"+id++;
+		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ReflectionAccessor"));
 		cw.set(0x34, 0x21, className, "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Ljava/lang/Void;>;");
-		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 		code.addInstruction(Opcodes.ALOAD_1);
 		code.addInstruction(Opcodes.ICONST_0);
 		code.addInstruction(Opcodes.AALOAD);
 		code.addTypeInstruction(Opcodes.CHECKCAST, "java/lang/Throwable");
 		code.addInstruction(Opcodes.ATHROW);
 		code.setMaxs(2, 2);
-		return (ReflectionAccessor<Void>) UNSAFE.allocateInstance(ACCESSOR.defineClass(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader)), cw.toByteArray()));
+		return (ReflectionAccessor<Void>) UNSAFE.allocateInstance(ACCESSOR.defineClass(AccessController.doPrivileged((PrivilegedAction<ClassLoader>)(ReflectionFactory.class::getClassLoader)), cw.toByteArray()));
 	}
 
 	public static <T> ReflectionAccessor<T> constant(T value)
 	{
-		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
-		ClassWriter cw = new ClassWriter();
+		String className = "org/mve/util/reflect/ConstantValue"+id++;
+		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstantValue"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(value.getClass())+">;");
 		cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL, "0", "Ljava/lang/Object;");
-		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "<init>", "(Ljava/lang/Object;)V").addCode();
+		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "<init>", "(Ljava/lang/Object;)V").addCode();
 		code.addInstruction(Opcodes.ALOAD_0);
 		code.addInstruction(Opcodes.DUP);
 		code.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
@@ -142,16 +145,22 @@ public class ReflectionFactory
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean special, boolean isAbstract)
 	{
-		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
+		String className = "org/mve/util/reflect/MethodAccessor";
 		String desc = type.toMethodDescriptorString();
 		final String owner = clazz.getTypeName().replace('.', '/');
 		Class<?> returnType = type.returnType();
 		Class<?>[] params = type.parameterArray();
 		final OperandStack stack = new OperandStack();
-		ClassWriter cw = new ClassWriter();
+		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("MethodAccessor"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(returnType))+">;");
-		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
+			.addAttribute(new RuntimeVisibleAnnotationsWriter()
+				.addAnnotation(new AnnotationWriter().set("Ljava/lang/invoke/LambdaForm$Hidden;"))
+				.addAnnotation(new AnnotationWriter().set("Ljava/lang/invoke/ForceInline;"))
+				.addAnnotation(new AnnotationWriter().set("Ljava/lang/invoke/LambdaForm$Compiled;"))
+			)
+			.addCode();
 		if (!isStatic) arrayFirst(code, stack);
 		pushArguments(params, code, isStatic ? 0 : 1, stack);
 		int invoke = isStatic ? Opcodes.INVOKESTATIC : special ? Opcodes.INVOKESPECIAL : isAbstract ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL;
@@ -166,20 +175,20 @@ public class ReflectionFactory
 		else warp(returnType, code, stack);
 		code.addInstruction(Opcodes.ARETURN);
 		code.setMaxs(stack.getMaxSize(), 2);
-		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(getClassLoader(callerLoader).define(cw.toByteArray()));
+		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(clazz, cw.toByteArray(), null));
 	}
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect)
 	{
 		if (typeWarp(type) == Void.class) throw new IllegalArgumentException("illegal type: void");
-		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
+		String className = "org/mve/util/reflect/FieldAccessor";
 		String desc = getDescriptor(type);
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
-		ClassWriter cw = new ClassWriter();
+		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("FieldAccessor"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(type))+">;");
-		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 		Marker marker = new Marker();
 		code.addInstruction(Opcodes.ALOAD_1);
 		stack.push();
@@ -293,14 +302,14 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, MethodType type)
 	{
 		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
+		String className = "org/mve/util/reflect/ConstructorAccessor";
 		String desc = type.toMethodDescriptorString();
 		final OperandStack stack = new OperandStack();
 		String owner = clazz.getTypeName().replace('.', '/');
-		ClassWriter cw = new ClassWriter();
+		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstructorAccessor"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;");
-		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 		code.addTypeInstruction(Opcodes.NEW, owner);
 		stack.push();
 		code.addInstruction(Opcodes.DUP);
@@ -321,15 +330,15 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz)
 	{
 		if (typeWarp(clazz) == Void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/util/reflect/ReflectionAccessorImpl"+id++;
-		ClassWriter cw = new ClassWriter();
+		String className = "org/mve/util/reflect/Allocator";
+		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Allocator"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;");
-		AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 		code.addTypeInstruction(Opcodes.NEW, getType(clazz));
 		code.addInstruction(Opcodes.ARETURN);
 		code.setMaxs(1, 2);
-		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(getClassLoader(callerLoader).define(cw.toByteArray()));
+		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(clazz, cw.toByteArray(), null));
 	}
 
 	private static ReflectionClassLoader getClassLoader(ClassLoader callerLoader)
@@ -342,7 +351,7 @@ public class ReflectionFactory
 		return CLASS_LOADER_MAP.computeIfAbsent(callerLoader, StandardReflectionClassLoader::new);
 	}
 
-	private static void arrayFirst(AttributeCodeWriter code, OperandStack stack)
+	private static void arrayFirst(CodeWriter code, OperandStack stack)
 	{
 		code.addInstruction(Opcodes.ALOAD_1);
 		stack.push();
@@ -352,7 +361,7 @@ public class ReflectionFactory
 		stack.pop();
 	}
 
-	private static void pushArguments(Class<?>[] paramTypes, AttributeCodeWriter code, int start, OperandStack stack)
+	private static void pushArguments(Class<?>[] paramTypes, CodeWriter code, int start, OperandStack stack)
 	{
 		for (Class<?> c : paramTypes)
 		{
@@ -370,7 +379,7 @@ public class ReflectionFactory
 		}
 	}
 
-	private static void warp(Class<?> c, AttributeCodeWriter code, OperandStack stack)
+	private static void warp(Class<?> c, CodeWriter code, OperandStack stack)
 	{
 		if (c == byte.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false);
 		else if (c == short.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false);
@@ -397,7 +406,7 @@ public class ReflectionFactory
 		else return type;
 	}
 
-	private static void unwarp(Class<?> c, AttributeCodeWriter code, OperandStack stack)
+	private static void unwarp(Class<?> c, CodeWriter code, OperandStack stack)
 	{
 		if (c == byte.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "byteValue", "()B", false);
 		else if (c == short.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "shortValue", "()S", false);
@@ -541,7 +550,7 @@ public class ReflectionFactory
 						Consumer<ClassWriter> implement = (cw1) ->
 						{
 							{
-								AttributeCodeWriter code = cw1.addMethod(AccessFlag.ACC_PUBLIC, "getJavaVMVersion", "()I").addCode();
+								CodeWriter code = cw1.addMethod(AccessFlag.ACC_PUBLIC, "getJavaVMVersion", "()I").addCode();
 								code.addNumberInstruction(Opcodes.BIPUSH, majorVersion);
 								code.addInstruction(Opcodes.IRETURN);
 								code.setMaxs(1, 1);
@@ -551,7 +560,7 @@ public class ReflectionFactory
 								String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
 								MethodWriter mw = cw1.addMethod(AccessFlag.ACC_PUBLIC, name[0], desc);
 								if (name.length == 3) mw.addSignature(name[2]);
-								AttributeCodeWriter code = mw.addCode();
+								CodeWriter code = mw.addCode();
 								code.addFieldInstruction(Opcodes.GETSTATIC, className, "final", getDescriptor(usfClass));
 								int size = 0;
 								for (int i = 1; i < arr.length; i++)
@@ -580,7 +589,7 @@ public class ReflectionFactory
 								String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
 								MethodWriter mw = cw1.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, name[0], desc);
 								if (name.length == 2) mw.addSignature(name[1]);
-								AttributeCodeWriter code = mw.addCode();
+								CodeWriter code = mw.addCode();
 								int size = arr.length;
 								for (Class<?> c : arr) if (c == long.class || c == double.class) size++;
 								code.addTypeInstruction(Opcodes.NEW, getType(UnsupportedOperationException.class));
@@ -1129,7 +1138,7 @@ public class ReflectionFactory
 					// static constructor
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_STATIC, "<clinit>", "()V");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "TRUSTED_LOOKUP", getDescriptor(MethodHandles.Lookup.class));
 						code.addConstantInstruction(Opcodes.LDC, new Type(usfClass));
 						code.addConstantInstruction(Opcodes.LDC_W, "theUnsafe");
@@ -1169,7 +1178,7 @@ public class ReflectionFactory
 					 * void MethodHandleInvoker();
 					 */
 					{
-						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "<init>", "()V").addCode();
+						CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "<init>", "()V").addCode();
 						code.addInstruction(Opcodes.ALOAD_0);
 						code.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
 						code.addInstruction(Opcodes.RETURN);
@@ -1179,7 +1188,7 @@ public class ReflectionFactory
 					 * Object invoke(Object...);
 					 */
 					{
-						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+						CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_0);
 						code.addInstruction(Opcodes.AALOAD);
@@ -1194,7 +1203,6 @@ public class ReflectionFactory
 						code.setMaxs(4, 2);
 					}
 					byte[] code = cw.toByteArray();
-//					handleInvoker = (Class<?>) DEFINE.invoke(ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
 					handleInvoker = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 				}
 				METHOD_HANDLE_INVOKER = (ReflectionAccessor<Object>) handleInvoker.getDeclaredConstructor().newInstance();
@@ -1224,7 +1232,7 @@ public class ReflectionFactory
 					 * <clinit>
 					 */
 					{
-						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_STATIC, "<clinit>", "()V").addCode();
+						CodeWriter code = cw.addMethod(AccessFlag.ACC_STATIC, "<clinit>", "()V").addCode();
 						code.addTypeInstruction(Opcodes.NEW, getType(SecurityManager.class));
 						code.addInstruction(Opcodes.DUP);
 						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(SecurityManager.class), "<init>", "()V", false);
@@ -1237,7 +1245,7 @@ public class ReflectionFactory
 					 * void setAccessible(AccessibleObject acc, boolean flag);
 					 */
 					{
-						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "setAccessible", MethodType.methodType(void.class, AccessibleObject.class, boolean.class).toMethodDescriptorString()).addCode();
+						CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "setAccessible", MethodType.methodType(void.class, AccessibleObject.class, boolean.class).toMethodDescriptorString()).addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ILOAD_2);
 						code.addFieldInstruction(Opcodes.PUTFIELD, getType(AccessibleObject.class), "override", getDescriptor(boolean.class));
@@ -1249,7 +1257,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "forName", MethodType.methodType(Class.class, String.class).toMethodDescriptorString());
 						mw.addSignature("(Ljava/lang/String;)Ljava/lang/Class<*>;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_1);
 						code.addInstruction(Opcodes.ALOAD_0);
@@ -1266,7 +1274,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString());
 						mw.addSignature("(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class<*>;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ILOAD_2);
 						code.addInstruction(Opcodes.ALOAD_3);
@@ -1280,7 +1288,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "defineClass", MethodType.methodType(Class.class, ClassLoader.class, byte[].class).toMethodDescriptorString());
 						mw.addSignature("(Ljava/lang/ClassLoader;[B)Ljava/lang/Class<*>;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ACONST_NULL);
 						code.addInstruction(Opcodes.ALOAD_2);
@@ -1298,7 +1306,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString());
 						mw.addSignature("()Ljava/lang/Class<*>;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addFieldInstruction(Opcodes.GETSTATIC, className, "0", getDescriptor(SecurityManager.class));
 						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
 						code.addInstruction(Opcodes.ICONST_2);
@@ -1313,7 +1321,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_FINAL | AccessFlag.ACC_PUBLIC, "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString());
 						mw.addSignature("()[Ljava/lang/Class<*>;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addFieldInstruction(Opcodes.GETSTATIC, className, "0", getDescriptor(SecurityManager.class));
 						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
 						code.addInstruction(Opcodes.DUP);
@@ -1332,7 +1340,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "construct", MethodType.methodType(Object.class, Class.class).toMethodDescriptorString());
 						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;)TT;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_0);
 						code.addTypeInstruction(Opcodes.ANEWARRAY, getType(Class.class));
@@ -1353,7 +1361,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "construct", MethodType.methodType(Object.class, Class.class, Class[].class, Object[].class).toMethodDescriptorString());
 						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;Ljava/lang/Class<*>;[Ljava/lang/Object;)TT;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ALOAD_2);
 						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(Class.class), "getDeclaredConstructor", MethodType.methodType(Constructor.class, Class[].class).toMethodDescriptorString(), false);
@@ -1370,7 +1378,7 @@ public class ReflectionFactory
 					 * Object invokeMethodHandle(MethodHandle handle, Object... args);
 					 */
 					{
-						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invokeMethodHandle", MethodType.methodType(Object.class, MethodHandle.class, Object[].class).toMethodDescriptorString()).addCode();
+						CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invokeMethodHandle", MethodType.methodType(Object.class, MethodHandle.class, Object[].class).toMethodDescriptorString()).addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ALOAD_2);
 						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
@@ -1384,7 +1392,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class, Class.class, String.class).toMethodDescriptorString());
 						mw.addSignature("(Ljava/lang/Class<*>;Ljava/lang/String;)Ljava/lang/reflect/Field;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_0);
@@ -1410,7 +1418,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "getMethod", "(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;");
 						mw.addSignature("(Ljava/lang/Class<*>;Ljava/lang/String;[Ljava/lang/Class<*>;)Ljava/lang/reflect/Method;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_0);
 						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredMethods0", "(Z)[Ljava/lang/reflect/Method;", false);
@@ -1450,7 +1458,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "getConstructor", MethodType.methodType(Constructor.class, Class.class, Class[].class).toMethodDescriptorString());
 						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;[Ljava/lang/Class<*>;)Ljava/lang/reflect/Constructor<TT;>;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_0);
 						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredConstructors0", MethodType.methodType(Constructor[].class, boolean.class).toMethodDescriptorString(), false);
@@ -1510,7 +1518,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString());
 						mw.addSignature("(Ljava/lang/Class<*>;)[Ljava/lang/reflect/Field;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_0);
 						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredFields0", MethodType.methodType(Field[].class, boolean.class).toMethodDescriptorString(), false);
@@ -1524,7 +1532,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getMethods", MethodType.methodType(Method[].class, Class.class).toMethodDescriptorString());
 						mw.addSignature("(Ljava/lang/Class<*>;)[Ljava/lang/reflect/Method;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_0);
 						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredMethods0", MethodType.methodType(Method[].class, boolean.class).toMethodDescriptorString(), false);
@@ -1538,7 +1546,7 @@ public class ReflectionFactory
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getConstructors", MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString());
 						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;)[Ljava/lang/reflect/Constructor<TT;>;");
-						AttributeCodeWriter code = mw.addCode();
+						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_0);
 						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredConstructors0", MethodType.methodType(Constructor[].class, boolean.class).toMethodDescriptorString(), false);
@@ -1550,7 +1558,7 @@ public class ReflectionFactory
 					 * void throwException(Throwable t);
 					 */
 					{
-						AttributeCodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "throwException", "(Ljava/lang/Throwable;)V").addCode();
+						CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "throwException", "(Ljava/lang/Throwable;)V").addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ATHROW);
 						code.setMaxs(1, 2);

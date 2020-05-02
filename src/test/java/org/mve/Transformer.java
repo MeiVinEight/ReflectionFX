@@ -1,13 +1,8 @@
 package org.mve;
 
-import org.mve.io.RandomAccessByteArray;
-import org.mve.util.asm.ConstantPoolFinder;
-import org.mve.util.asm.Opcodes;
-import org.mve.util.asm.file.AttributeCode;
 import org.mve.util.asm.file.ClassFile;
 import org.mve.util.asm.file.ClassMethod;
 import org.mve.util.asm.file.ConstantClass;
-import org.mve.util.asm.file.ConstantNameAndType;
 import org.mve.util.asm.file.ConstantPool;
 import org.mve.util.asm.file.ConstantUTF8;
 
@@ -35,21 +30,26 @@ public class Transformer
 				ConstantClass clazz = (ConstantClass) pool.getConstantPoolElement(file.getThisClassIndex());
 				ConstantUTF8 utf = (ConstantUTF8) pool.getConstantPoolElement(clazz.getNameIndex());
 				String name = utf.getUTF8();
-//				String simpleName = filter(name);
-//				if (simpleName != null)
-//				{
-//					try
-//					{
-//						FileOutputStream out = new FileOutputStream(simpleName+".class");
-//						out.write(classfileBuffer);
-//						out.flush();
-//						out.close();
-//					}
-//					catch (Exception e)
-//					{
-//						e.printStackTrace();
-//					}
-//				}
+				for (int i=0; i<file.getMethodCount(); i++)
+				{
+					ClassMethod method = file.getMethod(i);
+					String methodname = ((ConstantUTF8) pool.getConstantPoolElement(method.getNameIndex())).getUTF8();
+					if (methodname.equals("invokeStatic__V"))
+					{
+						try
+						{
+							FileOutputStream out = new FileOutputStream("b.class");
+							out.write(classfileBuffer);
+							out.flush();
+							out.close();
+						}
+						catch (Exception E)
+						{
+							E.printStackTrace();
+						}
+						return classfileBuffer;
+					}
+				}
 				return classfileBuffer;
 			}
 		});

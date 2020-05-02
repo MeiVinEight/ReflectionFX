@@ -11,11 +11,12 @@ public class FieldWriter
 	private String desc;
 	private AttributeWriter[] attributes = new AttributeWriter[0];
 
-	public void set(int accessFlag, String name, String desc)
+	public FieldWriter set(int accessFlag, String name, String desc)
 	{
 		this.accessFlag = accessFlag;
 		this.name = name;
 		this.desc = desc;
+		return this;
 	}
 
 	public int getAccessFlag()

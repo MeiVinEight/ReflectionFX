@@ -6,11 +6,11 @@ import org.mve.util.asm.file.AttributeSignature;
 import org.mve.util.asm.file.AttributeType;
 import org.mve.util.asm.file.ConstantPool;
 
-public class AttributeSignatureWriter implements AttributeWriter
+public class SignatureWriter implements AttributeWriter
 {
 	public final String signature;
 
-	public AttributeSignatureWriter(String signature)
+	public SignatureWriter(String signature)
 	{
 		this.signature = signature;
 	}

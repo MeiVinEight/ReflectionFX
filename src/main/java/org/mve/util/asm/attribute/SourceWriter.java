@@ -6,11 +6,11 @@ import org.mve.util.asm.file.AttributeSourceFile;
 import org.mve.util.asm.file.AttributeType;
 import org.mve.util.asm.file.ConstantPool;
 
-public class AttributeSourceWriter implements AttributeWriter
+public class SourceWriter implements AttributeWriter
 {
 	public final String source;
 
-	public AttributeSourceWriter(String source)
+	public SourceWriter(String source)
 	{
 		this.source = source;
 	}
