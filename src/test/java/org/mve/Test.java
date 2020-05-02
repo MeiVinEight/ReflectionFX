@@ -1,8 +1,5 @@
-package org.mve.test;
+package org.mve;
 
-
-import org.mve.util.SystemUtil;
-import org.mve.util.reflect.ReflectionFactory;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -12,12 +9,7 @@ public class Test
 {
 	private static void method()
 	{
-		new Throwable().printStackTrace(System.out);
-	}
-
-	public static void invoke(Object... obj)
-	{
-		method();
+		new Throwable().printStackTrace();
 	}
 
 	public static MethodHandle get() throws Throwable

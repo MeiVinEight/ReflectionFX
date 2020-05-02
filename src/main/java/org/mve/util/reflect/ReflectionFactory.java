@@ -145,7 +145,7 @@ public class ReflectionFactory
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean special, boolean isAbstract)
 	{
-		String className = "org/mve/util/reflect/MethodAccessor";
+		String className = "org/mve/util/reflect/MethodAccessor"+id++;
 		String desc = type.toMethodDescriptorString();
 		final String owner = clazz.getTypeName().replace('.', '/');
 		Class<?> returnType = type.returnType();
@@ -154,13 +154,7 @@ public class ReflectionFactory
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("MethodAccessor"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(returnType))+">;");
-		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
-			.addAttribute(new RuntimeVisibleAnnotationsWriter()
-				.addAnnotation(new AnnotationWriter().set("Ljava/lang/invoke/LambdaForm$Hidden;"))
-				.addAnnotation(new AnnotationWriter().set("Ljava/lang/invoke/ForceInline;"))
-				.addAnnotation(new AnnotationWriter().set("Ljava/lang/invoke/LambdaForm$Compiled;"))
-			)
-			.addCode();
+		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 		if (!isStatic) arrayFirst(code, stack);
 		pushArguments(params, code, isStatic ? 0 : 1, stack);
 		int invoke = isStatic ? Opcodes.INVOKESTATIC : special ? Opcodes.INVOKESPECIAL : isAbstract ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL;
@@ -175,13 +169,13 @@ public class ReflectionFactory
 		else warp(returnType, code, stack);
 		code.addInstruction(Opcodes.ARETURN);
 		code.setMaxs(stack.getMaxSize(), 2);
-		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(clazz, cw.toByteArray(), null));
+		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(getClassLoader(callerLoader).define(cw.toByteArray()));
 	}
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect)
 	{
 		if (typeWarp(type) == Void.class) throw new IllegalArgumentException("illegal type: void");
-		String className = "org/mve/util/reflect/FieldAccessor";
+		String className = "org/mve/util/reflect/FieldAccessor"+id++;
 		String desc = getDescriptor(type);
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
@@ -302,7 +296,7 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, MethodType type)
 	{
 		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/util/reflect/ConstructorAccessor";
+		String className = "org/mve/util/reflect/ConstructorAccessor"+id++;
 		String desc = type.toMethodDescriptorString();
 		final OperandStack stack = new OperandStack();
 		String owner = clazz.getTypeName().replace('.', '/');
@@ -330,7 +324,7 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz)
 	{
 		if (typeWarp(clazz) == Void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/util/reflect/Allocator";
+		String className = "org/mve/util/reflect/Allocator"+id++;
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Allocator"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;");
@@ -338,7 +332,7 @@ public class ReflectionFactory
 		code.addTypeInstruction(Opcodes.NEW, getType(clazz));
 		code.addInstruction(Opcodes.ARETURN);
 		code.setMaxs(1, 2);
-		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(clazz, cw.toByteArray(), null));
+		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(getClassLoader(callerLoader).define(cw.toByteArray()));
 	}
 
 	private static ReflectionClassLoader getClassLoader(ClassLoader callerLoader)
