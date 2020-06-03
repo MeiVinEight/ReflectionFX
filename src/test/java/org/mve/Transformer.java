@@ -8,7 +8,6 @@ import org.mve.util.asm.file.ConstantUTF8;
 
 import java.io.FileOutputStream;
 import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 import java.util.LinkedList;
@@ -21,71 +20,35 @@ public class Transformer
 
 	public static void premain(String agentArgs, Instrumentation instrumentation)
 	{
-		instrumentation.addTransformer(new ClassFileTransformer()
+		instrumentation.addTransformer((loader, className, classBeingRedefined, protectionDomain, classfileBuffer) ->
 		{
-			@Override
-			public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer)
+			ClassFile file = new ClassFile(classfileBuffer);
+			ConstantPool pool = file.getConstantPool();
+			ConstantClass clazz = (ConstantClass) pool.getConstantPoolElement(file.getThisClassIndex());
+			ConstantUTF8 utf = (ConstantUTF8) pool.getConstantPoolElement(clazz.getNameIndex());
+			String name = utf.getUTF8();
+			System.out.println(name);
+			for (int i=0; i<file.getMethodCount(); i++)
 			{
-				ClassFile file = new ClassFile(classfileBuffer);
-				ConstantPool pool = file.getConstantPool();
-				ConstantClass clazz = (ConstantClass) pool.getConstantPoolElement(file.getThisClassIndex());
-				ConstantUTF8 utf = (ConstantUTF8) pool.getConstantPoolElement(clazz.getNameIndex());
-				String name = utf.getUTF8();
-				System.out.println(name);
-				for (int i=0; i<file.getMethodCount(); i++)
+				ClassMethod method = file.getMethod(i);
+				String methodname = ((ConstantUTF8) pool.getConstantPoolElement(method.getNameIndex())).getUTF8();
+				if (methodname.equals("invokeStatic_L_V"))
 				{
-					ClassMethod method = file.getMethod(i);
-					String methodname = ((ConstantUTF8) pool.getConstantPoolElement(method.getNameIndex())).getUTF8();
-					if (methodname.equals("invokeStatic_L_V"))
+					try
 					{
-						try
-						{
-							FileOutputStream out = new FileOutputStream("invokeStatic_L_V.class");
-							out.write(classfileBuffer);
-							out.flush();
-							out.close();
-						}
-						catch (Exception E)
-						{
-							E.printStackTrace();
-						}
-						return classfileBuffer;
+						FileOutputStream out = new FileOutputStream("invokeStatic_L_V.class");
+						out.write(classfileBuffer);
+						out.flush();
+						out.close();
 					}
-				}
-				return classfileBuffer;
-			}
-
-			@Override
-			public byte[] transform(Module module, ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer)
-			{
-				ClassFile file = new ClassFile(classfileBuffer);
-				ConstantPool pool = file.getConstantPool();
-				ConstantClass clazz = (ConstantClass) pool.getConstantPoolElement(file.getThisClassIndex());
-				ConstantUTF8 utf = (ConstantUTF8) pool.getConstantPoolElement(clazz.getNameIndex());
-				String name = utf.getUTF8();
-				System.out.println(name);
-				for (int i=0; i<file.getMethodCount(); i++)
-				{
-					ClassMethod method = file.getMethod(i);
-					String methodname = ((ConstantUTF8) pool.getConstantPoolElement(method.getNameIndex())).getUTF8();
-					if (methodname.equals("invokeStatic"))
+					catch (Exception E)
 					{
-						try
-						{
-							FileOutputStream out = new FileOutputStream("invokeStatic_L_V.class");
-							out.write(classfileBuffer);
-							out.flush();
-							out.close();
-						}
-						catch (Exception E)
-						{
-							E.printStackTrace();
-						}
-						return classfileBuffer;
+						E.printStackTrace();
 					}
+					return classfileBuffer;
 				}
-				return classfileBuffer;
 			}
+			return classfileBuffer;
 		});
 	}
 
@@ -98,7 +61,5 @@ public class Transformer
 	static
 	{
 		FILTERS.add(name -> name.startsWith("sun/reflect/GeneratedMethodAccessor"));
-		FILTERS.add(name -> name.startsWith("org/mve/util/reflect/ReflectionAccessorImpl"));
-		FILTERS.add(name -> name.equals("org/mve/Main"));
 	}
 }

@@ -1,24 +1,10 @@
 package org.mve.util.asm.file;
 
-public class ConstantInterfaceMethodReference extends ConstantPoolElement
+public class ConstantInterfaceMethodReference extends ConstantMethodReference
 {
-	private final short classIndex;
-	private final short nameAndTypeIndex;
-
 	public ConstantInterfaceMethodReference(short classIndex, short nameAndTypeIndex)
 	{
-		this.classIndex = classIndex;
-		this.nameAndTypeIndex = nameAndTypeIndex;
-	}
-
-	public short getClassIndex()
-	{
-		return classIndex;
-	}
-
-	public short getNameAndTypeIndex()
-	{
-		return nameAndTypeIndex;
+		super(classIndex, nameAndTypeIndex);
 	}
 
 	@Override
@@ -30,12 +16,8 @@ public class ConstantInterfaceMethodReference extends ConstantPoolElement
 	@Override
 	public byte[] toByteArray()
 	{
-		byte[] b = new byte[5];
+		byte[] b = super.toByteArray();
 		b[0] = this.getType().getCode();
-		b[1] = (byte) ((this.classIndex >>> 8) & 0XFF);
-		b[2] = (byte) (this.classIndex & 0XFF);
-		b[3] = (byte) ((this.nameAndTypeIndex >>> 8) & 0XFF);
-		b[4] = (byte) (this.nameAndTypeIndex & 0XFF);
 		return b;
 	}
 }

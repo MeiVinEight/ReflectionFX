@@ -17,7 +17,7 @@ public class ElementValueArray extends ElementValue
 
 	public void addElementValue(ElementValue value)
 	{
-		ElementValue[] arr = new ElementValue[this.valueCount];
+		ElementValue[] arr = new ElementValue[this.valueCount+1];
 		System.arraycopy(this.values, 0, arr, 0, this.valueCount);
 		arr[this.valueCount] = value;
 		this.values = arr;

@@ -272,10 +272,10 @@ public class ClassFile implements Binary
 			{
 				case 1:
 				{
-					short length = codeAccessor.readShort();
+					int length = codeAccessor.readUnsignedShort();
 					byte[] bytes = new byte[length];
 					if (length != codeAccessor.read(bytes)) throw new ClassFormatError();
-					this.constantPool.addConstantPoolElement(new ConstantUTF8(length, new String(bytes)));
+					this.constantPool.addConstantPoolElement(new ConstantUTF8((short) length, new String(bytes)));
 					break;
 				}
 				case 3:
@@ -358,6 +358,9 @@ public class ClassFile implements Binary
 					short index = codeAccessor.readShort();
 					this.constantPool.addConstantPoolElement(new ConstantMethodType(index));
 					break;
+				}
+				case 17:
+				{
 				}
 				case 18:
 				{

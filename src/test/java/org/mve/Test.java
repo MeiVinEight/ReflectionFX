@@ -9,7 +9,13 @@ public class Test
 {
 	private static void method()
 	{
-		new Throwable().printStackTrace();
+//		new Throwable().printStackTrace();
+	}
+
+	public static Object invoke(Object... args)
+	{
+		method();
+		return null;
 	}
 
 	public static MethodHandle get() throws Throwable
