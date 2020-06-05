@@ -40,7 +40,160 @@ public class ReflectionFactory
 	private static final ReflectionClassLoader INTERNAL_CLASS_LOADER;
 	private static final String MAGIC_ACCESSOR;
 	private static final Map<ClassLoader, ReflectionClassLoader> CLASS_LOADER_MAP = new ConcurrentHashMap<>();
+
+	public static final int
+		KIND_INVOKE_VIRTUAL		= 0,
+		KIND_INVOKE_SPECIAL		= 1,
+		KIND_INVOKE_STATIC		= 2,
+		KIND_INVOKE_INTERFACE	= 3,
+		KIND_GET				= 4,
+		KIND_PUT				= 5,
+		KIND_NEW				= 6,
+		KIND_NEW_CONSTRUCT		= 7;
+
 	private static int id = 0;
+
+	private final ClassWriter generator = new ClassWriter();
+	private final Class<?> target;
+
+	public ReflectionFactory(Class<?> handle, Class<?> target)
+	{
+		this.target = target;
+		this.generator.set(0x34, 0x21, handle.getTypeName().replace('.', '/').concat("Impl"+id++), MAGIC_ACCESSOR, new String[]{getType(handle)});
+	}
+
+	public ReflectionFactory method(MethodKind implementation, MethodKind invocation, int kind)
+	{
+		CodeWriter code = this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString()).addCode();
+		int local = 1;
+		Class<?>[] params = implementation.type().parameterArray();
+		for (Class<?> c : params)
+		{
+			if (integer(c)) code.addLocalVariableInstruction(Opcodes.ILOAD, local);
+			else if (c == long.class) code.addLocalVariableInstruction(Opcodes.LLOAD, local);
+			else if (c == float.class) code.addLocalVariableInstruction(Opcodes.FLOAD, local);
+			else if (c == double.class) code.addLocalVariableInstruction(Opcodes.DLOAD, local);
+			else code.addLocalVariableInstruction(Opcodes.ALOAD, local);
+			local += typeSize(c);
+		}
+		code.addMethodInstruction(0xB6 + kind, getType(target), invocation.name(), invocation.type().toMethodDescriptorString(), kind == KIND_INVOKE_INTERFACE);
+		Class<?> c = implementation.type().returnType();
+		if (c == void.class)
+		{
+			if (invocation.type().returnType() != void.class)
+			{
+				if (typeSize(invocation.type().returnType()) == 2) code.addInstruction(Opcodes.POP2);
+				else code.addInstruction(Opcodes.POP);
+			}
+			code.addInstruction(Opcodes.RETURN);
+		}
+		else if (integer(c)) code.addInstruction(Opcodes.IRETURN);
+		else if (c == long.class) code.addInstruction(Opcodes.LRETURN);
+		else if (c == float.class) code.addInstruction(Opcodes.FRETURN);
+		else if (c == double.class) code.addInstruction(Opcodes.DRETURN);
+		else code.addInstruction(Opcodes.ARETURN);
+		code.setMaxs(Math.max(typeSize(invocation.type().returnType()), local-1), local);
+		return this;
+	}
+
+	public ReflectionFactory field(MethodKind implementation, String operation, int kind)
+	{
+		Field f = ACCESSOR.getField(target, operation);
+		Class<?> type = f.getType();
+		boolean isStatic = Modifier.isStatic(f.getModifiers());
+		CodeWriter code = this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString()).addCode();
+		code.setMaxLocals(1 + (isStatic ? 0 : 1) + typeSize(type));
+		boolean isFinal = Modifier.isFinal(f.getModifiers());
+		int opcode = kind + 0xAE;
+		opcode += isStatic ? 0 : 2;
+		int load;
+		if (integer(type)) load = Opcodes.ILOAD_0;
+		else if (type == long.class) load = Opcodes.LLOAD_0;
+		else if (type == float.class) load = Opcodes.FLOAD_0;
+		else if (type == double.class) load = Opcodes.DLOAD_0;
+		else load = Opcodes.ALOAD_0;
+		load += isStatic ? 1 : 2;
+		if (kind == KIND_PUT)
+		{
+			if (isFinal)
+			{
+				long offset = UNSAFE.staticFieldOffset(f);
+				code.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class));
+				if (isStatic) code.addConstantInstruction(Opcodes.LDC, new Type(target));
+				else code.addInstruction(Opcodes.ALOAD_1);
+				code.addConstantInstruction(Opcodes.LDC2_W, offset);
+				code.addInstruction(load);
+				if (type == byte.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", true);
+				else if (type == short.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", true);
+				else if (type == int.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", true);
+				else if (type == long.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", true);
+				else if (type == float.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", true);
+				else if (type == double.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", true);
+				else if (type == boolean.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", true);
+				else if (type == char.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", true);
+				else code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
+				code.addInstruction(Opcodes.RETURN).setMaxStack(4 + typeSize(type));
+			}
+			else
+			{
+				if (!isStatic) code.addInstruction(Opcodes.ALOAD_1);
+				code
+					.addInstruction(load)
+					.addFieldInstruction(opcode, getType(target), f.getName(), getDescriptor(type))
+					.addInstruction(Opcodes.RETURN)
+					.setMaxStack(typeSize(type) + (isStatic ? 0 : 1));
+			}
+		}
+		else if (kind == KIND_GET)
+		{
+			if (!isStatic) code.addInstruction(Opcodes.ALOAD_1);
+			code.addFieldInstruction(opcode, getType(target), f.getName(), getDescriptor(type));
+			if (integer(type)) code.addInstruction(Opcodes.IRETURN);
+			else if (type == long.class) code.addInstruction(Opcodes.LRETURN);
+			else if (type == float.class) code.addInstruction(Opcodes.FRETURN);
+			else if (type == double.class) code.addInstruction(Opcodes.DRETURN);
+			else code.addInstruction(Opcodes.ARETURN);
+			code.setMaxStack(typeSize(type));
+		}
+		return this;
+	}
+
+	public ReflectionFactory instantiation(MethodKind implementation)
+	{
+		this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString()).addCode()
+			.addTypeInstruction(Opcodes.NEW, getType(target))
+			.addInstruction(Opcodes.ARETURN)
+			.setMaxs(1, 1 + parameterSize(implementation.type().parameterArray()));
+		return this;
+	}
+
+	public ReflectionFactory construct(MethodKind implementation, MethodKind invocation)
+	{
+		CodeWriter code = this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString()).addCode()
+			.addTypeInstruction(Opcodes.NEW, getType(target))
+			.addInstruction(Opcodes.DUP)
+			.setMaxs(2 + parameterSize(implementation.type().parameterArray()), 1 + parameterSize(implementation.type().parameterArray()));
+		int local = 1;
+		Class<?>[] params = implementation.type().parameterArray();
+		for (Class<?> c : params)
+		{
+			if (integer(c)) code.addLocalVariableInstruction(Opcodes.ILOAD, local);
+			else if (c == long.class) code.addLocalVariableInstruction(Opcodes.LLOAD, local);
+			else if (c == float.class) code.addLocalVariableInstruction(Opcodes.FLOAD, local);
+			else if (c == double.class) code.addLocalVariableInstruction(Opcodes.DLOAD, local);
+			else code.addLocalVariableInstruction(Opcodes.ALOAD, local);
+			local += typeSize(c);
+		}
+		code
+			.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(target), "<init>", invocation.type().toMethodDescriptorString(), false)
+			.addInstruction(Opcodes.ARETURN);
+		return this;
+	}
+
+	public <T> T allocate()
+	{
+		return (T) UNSAFE.allocateInstance(getClassLoader(target.getClassLoader()).define(this.generator.toByteArray()));
+	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String methodName, boolean isStatic, boolean special, boolean isAbstract, Class<?> returnType, Class<?>... params)
 	{
@@ -141,336 +294,14 @@ public class ReflectionFactory
 		return ACCESSOR.construct(getClassLoader(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader))).define(cw.toByteArray()), new Class[]{Object.class}, new Object[]{value});
 	}
 
-	public static <T> T reflection(Class<T> handle, String implName, MethodType implType, Class<?> target, String name, MethodType methodType)
+	public static <T> T reflection(Class<T> handle, String implName, MethodType implType, Class<?> target, String name, MethodType methodType, int kind)
 	{
-		Method implMethod;
-		Method[] methods = ACCESSOR.getMethods(handle);
-		FIND:
-		{
-			for (Method m : methods)
-			{
-				if (m.getName().equals(implName) && m.getReturnType() == implType.returnType() && Arrays.equals(m.getParameterTypes(), implType.parameterArray()))
-				{
-					implMethod = m;
-					break FIND;
-				}
-			}
-			ACCESSOR.throwException(new NoSuchMethodException(handle.getName().concat(".").concat(implName).concat(implType.toMethodDescriptorString())));
-			return null;
-		}
-		BiConsumer<Class<?>, CodeWriter> returnGenerator = (c, code)->
-		{
-			if (c == void.class) code.addInstruction(Opcodes.RETURN);
-			else if (c == byte.class || c == short.class || c == int.class || c == boolean.class || c == char.class) code.addInstruction(Opcodes.IRETURN);
-			else if (c == long.class) code.addInstruction(Opcodes.LRETURN);
-			else if (c == float.class) code.addInstruction(Opcodes.FRETURN);
-			else if (c == double.class) code.addInstruction(Opcodes.DRETURN);
-			else code.addInstruction(Opcodes.ARETURN);
-		};
-		ClassWriter cw = new ClassWriter();
-		cw.set(0x34, 0x21, handle.getTypeName().replace('.', '/').concat("Impl"+id++), MAGIC_ACCESSOR, new String[]{getType(handle)});
-		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, implName, implType.toMethodDescriptorString()).addCode();
-		ReflectionSite site = implMethod.getDeclaredAnnotation(ReflectionSite.class);
-		int type = site.type();
-		int kind = site.kind();
-		switch (type)
-		{
-			case ReflectionSite.REFLECTION_TYPE_METHOD:
-			{
-				Class<?> returnType = methodType.returnType();
-				Class<?>[] params = methodType.parameterArray();
-				int local = 1;
-				int ret = typeSize(returnType);
-				for (Class<?> c : params)
-				{
-					if (c == byte.class || c == short.class || c == int.class || c == char.class || c == boolean.class) code.addLocalVariableInstruction(Opcodes.ILOAD, local);
-					else if (c == long.class) code.addLocalVariableInstruction(Opcodes.LLOAD, local);
-					else if (c == float.class) code.addLocalVariableInstruction(Opcodes.FLOAD, local);
-					else if (c == double.class) code.addLocalVariableInstruction(Opcodes.DLOAD, local);
-					else code.addLocalVariableInstruction(Opcodes.ALOAD, local);
-					local+= typeSize(c);
-				}
-				switch (kind)
-				{
-					case ReflectionSite.KIND_INVOKE_STATIC:
-					{
-						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(target), name, methodType.toMethodDescriptorString(), false);
-						break;
-					}
-					case ReflectionSite.KIND_INVOKE_SPECIAL:
-					{
-						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(target), name, methodType.toMethodDescriptorString(), false);
-						break;
-					}
-					case ReflectionSite.KIND_INVOKE_INTERFACE:
-					{
-						code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(target), name, methodType.toMethodDescriptorString(), true);
-						break;
-					}
-					case ReflectionSite.KIND_INVOKE_VIRTUAL:
-					{
-						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(target), name, methodType.toMethodDescriptorString(), false);
-						break;
-					}
-				}
-				returnGenerator.accept(returnType, code);
-				code.setMaxs(Math.max(local, ret), local);
-				break;
-			}
-			case ReflectionSite.REFLECTION_TYPE_FIELD:
-			{
-				switch (kind)
-				{
-					case ReflectionSite.KIND_GET_STATIC:
-					{
-						code
-							.addFieldInstruction(Opcodes.GETSTATIC, getType(target), name, getDescriptor(methodType.returnType()))
-							.setMaxs(typeSize(methodType.returnType()), 1);
-						returnGenerator.accept(methodType.returnType(), code);
-						break;
-					}
-					case ReflectionSite.KIND_GET_FIELD:
-					{
-						code
-							.addInstruction(Opcodes.ALOAD_1)
-							.addFieldInstruction(Opcodes.GETFIELD, getType(target), name, getDescriptor(methodType.returnType()))
-							.setMaxs(typeSize(methodType.returnType()), 2);
-						returnGenerator.accept(methodType.returnType(), code);
-						break;
-					}
-					case ReflectionSite.KIND_PUT_STATIC:
-					{
-						Field field;
-						Field[] fields = ACCESSOR.getFields(target);
-						FIND:
-						{
-							for (Field f : fields)
-							{
-								if (f.getName().equals(name) && f.getType() == methodType.returnType())
-								{
-									field = f;
-									break FIND;
-								}
-							}
-							ACCESSOR.throwException(new NoSuchFieldException(target.getName().concat(".").concat(name).concat(":").concat(methodType.returnType().getTypeName())));
-							return null;
-						}
-						Class<?> c = methodType.returnType();
-						boolean deepreflect = Modifier.isFinal(field.getModifiers());
-						if (deepreflect)
-						{
-							long offset = UNSAFE.staticFieldOffset(field);
-							code
-								.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
-								.addConstantInstruction(Opcodes.LDC, new Type(target))
-								.addConstantInstruction(Opcodes.LDC2_W, offset);
-							if (c == byte.class)
-							{
-								code
-									.addInstruction(Opcodes.ILOAD_1)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", true);
-							}
-							else if (c == short.class)
-							{
-								code
-									.addInstruction(Opcodes.ILOAD_1)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", true);
-							}
-							else if (c == int.class)
-							{
-								code
-									.addInstruction(Opcodes.ILOAD_1)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", true);
-							}
-							else if (c == long.class)
-							{
-								code
-									.addInstruction(Opcodes.LLOAD_1)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", true);
-							}
-							else if (c == float.class)
-							{
-								code
-									.addInstruction(Opcodes.FLOAD_1)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", true);
-							}
-							else if (c == double.class)
-							{
-								code
-									.addInstruction(Opcodes.DLOAD_1)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", true);
-							}
-							else if (c == boolean.class)
-							{
-								code
-									.addInstruction(Opcodes.ILOAD_1)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", true);
-							}
-							else if (c == char.class)
-							{
-								code
-									.addInstruction(Opcodes.ILOAD_1)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", true);
-							}
-							else
-							{
-								code
-									.addInstruction(Opcodes.ALOAD_1)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
-							}
-							code
-								.addInstruction(Opcodes.RETURN)
-								.setMaxs(4 + typeSize(c), 1 + typeSize(c));
-						}
-						else
-						{
-							if (c == byte.class || c == short.class || c == int.class || c == boolean.class || c == char.class) code.addInstruction(Opcodes.ILOAD_1);
-							else if (c == long.class) code.addInstruction(Opcodes.LLOAD_1);
-							else if (c == float.class) code.addInstruction(Opcodes.FLOAD_1);
-							else if (c == double.class) code.addInstruction(Opcodes.DLOAD_1);
-							else code.addInstruction(Opcodes.ALOAD_1);
-							code
-								.addFieldInstruction(Opcodes.PUTSTATIC, getType(target), name, getDescriptor(c))
-								.addInstruction(Opcodes.RETURN)
-								.setMaxs(typeSize(c), 1 + typeSize(c));
-						}
-						break;
-					}
-					case ReflectionSite.KIND_PUT_FIELD:
-					{
-						Field field;
-						Field[] fields = ACCESSOR.getFields(target);
-						FIND:
-						{
-							for (Field f : fields)
-							{
-								if (f.getName().equals(name) && f.getType() == methodType.returnType())
-								{
-									field = f;
-									break FIND;
-								}
-							}
-							ACCESSOR.throwException(new NoSuchFieldException(target.getName().concat(".").concat(name).concat(":").concat(methodType.returnType().getTypeName())));
-							return null;
-						}
-						Class<?> c = methodType.returnType();
-						boolean deepreflect = Modifier.isFinal(field.getModifiers());
-						if (deepreflect)
-						{
-							long offset = UNSAFE.staticFieldOffset(field);
-							code
-								.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
-								.addInstruction(Opcodes.ALOAD_1)
-								.addConstantInstruction(Opcodes.LDC2_W, offset);
-							if (c == byte.class)
-							{
-								code
-									.addInstruction(Opcodes.ILOAD_2)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", true);
-							}
-							else if (c == short.class)
-							{
-								code
-									.addInstruction(Opcodes.ILOAD_2)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", true);
-							}
-							else if (c == int.class)
-							{
-								code
-									.addInstruction(Opcodes.ILOAD_2)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", true);
-							}
-							else if (c == long.class)
-							{
-								code
-									.addInstruction(Opcodes.LLOAD_2)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", true);
-							}
-							else if (c == float.class)
-							{
-								code
-									.addInstruction(Opcodes.FLOAD_2)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", true);
-							}
-							else if (c == double.class)
-							{
-								code
-									.addInstruction(Opcodes.DLOAD_2)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", true);
-							}
-							else if (c == boolean.class)
-							{
-								code
-									.addInstruction(Opcodes.ILOAD_2)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", true);
-							}
-							else if (c == char.class)
-							{
-								code
-									.addInstruction(Opcodes.ILOAD_2)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", true);
-							}
-							else
-							{
-								code
-									.addInstruction(Opcodes.ALOAD_2)
-									.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
-							}
-							code
-								.addInstruction(Opcodes.RETURN)
-								.setMaxs(4 + typeSize(c), 1 + typeSize(c));
-						}
-						else
-						{
-							code.addInstruction(Opcodes.ALOAD_1);
-							if (c == byte.class || c == short.class || c == int.class || c == boolean.class || c == char.class) code.addInstruction(Opcodes.ILOAD_2);
-							else if (c == long.class) code.addInstruction(Opcodes.LLOAD_2);
-							else if (c == float.class) code.addInstruction(Opcodes.FLOAD_2);
-							else if (c == double.class) code.addInstruction(Opcodes.DLOAD_2);
-							else code.addInstruction(Opcodes.ALOAD_2);
-							code
-								.addFieldInstruction(Opcodes.PUTFIELD, getType(target), name, getDescriptor(c))
-								.addInstruction(Opcodes.RETURN)
-								.setMaxs(1 + typeSize(c), 2 + typeSize(c));
-						}
-						break;
-					}
-				}
-				break;
-			}
-			case ReflectionSite.REFLECTION_TYPE_NEW:
-			{
-				code
-					.addTypeInstruction(Opcodes.NEW, getType(target))
-					.addInstruction(Opcodes.ARETURN)
-					.setMaxs(1, 1);
-				break;
-			}
-			case ReflectionSite.REFLECTION_TYPE_NEW_CONSTRUCT:
-			{
-				code
-					.addTypeInstruction(Opcodes.NEW, getType(target))
-					.addInstruction(Opcodes.DUP);
-				Class<?>[] params = methodType.parameterArray();
-				int local = 1;
-				for (Class<?> c : params)
-				{
-					if (c == byte.class || c == short.class || c == int.class || c == char.class || c == boolean.class) code.addLocalVariableInstruction(Opcodes.ILOAD, local);
-					else if (c == long.class) code.addLocalVariableInstruction(Opcodes.LLOAD, local);
-					else if (c == float.class) code.addLocalVariableInstruction(Opcodes.FLOAD, local);
-					else if (c == double.class) code.addLocalVariableInstruction(Opcodes.DLOAD, local);
-					else code.addLocalVariableInstruction(Opcodes.ALOAD, local);
-					local+= typeSize(c);
-				}
-				code
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(target), "<init>", methodType.toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ARETURN)
-					.setMaxs(2 + local - 1, local);
-				break;
-			}
-		}
-		byte[] classcode = cw.toByteArray();
-		return (T) UNSAFE.allocateInstance(getClassLoader(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader))).define(classcode));
+		ReflectionFactory factory = new ReflectionFactory(handle, target);
+		if (kind == KIND_INVOKE_VIRTUAL || kind == KIND_INVOKE_SPECIAL || kind == KIND_INVOKE_STATIC || kind == KIND_INVOKE_INTERFACE) factory.method(new MethodKind(implName, implType), new MethodKind(name, methodType), kind);
+		else if (kind == KIND_GET || kind == KIND_PUT) factory.field(new MethodKind(implName, implType), name, kind);
+		else if (kind == KIND_NEW) factory.instantiation(new MethodKind(implName, implType));
+		else if (kind == KIND_NEW_CONSTRUCT) factory.construct(new MethodKind(implName, implType), new MethodKind(name, methodType));
+		return factory.allocate();
 	}
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean special, boolean isAbstract)
@@ -789,6 +620,18 @@ public class ReflectionFactory
 		else if (c == byte.class || c == short.class || c == int.class || c == float.class || c == boolean.class || c == char.class) return 1;
 		else if (c == long.class || c == double.class) return 2;
 		else return 1;
+	}
+
+	private static boolean integer(Class<?> type)
+	{
+		return type == byte.class || type == short.class || type == int.class || type == boolean.class || type == char.class;
+	}
+
+	private static int parameterSize(Class<?>[] params)
+	{
+		int size = 0;
+		for (Class<?> c : params) size += typeSize(c);
+		return size;
 	}
 
 	private static String primitive(Class<?> clazz)

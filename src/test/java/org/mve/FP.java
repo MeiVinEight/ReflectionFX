@@ -1,12 +1,12 @@
 package org.mve;
 
-import org.mve.util.reflect.ReflectionSite;
+import org.mve.test.A;
 
 public interface FP
 {
-	@ReflectionSite(
-		type = ReflectionSite.REFLECTION_TYPE_NEW,
-		kind = ReflectionSite.KIND_INVOKE_SPECIAL
-	)
-	Main call();
+	void call(String s);
+
+	void aa(A a, String s);
+
+	A a();
 }
