@@ -192,7 +192,23 @@ public class ReflectionFactory
 
 	public ReflectionFactory enumHelper()
 	{
-		long offset = UNSAFE.staticFieldOffset(ACCESSOR.getField(this.target, "$VALUES"));
+		String values;
+		FIND:
+		{
+			Field[] fields = ACCESSOR.getFields(this.target);
+			for (Field field : fields)
+			{
+				int modifier = field.getModifiers();
+				if (Modifier.isPrivate(modifier) && Modifier.isStatic(modifier) && Modifier.isFinal(modifier) && field.getType().isArray() && field.getType().getComponentType() == this.target)
+				{
+					values = field.getName();
+					break FIND;
+				}
+			}
+			ACCESSOR.throwException(new NoSuchFieldException("private static final ".concat(target.getName()).concat("[]")));
+			return null;
+		}
+		long offset = UNSAFE.staticFieldOffset(ACCESSOR.getField(this.target, values));
 		Marker m1 = new Marker();
 		this.generator
 			.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/EnumHelper<".concat(getDescriptor(target)).concat(">;"))
@@ -201,7 +217,7 @@ public class ReflectionFactory
 			.addTypeInstruction(Opcodes.NEW, getType(target))
 			.addInstruction(Opcodes.DUP)
 			.addInstruction(Opcodes.ALOAD_1)
-			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.ARRAYLENGTH)
 			.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Enum.class), "<init>", MethodType.methodType(void.class, String.class, int.class).toMethodDescriptorString(), false)
 			.addInstruction(Opcodes.ARETURN)
@@ -219,7 +235,7 @@ public class ReflectionFactory
 			.getClassWriter()
 			.addMethod(AccessFlag.ACC_PUBLIC, "values", MethodType.methodType(Object[].class).toMethodDescriptorString())
 			.addCode()
-			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.ARETURN)
 			.setMaxs(1, 1)
 			.getClassWriter()
@@ -238,7 +254,7 @@ public class ReflectionFactory
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
-			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.DUP)
 			.addInstruction(Opcodes.ARRAYLENGTH)
 			.addInstruction(Opcodes.DUP_X1)
@@ -258,13 +274,13 @@ public class ReflectionFactory
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
-			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.ARRAYLENGTH)
 			.addInstruction(Opcodes.ICONST_1)
 			.addInstruction(Opcodes.ISUB)
 			.addTypeInstruction(Opcodes.ANEWARRAY, getType(target))
 			.addInstruction(Opcodes.DUP)
-			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.SWAP)
 			.addInstruction(Opcodes.ICONST_0)
 			.addInstruction(Opcodes.SWAP)
@@ -276,14 +292,14 @@ public class ReflectionFactory
 			.addInstruction(Opcodes.ILOAD_1)
 			.addJumpInstruction(Opcodes.IF_ICMPEQ, m1)
 			.addInstruction(Opcodes.DUP)
-			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.SWAP)
 			.addInstruction(Opcodes.ILOAD_1)
 			.addInstruction(Opcodes.ICONST_1)
 			.addInstruction(Opcodes.IADD)
 			.addInstruction(Opcodes.SWAP)
 			.addInstruction(Opcodes.ILOAD_1)
-			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.ARRAYLENGTH)
 			.addInstruction(Opcodes.ILOAD_1)
 			.addInstruction(Opcodes.ICONST_1)
