@@ -8,16 +8,27 @@ import java.util.Arrays;
 
 public class MethodWriter
 {
+	private final ClassWriter classWriter;
 	private int accessFlag;
 	private String name;
-	private String desc;
+	private String type;
 	private AttributeWriter[] attributes = new AttributeWriter[0];
+
+	public MethodWriter(ClassWriter cw)
+	{
+		this.classWriter = cw;
+	}
+
+	public ClassWriter getClassWriter()
+	{
+		return classWriter;
+	}
 
 	public MethodWriter set(int accessFlag, String name, String desc)
 	{
 		this.accessFlag = accessFlag;
 		this.name = name;
-		this.desc = desc;
+		this.type = desc;
 		return this;
 	}
 
@@ -41,14 +52,14 @@ public class MethodWriter
 		this.name = name;
 	}
 
-	public String getDesc()
+	public String getType()
 	{
-		return desc;
+		return type;
 	}
 
-	public void setDesc(String desc)
+	public void setType(String type)
 	{
-		this.desc = desc;
+		this.type = type;
 	}
 
 	public MethodWriter addAttribute(AttributeWriter writer)
@@ -66,7 +77,7 @@ public class MethodWriter
 
 	public CodeWriter addCode()
 	{
-		CodeWriter writer = new CodeWriter();
+		CodeWriter writer = new CodeWriter(this.classWriter);
 		this.addAttribute(writer);
 		return writer;
 	}

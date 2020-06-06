@@ -105,10 +105,10 @@ public class ClassWriter
 		return this;
 	}
 
-	public MethodWriter addMethod(int accessFlag, String name, String desc)
+	public MethodWriter addMethod(int accessFlag, String name, String type)
 	{
-		MethodWriter writer = new MethodWriter();
-		writer.set(accessFlag, name, desc);
+		MethodWriter writer = new MethodWriter(this);
+		writer.set(accessFlag, name, type);
 		this.addMethod(writer);
 		return writer;
 	}
@@ -121,9 +121,10 @@ public class ClassWriter
 		return this;
 	}
 
-	public void addSignature(String signature)
+	public ClassWriter addSignature(String signature)
 	{
 		this.addAttribute(new SignatureWriter(signature));
+		return this;
 	}
 
 	public SourceWriter addSource(String name)
@@ -171,7 +172,7 @@ public class ClassWriter
 			ClassMethod method = new ClassMethod();
 			method.setAccessFlag((short) writer.getAccessFlag());
 			method.setNameIndex((short) ConstantPoolFinder.findUTF8(pool, writer.getName()));
-			method.setDescriptorIndex((short) ConstantPoolFinder.findUTF8(pool, writer.getDesc()));
+			method.setDescriptorIndex((short) ConstantPoolFinder.findUTF8(pool, writer.getType()));
 			AttributeWriter[] attrs = writer.getAttributes();
 			for (AttributeWriter attr : attrs) method.addAttribute(attr.getAttribute(pool));
 			file.addMethod(method);

@@ -1,6 +1,7 @@
 package org.mve.util.asm.attribute;
 
 import org.mve.io.RandomAccessByteArray;
+import org.mve.util.asm.ClassWriter;
 import org.mve.util.asm.ConstantPoolFinder;
 import org.mve.util.asm.Marker;
 import org.mve.util.asm.Opcodes;
@@ -26,12 +27,23 @@ import java.util.Arrays;
 
 public class CodeWriter implements AttributeWriter
 {
+	private final ClassWriter classWriter;
 	private int maxStack;
 	private int maxLocals;
 	private int addr;
 	private Instruction[] instructions = new Instruction[0];
 	private StructExceptionTable[] exceptionTables = new StructExceptionTable[0];
 	private AttributeWriter[] attributes = new AttributeWriter[0];
+
+	public CodeWriter(ClassWriter cw)
+	{
+		this.classWriter = cw;
+	}
+
+	public ClassWriter getClassWriter()
+	{
+		return classWriter;
+	}
 
 	public int getMaxStack()
 	{
