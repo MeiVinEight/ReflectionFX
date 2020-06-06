@@ -39,4 +39,6 @@ public interface MagicAccessor
 	<T> Constructor<T>[] getConstructors(Class<?> target);
 
 	void throwException(Throwable t);
+
+	void initialize(Object obj);
 }

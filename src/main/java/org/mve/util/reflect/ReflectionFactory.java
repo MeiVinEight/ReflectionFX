@@ -190,9 +190,118 @@ public class ReflectionFactory
 		return this;
 	}
 
+	public ReflectionFactory enumHelper()
+	{
+		long offset = UNSAFE.staticFieldOffset(ACCESSOR.getField(this.target, "$VALUES"));
+		Marker m1 = new Marker();
+		this.generator
+			.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/EnumHelper<".concat(getDescriptor(target)).concat(">;"))
+			.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, String.class).toMethodDescriptorString())
+			.addCode()
+			.addTypeInstruction(Opcodes.NEW, getType(target))
+			.addInstruction(Opcodes.DUP)
+			.addInstruction(Opcodes.ALOAD_1)
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addInstruction(Opcodes.ARRAYLENGTH)
+			.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Enum.class), "<init>", MethodType.methodType(void.class, String.class, int.class).toMethodDescriptorString(), false)
+			.addInstruction(Opcodes.ARETURN)
+			.setMaxs(4, 2)
+			.getClassWriter()
+			.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, String.class, int.class).toMethodDescriptorString())
+			.addCode()
+			.addTypeInstruction(Opcodes.NEW, getType(target))
+			.addInstruction(Opcodes.DUP)
+			.addInstruction(Opcodes.ALOAD_1)
+			.addInstruction(Opcodes.ILOAD_2)
+			.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Enum.class), "<init>", MethodType.methodType(void.class, String.class, int.class).toMethodDescriptorString(), false)
+			.addInstruction(Opcodes.ARETURN)
+			.setMaxs(4, 3)
+			.getClassWriter()
+			.addMethod(AccessFlag.ACC_PUBLIC, "values", MethodType.methodType(Object[].class).toMethodDescriptorString())
+			.addCode()
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addInstruction(Opcodes.ARETURN)
+			.setMaxs(1, 1)
+			.getClassWriter()
+			.addMethod(AccessFlag.ACC_PUBLIC, "values", MethodType.methodType(void.class, Object[].class).toMethodDescriptorString())
+			.addCode()
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
+			.addConstantInstruction(Opcodes.LDC, new Type(target))
+			.addConstantInstruction(Opcodes.LDC2_W, offset)
+			.addInstruction(Opcodes.ALOAD_1)
+			.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true)
+			.addInstruction(Opcodes.RETURN)
+			.setMaxs(5, 2)
+			.getClassWriter()
+			.addMethod(AccessFlag.ACC_PUBLIC, "add", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
+			.addCode()
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
+			.addConstantInstruction(Opcodes.LDC, new Type(target))
+			.addConstantInstruction(Opcodes.LDC2_W, offset)
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addInstruction(Opcodes.DUP)
+			.addInstruction(Opcodes.ARRAYLENGTH)
+			.addInstruction(Opcodes.DUP_X1)
+			.addInstruction(Opcodes.ICONST_1)
+			.addInstruction(Opcodes.IADD)
+			.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Arrays.class), "copyOf", MethodType.methodType(Object[].class, Object[].class, int.class).toMethodDescriptorString(), false)
+			.addInstruction(Opcodes.DUP_X1)
+			.addInstruction(Opcodes.SWAP)
+			.addInstruction(Opcodes.ALOAD_1)
+			.addInstruction(Opcodes.AASTORE)
+			.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true)
+			.addInstruction(Opcodes.RETURN)
+			.setMaxs(8, 2)
+			.getClassWriter()
+			.addMethod(AccessFlag.ACC_PUBLIC, "remove", MethodType.methodType(void.class, int.class).toMethodDescriptorString())
+			.addCode()
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
+			.addConstantInstruction(Opcodes.LDC, new Type(target))
+			.addConstantInstruction(Opcodes.LDC2_W, offset)
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addInstruction(Opcodes.ARRAYLENGTH)
+			.addInstruction(Opcodes.ICONST_1)
+			.addInstruction(Opcodes.ISUB)
+			.addTypeInstruction(Opcodes.ANEWARRAY, getType(target))
+			.addInstruction(Opcodes.DUP)
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addInstruction(Opcodes.SWAP)
+			.addInstruction(Opcodes.ICONST_0)
+			.addInstruction(Opcodes.SWAP)
+			.addInstruction(Opcodes.ICONST_0)
+			.addInstruction(Opcodes.ILOAD_1)
+			.addMethodInstruction(Opcodes.INVOKESTATIC, getType(System.class), "arraycopy", MethodType.methodType(void.class, Object.class, int.class, Object.class, int.class, int.class).toMethodDescriptorString(), false)
+			.addInstruction(Opcodes.DUP)
+			.addInstruction(Opcodes.ARRAYLENGTH)
+			.addInstruction(Opcodes.ILOAD_1)
+			.addJumpInstruction(Opcodes.IF_ICMPEQ, m1)
+			.addInstruction(Opcodes.DUP)
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addInstruction(Opcodes.SWAP)
+			.addInstruction(Opcodes.ILOAD_1)
+			.addInstruction(Opcodes.ICONST_1)
+			.addInstruction(Opcodes.IADD)
+			.addInstruction(Opcodes.SWAP)
+			.addInstruction(Opcodes.ILOAD_1)
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), "$VALUES", "[".concat(getDescriptor(target)))
+			.addInstruction(Opcodes.ARRAYLENGTH)
+			.addInstruction(Opcodes.ILOAD_1)
+			.addInstruction(Opcodes.ICONST_1)
+			.addInstruction(Opcodes.IADD)
+			.addInstruction(Opcodes.ISUB)
+			.addMethodInstruction(Opcodes.INVOKESTATIC, getType(System.class), "arraycopy", MethodType.methodType(void.class, Object.class, int.class, Object.class, int.class, int.class).toMethodDescriptorString(), false)
+			.mark(m1)
+			.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true)
+			.addInstruction(Opcodes.RETURN)
+			.setMaxs(12, 2);
+		return this;
+	}
+
 	public <T> T allocate()
 	{
-		return (T) UNSAFE.allocateInstance(getClassLoader(target.getClassLoader()).define(this.generator.toByteArray()));
+		T value = (T) UNSAFE.allocateInstance(getClassLoader(target.getClassLoader()).define(this.generator.toByteArray()));
+		ACCESSOR.initialize(value);
+		return value;
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String methodName, boolean isStatic, boolean special, boolean isAbstract, Class<?> returnType, Class<?>... params)
@@ -302,6 +411,11 @@ public class ReflectionFactory
 		else if (kind == KIND_NEW) factory.instantiation(new MethodKind(implName, implType));
 		else if (kind == KIND_NEW_CONSTRUCT) factory.construct(new MethodKind(implName, implType), new MethodKind(name, methodType));
 		return factory.allocate();
+	}
+
+	public static <T> EnumHelper<T> getEnumHelper(Class<?> target)
+	{
+		return new ReflectionFactory(EnumHelper.class, target).enumHelper().allocate();
 	}
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean special, boolean isAbstract)
@@ -1757,6 +1871,19 @@ public class ReflectionFactory
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ATHROW);
 						code.setMaxs(1, 2);
+					}
+
+					/*
+					 * void initialize(Object obj);
+					 */
+					{
+						cw
+							.addMethod(AccessFlag.ACC_PUBLIC, "initialize", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
+							.addCode()
+							.addInstruction(Opcodes.ALOAD_1)
+							.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Object.class), "<init>", "()V", false)
+							.addInstruction(Opcodes.RETURN)
+							.setMaxs(1, 2);
 					}
 
 					byte[] code = cw.toByteArray();
