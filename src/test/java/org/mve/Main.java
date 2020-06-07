@@ -11,6 +11,7 @@ public class Main
 	public static void main(String[] args)
 	{
 		EnumHelper<C> enumHelper = ReflectionFactory.getEnumHelper(C.class);
+		System.out.println(enumHelper);
 		System.out.println(Arrays.toString(C.values()));
 		C d = enumHelper.construct("D", 3);
 		enumHelper.add(d);

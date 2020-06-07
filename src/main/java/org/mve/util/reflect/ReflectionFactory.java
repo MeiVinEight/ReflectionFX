@@ -241,6 +241,12 @@ public class ReflectionFactory
 			.getClassWriter()
 			.addMethod(AccessFlag.ACC_PUBLIC, "values", MethodType.methodType(void.class, Object[].class).toMethodDescriptorString())
 			.addCode()
+			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addInstruction(Opcodes.ACONST_NULL)
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstants", getDescriptor(Object[].class))
+			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addInstruction(Opcodes.ACONST_NULL)
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstantDirectory", getDescriptor(Map.class))
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
@@ -251,6 +257,12 @@ public class ReflectionFactory
 			.getClassWriter()
 			.addMethod(AccessFlag.ACC_PUBLIC, "add", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
 			.addCode()
+			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addInstruction(Opcodes.ACONST_NULL)
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstants", getDescriptor(Object[].class))
+			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addInstruction(Opcodes.ACONST_NULL)
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstantDirectory", getDescriptor(Map.class))
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
@@ -271,6 +283,12 @@ public class ReflectionFactory
 			.getClassWriter()
 			.addMethod(AccessFlag.ACC_PUBLIC, "remove", MethodType.methodType(void.class, int.class).toMethodDescriptorString())
 			.addCode()
+			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addInstruction(Opcodes.ACONST_NULL)
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstants", getDescriptor(Object[].class))
+			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addInstruction(Opcodes.ACONST_NULL)
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstantDirectory", getDescriptor(Map.class))
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
@@ -315,7 +333,8 @@ public class ReflectionFactory
 
 	public <T> T allocate()
 	{
-		T value = (T) UNSAFE.allocateInstance(getClassLoader(target.getClassLoader()).define(this.generator.toByteArray()));
+		byte[] classcode = this.generator.toByteArray();
+		T value = (T) UNSAFE.allocateInstance(getClassLoader(target.getClassLoader()).define(classcode));
 		ACCESSOR.initialize(value);
 		return value;
 	}
