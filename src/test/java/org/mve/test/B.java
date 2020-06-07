@@ -1,9 +1,6 @@
 package org.mve.test;
 
-public class B
+public class B<T>
 {
-	public static void test()
-	{
-		System.out.println("B");
-	}
+	T[] values;
 }

@@ -37,8 +37,8 @@ public class ReflectionFactory
 	public static final MethodHandles.Lookup TRUSTED_LOOKUP;
 	public static final ReflectionAccessor<Object> METHOD_HANDLE_INVOKER;
 	public static final MagicAccessor ACCESSOR;
+	private static final String[] CONSTANT_POOL = new String[3];
 	private static final ReflectionClassLoader INTERNAL_CLASS_LOADER;
-	private static final String MAGIC_ACCESSOR;
 	private static final Map<ClassLoader, ReflectionClassLoader> CLASS_LOADER_MAP = new ConcurrentHashMap<>();
 
 	public static final int
@@ -59,7 +59,7 @@ public class ReflectionFactory
 	public ReflectionFactory(Class<?> handle, Class<?> target)
 	{
 		this.target = target;
-		this.generator.set(0x34, 0x21, handle.getTypeName().replace('.', '/').concat("Impl"+id++), MAGIC_ACCESSOR, new String[]{getType(handle)});
+		this.generator.set(0x34, 0x21, handle.getTypeName().replace('.', '/').concat("Impl"+id++), CONSTANT_POOL[0], new String[]{getType(handle)});
 	}
 
 	public ReflectionFactory method(MethodKind implementation, MethodKind invocation, int kind)
@@ -243,10 +243,10 @@ public class ReflectionFactory
 			.addCode()
 			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstants", getDescriptor(Object[].class))
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
 			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstantDirectory", getDescriptor(Map.class))
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
@@ -259,10 +259,10 @@ public class ReflectionFactory
 			.addCode()
 			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstants", getDescriptor(Object[].class))
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
 			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstantDirectory", getDescriptor(Map.class))
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
@@ -285,10 +285,10 @@ public class ReflectionFactory
 			.addCode()
 			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstants", getDescriptor(Object[].class))
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
 			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstantDirectory", getDescriptor(Map.class))
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
@@ -461,7 +461,7 @@ public class ReflectionFactory
 		Class<?> returnType = type.returnType();
 		Class<?>[] params = type.parameterArray();
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("MethodAccessor.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(returnType))+">;");
 		Consumer<CodeWriter> gen = code ->
 		{
@@ -494,7 +494,7 @@ public class ReflectionFactory
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("FieldAccessor.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(type))+">;");
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 		Marker marker = new Marker();
@@ -622,7 +622,7 @@ public class ReflectionFactory
 		String desc = type.toMethodDescriptorString();
 		String owner = clazz.getTypeName().replace('.', '/');
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstructorAccessor.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;");
 		Consumer<CodeWriter> gen = code ->
 		{
@@ -652,7 +652,7 @@ public class ReflectionFactory
 		if (typeWarp(clazz) == Void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
 		String className = "org/mve/util/reflect/Allocator"+id++;
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Allocator.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, MAGIC_ACCESSOR, new String[]{"org/mve/util/reflect/ReflectionAccessor"});
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{"org/mve/util/reflect/ReflectionAccessor"});
 		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;");
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 		code.addTypeInstruction(Opcodes.NEW, getType(clazz));
@@ -850,8 +850,8 @@ public class ReflectionFactory
 					usf.putObjectVolatile(clazz, offset, illegalAccessLogger);
 				}
 
-				if (majorVersion <= 0X34) MAGIC_ACCESSOR = "sun/reflect/MagicAccessorImpl";
-				else MAGIC_ACCESSOR = "jdk/internal/reflect/MagicAccessorImpl";
+				if (majorVersion <= 0X34) CONSTANT_POOL[0] = "sun/reflect/MagicAccessorImpl";
+				else CONSTANT_POOL[0] = "jdk/internal/reflect/MagicAccessorImpl";
 			}
 
 			/*
@@ -1568,7 +1568,7 @@ public class ReflectionFactory
 				{
 					String className = "org/mve/util/reflect/ReflectionMagicAccessor";
 					ClassWriter cw = new ClassWriter();
-					cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER | AccessFlag.ACC_FINAL, className, MAGIC_ACCESSOR, new String[]{getType(MagicAccessor.class)});
+					cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER | AccessFlag.ACC_FINAL, className, CONSTANT_POOL[0], new String[]{getType(MagicAccessor.class)});
 					cw.addSource("MagicAccessor.java");
 					cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "0", getDescriptor(SecurityManager.class));
 
@@ -1925,6 +1925,29 @@ public class ReflectionFactory
 					c = INTERNAL_CLASS_LOADER.define(code);
 				}
 				ACCESSOR = (MagicAccessor) UNSAFE.allocateInstance(c);
+			}
+
+			/*
+			 * Find enum cache
+			 */
+			{
+				Field[] fields = ACCESSOR.getFields(Class.class);
+				for (Field f : fields)
+				{
+					if (f.getType() == Object[].class && !Modifier.isStatic(f.getModifiers()) && !Modifier.isFinal(f.getModifiers()))
+					{
+						CONSTANT_POOL[1] = f.getName();
+						break;
+					}
+				}
+				for (Field f : fields)
+				{
+					if (f.getType() == Map.class)
+					{
+						CONSTANT_POOL[2] = f.getName();
+						break;
+					}
+				}
 			}
 		}
 		catch (Throwable t)
