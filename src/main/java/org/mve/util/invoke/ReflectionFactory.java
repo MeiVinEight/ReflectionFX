@@ -1,4 +1,4 @@
-package org.mve.util.reflect;
+package org.mve.util.invoke;
 
 import org.mve.util.asm.ClassWriter;
 import org.mve.util.asm.Marker;
@@ -211,7 +211,7 @@ public class ReflectionFactory
 		long offset = UNSAFE.staticFieldOffset(ACCESSOR.getField(this.target, values));
 		Marker m1 = new Marker();
 		this.generator
-			.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/EnumHelper<".concat(getDescriptor(target)).concat(">;"))
+			.addSignature("Ljava/lang/Object;L"+getType(EnumHelper.class)+"<".concat(getDescriptor(target)).concat(">;"))
 			.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, String.class).toMethodDescriptorString())
 			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
@@ -401,10 +401,10 @@ public class ReflectionFactory
 
 	public static ReflectionAccessor<Void> throwException()
 	{
-		String className = "org/mve/util/reflect/Throwable"+id++;
+		String className = "org/mve/util/invoke/Throwable"+id++;
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Thrower.java"));
-		cw.set(0x34, 0x21, className, "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Ljava/lang/Void;>;");
+		cw.set(0x34, 0x21, className, "java/lang/Object", new String[]{getType(ReflectionAccessor.class)});
+		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<Ljava/lang/Void;>;");
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 		code.addInstruction(Opcodes.ALOAD_1);
 		code.addInstruction(Opcodes.ICONST_0);
@@ -417,10 +417,10 @@ public class ReflectionFactory
 
 	public static <T> ReflectionAccessor<T> constant(T value)
 	{
-		String className = "org/mve/util/reflect/ConstantValue"+id++;
+		String className = "org/mve/util/invoke/ConstantValue"+id++;
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstantValue.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(value.getClass())+">;");
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, "java/lang/Object", new String[]{getType(ReflectionAccessor.class)});
+		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(value.getClass())+">;");
 		cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL, "0", "Ljava/lang/Object;");
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "<init>", "(Ljava/lang/Object;)V").addCode();
 		code.addInstruction(Opcodes.ALOAD_0);
@@ -455,14 +455,14 @@ public class ReflectionFactory
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean special, boolean isAbstract)
 	{
-		String className = "org/mve/util/reflect/MethodAccessor"+id++;
+		String className = "org/mve/util/invoke/MethodAccessor"+id++;
 		String desc = type.toMethodDescriptorString();
 		final String owner = clazz.getTypeName().replace('.', '/');
 		Class<?> returnType = type.returnType();
 		Class<?>[] params = type.parameterArray();
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("MethodAccessor.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(returnType))+">;");
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
+		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(typeWarp(returnType))+">;");
 		Consumer<CodeWriter> gen = code ->
 		{
 			final OperandStack stack = new OperandStack();
@@ -489,13 +489,13 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect)
 	{
 		if (typeWarp(type) == Void.class) throw new IllegalArgumentException("illegal type: void");
-		String className = "org/mve/util/reflect/FieldAccessor"+id++;
+		String className = "org/mve/util/invoke/FieldAccessor"+id++;
 		String desc = getDescriptor(type);
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("FieldAccessor.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(typeWarp(type))+">;");
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
+		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(typeWarp(type))+">;");
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 		Marker marker = new Marker();
 		code.addInstruction(Opcodes.ALOAD_1);
@@ -618,12 +618,12 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, MethodType type)
 	{
 		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/util/reflect/ConstructorAccessor"+id++;
+		String className = "org/mve/util/invoke/ConstructorAccessor"+id++;
 		String desc = type.toMethodDescriptorString();
 		String owner = clazz.getTypeName().replace('.', '/');
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstructorAccessor.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;");
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
+		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(clazz)+">;");
 		Consumer<CodeWriter> gen = code ->
 		{
 			final OperandStack stack = new OperandStack();
@@ -650,10 +650,10 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz)
 	{
 		if (typeWarp(clazz) == Void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/util/reflect/Allocator"+id++;
+		String className = "org/mve/util/invoke/Allocator"+id++;
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Allocator.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-		cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<"+getDescriptor(clazz)+">;");
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
+		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(clazz)+">;");
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
 		code.addTypeInstruction(Opcodes.NEW, getType(clazz));
 		code.addInstruction(Opcodes.ARETURN);
@@ -877,7 +877,7 @@ public class ReflectionFactory
 			 */
 			{
 				Class<?> usfClass = Class.forName(majorVersion > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
-				String className = "org/mve/util/reflect/UnsafeWrapper";
+				String className = "org/mve/util/invoke/UnsafeWrapper";
 				Class<?> clazz;
 				try
 				{
@@ -1511,13 +1511,13 @@ public class ReflectionFactory
 				Class<?> handleInvoker;
 				try
 				{
-					handleInvoker = Class.forName("org.mve.util.reflect.MethodHandleInvoker");
+					handleInvoker = Class.forName("org.mve.util.invoke.MethodHandleInvoker");
 				}
 				catch (Throwable t)
 				{
 					ClassWriter cw = new ClassWriter();
-					cw.set(52, AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC, "org/mve/util/reflect/MethodHandleInvoker", "java/lang/Object", new String[]{"org/mve/util/reflect/ReflectionAccessor"});
-					cw.addSignature("Ljava/lang/Object;Lorg/mve/util/reflect/ReflectionAccessor<Ljava/lang/Class<*>;>;");
+					cw.set(52, AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC, "org/mve/util/invoke/MethodHandleInvoker", "java/lang/Object", new String[]{getType(ReflectionAccessor.class)});
+					cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<Ljava/lang/Class<*>;>;");
 					/*
 					 * void MethodHandleInvoker();
 					 */
@@ -1562,11 +1562,11 @@ public class ReflectionFactory
 				Class<?> c;
 				try
 				{
-					c = Class.forName("org.mve.util.reflect.ReflectionMagicAccessor");
+					c = Class.forName("org.mve.util.invoke.ReflectionMagicAccessor");
 				}
 				catch (Throwable t)
 				{
-					String className = "org/mve/util/reflect/ReflectionMagicAccessor";
+					String className = "org/mve/util/invoke/ReflectionMagicAccessor";
 					ClassWriter cw = new ClassWriter();
 					cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER | AccessFlag.ACC_FINAL, className, CONSTANT_POOL[0], new String[]{getType(MagicAccessor.class)});
 					cw.addSource("MagicAccessor.java");

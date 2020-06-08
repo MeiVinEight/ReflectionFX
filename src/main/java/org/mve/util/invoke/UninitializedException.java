@@ -1,4 +1,4 @@
-package org.mve.util.reflect;
+package org.mve.util.invoke;
 
 public class UninitializedException extends RuntimeException
 {

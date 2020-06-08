@@ -1,8 +1,8 @@
 package org.mve;
 
 import org.mve.test.C;
-import org.mve.util.reflect.EnumHelper;
-import org.mve.util.reflect.ReflectionFactory;
+import org.mve.util.invoke.EnumHelper;
+import org.mve.util.invoke.ReflectionFactory;
 
 import java.util.Arrays;
 
