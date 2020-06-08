@@ -1,25 +1,29 @@
 package org.mve;
 
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-
 public class Test
 {
-	private static void method()
+	public static final Test INSTANCE = new Test();
+	private static String staticPrefix = "StaticPrefix";
+	private final String defaultPrefix;
+	private String prefix;
+
+	public Test(String prefix)
 	{
-//		new Throwable().printStackTrace();
+		this.defaultPrefix = "Default"+prefix;
+		this.prefix = prefix;
 	}
 
-	public static Object invoke(Object... args)
-	{
-		method();
-		return null;
-	}
+	public Test() { this("Prefix"); }
 
-	public static MethodHandle get() throws Throwable
-	{
-		return MethodHandles.lookup().findStatic(Test.class, "method", MethodType.methodType(void.class));
-	}
+	private static void staticPrint(String text) { System.out.println(staticPrefix + " - " + text); }
+
+	private void print(String text) { System.out.println(prefix + " - " + text); }
+
+	public String getPrefix() { return this.prefix; }
+
+	public String getDefaultPrefix() { return this.defaultPrefix; }
+
+	public static String getStaticPrefix() { return staticPrefix; }
 }
+
+
