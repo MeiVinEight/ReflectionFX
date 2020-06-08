@@ -339,14 +339,14 @@ public class ReflectionFactory
 		return value;
 	}
 
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String methodName, boolean isStatic, boolean special, boolean isAbstract, Class<?> returnType, Class<?>... params)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, String methodName, boolean isStatic, boolean special, boolean isAbstract, Class<?> returnType, Class<?>... params)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, methodName, MethodType.methodType(returnType, params), isStatic, special, isAbstract);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader)), target, methodName, MethodType.methodType(returnType, params), isStatic, special, isAbstract);
 	}
 
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String methodName, boolean isStatic, boolean special, boolean isAbstract, MethodType type)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, String methodName, boolean isStatic, boolean special, boolean isAbstract, MethodType type)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, methodName, type, isStatic, special, isAbstract);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader)), target, methodName, type, isStatic, special, isAbstract);
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Method method)
@@ -359,14 +359,14 @@ public class ReflectionFactory
 		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>)(method.getDeclaringClass()::getClassLoader)), method.getDeclaringClass(), method.getName(), MethodType.methodType(method.getReturnType(), method.getParameterTypes()), Modifier.isStatic(method.getModifiers()), special, Modifier.isAbstract(method.getModifiers()));
 	}
 
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, String fieldName, Class<?> type, boolean isStatic, boolean isFinal)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, false);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader)), target, fieldName, type, isStatic, isFinal, false);
 	}
 
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, fieldName, type, isStatic, isFinal, deepReflect);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader)), target, fieldName, type, isStatic, isFinal, deepReflect);
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Field field)
@@ -379,19 +379,19 @@ public class ReflectionFactory
 		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (field.getDeclaringClass()::getClassLoader)), field.getDeclaringClass(), field.getName(), field.getType(), Modifier.isStatic(field.getModifiers()), Modifier.isFinal(field.getModifiers()), deepReflect);
 	}
 
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader)), target);
 	}
 
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, boolean initialize)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, boolean initialize)
 	{
-		return initialize ? generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, MethodType.methodType(void.class)) : generic(ACCESSOR.getCallerClass().getClassLoader(), clazz);
+		return initialize ? generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader)), target, MethodType.methodType(void.class)) : generic(ACCESSOR.getCallerClass().getClassLoader(), target);
 	}
 
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> clazz, Class<?>... params)
+	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, Class<?>... params)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (clazz::getClassLoader)), clazz, MethodType.methodType(void.class, params));
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader)), target, MethodType.methodType(void.class, params));
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Constructor<?> ctr)
