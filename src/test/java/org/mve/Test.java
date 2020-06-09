@@ -24,6 +24,9 @@ public class Test
 	public String getDefaultPrefix() { return this.defaultPrefix; }
 
 	public static String getStaticPrefix() { return staticPrefix; }
+
+	public static enum TestEnum
+	{
+		A, B, C;
+	}
 }
-
-
