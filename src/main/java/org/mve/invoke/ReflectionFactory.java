@@ -68,9 +68,7 @@ import java.util.function.Consumer;
  * @see ReflectionFactory#getReflectionAccessor(Method)
  *
  * Reflect a field
- * @see ReflectionFactory#getReflectionAccessor(Class, String, Class, boolean, boolean, boolean)
  * @see ReflectionFactory#getReflectionAccessor(Class, String, Class, boolean, boolean)
- * @see ReflectionFactory#getReflectionAccessor(Field, boolean)
  * @see ReflectionFactory#getReflectionAccessor(Field)
  *
  * Allocate an object
@@ -827,22 +825,12 @@ public class ReflectionFactory
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, String fieldName, Class<?> type, boolean isStatic, boolean isFinal)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader)), target, fieldName, type, isStatic, isFinal, false);
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect)
-	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader)), target, fieldName, type, isStatic, isFinal, deepReflect);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (target::getClassLoader)), target, fieldName, type, isStatic, isFinal);
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Field field)
 	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (field.getDeclaringClass()::getClassLoader)), field.getDeclaringClass(), field.getName(), field.getType(), Modifier.isStatic(field.getModifiers()), Modifier.isFinal(field.getModifiers()), false);
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Field field, boolean deepReflect)
-	{
-		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (field.getDeclaringClass()::getClassLoader)), field.getDeclaringClass(), field.getName(), field.getType(), Modifier.isStatic(field.getModifiers()), Modifier.isFinal(field.getModifiers()), deepReflect);
+		return generic(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (field.getDeclaringClass()::getClassLoader)), field.getDeclaringClass(), field.getName(), field.getType(), Modifier.isStatic(field.getModifiers()), Modifier.isFinal(field.getModifiers()));
 	}
 
 	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target)
@@ -942,7 +930,7 @@ public class ReflectionFactory
 		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(getClassLoader(callerLoader).define(cw.toByteArray()));
 	}
 
-	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect)
+	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal)
 	{
 		if (typeWarp(type) == Void.class) throw new IllegalArgumentException("illegal type: void");
 		String className = "org/mve/invoke/FieldAccessor" +id++;
@@ -979,53 +967,37 @@ public class ReflectionFactory
 		}
 		if (isFinal)
 		{
-			if (deepReflect)
+			Field field1 = ACCESSOR.getField(clazz, fieldName);
+			long offset = isStatic ? UNSAFE.staticFieldOffset(field1) : UNSAFE.objectFieldOffset(field1);
+			code.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class));
+			stack.push();
+			if (isStatic) { code.addConstantInstruction(Opcodes.LDC, new Type(clazz)); stack.push(); }
+			else arrayFirst(code, stack);
+			code.addConstantInstruction(Opcodes.LDC2_W, offset);
+			stack.push();
+			code.addInstruction(Opcodes.ALOAD_1);
+			stack.push();
+			code.addInstruction(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
+			stack.push();
+			code.addInstruction(Opcodes.AALOAD);
+			stack.pop();
+			if (type.isPrimitive())
 			{
-				Field field1 = ACCESSOR.getField(clazz, fieldName);
-				long offset = isStatic ? UNSAFE.staticFieldOffset(field1) : UNSAFE.objectFieldOffset(field1);
-				code.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class));
-				stack.push();
-				if (isStatic) { code.addConstantInstruction(Opcodes.LDC, new Type(clazz)); stack.push(); }
-				else arrayFirst(code, stack);
-				code.addConstantInstruction(Opcodes.LDC2_W, offset);
-				stack.push();
-				code.addInstruction(Opcodes.ALOAD_1);
-				stack.push();
-				code.addInstruction(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
-				stack.push();
-				code.addInstruction(Opcodes.AALOAD);
-				stack.pop();
-				if (type.isPrimitive())
-				{
-					unwarp(type, code, stack);
-					if (type == long.class || type == double.class) stack.push();
-					if (type == byte.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", true);
-					else if (type == short.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", true);
-					else if (type == int.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", true);
-					else if (type == long.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", true);
-					else if (type == float.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", true);
-					else if (type == double.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", true);
-					else if (type == boolean.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", true);
-					else if (type == char.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", true);
-				}
-				else code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
-				stack.pop();
-				stack.pop();
-				stack.pop();
+				unwarp(type, code, stack);
+				if (type == long.class || type == double.class) stack.push();
+				if (type == byte.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", true);
+				else if (type == short.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", true);
+				else if (type == int.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", true);
+				else if (type == long.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", true);
+				else if (type == float.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", true);
+				else if (type == double.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", true);
+				else if (type == boolean.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", true);
+				else if (type == char.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", true);
 			}
-			else
-			{
-				code.addTypeInstruction(Opcodes.NEW, "java/lang/UnsupportedOperationException");
-				stack.push();
-				code.addInstruction(Opcodes.DUP);
-				stack.push();
-				code.addConstantInstruction(Opcodes.LDC, "Field is final");
-				stack.push();
-				code.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "(Ljava/lang/String;)V", false);
-				stack.pop();
-				stack.pop();
-				code.addInstruction(Opcodes.ATHROW);
-			}
+			else code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
+			stack.pop();
+			stack.pop();
+			stack.pop();
 			stack.pop();
 		}
 		else
