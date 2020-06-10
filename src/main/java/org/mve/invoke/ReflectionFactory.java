@@ -370,9 +370,26 @@ import java.util.function.Consumer;
 @SuppressWarnings({"unchecked"})
 public class ReflectionFactory
 {
+	/**
+	 * A wrapper of Unsafe
+	 * Includes Unsafe for Java 8 and above
+	 */
 	public static final Unsafe UNSAFE;
+
+	/**
+	 * The root lookup in jdk
+	 * It can find any element regardless of access rights
+	 */
 	public static final MethodHandles.Lookup TRUSTED_LOOKUP;
+
+	/**
+	 * Call MethodHandle without any exception thrown
+	 */
 	public static final ReflectionAccessor<Object> METHOD_HANDLE_INVOKER;
+
+	/**
+	 * Some useful methods
+	 */
 	public static final MagicAccessor ACCESSOR;
 	private static final String[] CONSTANT_POOL = new String[3];
 	private static final ReflectionClassLoader INTERNAL_CLASS_LOADER;
@@ -391,12 +408,29 @@ public class ReflectionFactory
 	private final ClassWriter generator = new ClassWriter();
 	private final Class<?> target;
 
+	/**
+	 * Construct a ReflectionFactory instance
+	 * It can be used to complete dynamic binding
+	 * @param handle Dynamically bound interface and must be an interface, generally a custom interface
+	 * @param target Dynamically bound target class
+	 */
 	public ReflectionFactory(Class<?> handle, Class<?> target)
 	{
 		this.target = target;
 		this.generator.set(0x34, 0x21, handle.getTypeName().replace('.', '/').concat("Impl"+id++), CONSTANT_POOL[0], new String[]{getType(handle)});
 	}
 
+	/**
+	 * Bind a method to the interface
+	 * @param implementation Method declared in the interface
+	 * @param invocation Bound method
+	 * @param kind Method call kind, it can be
+	 *             {@link ReflectionFactory#KIND_INVOKE_VIRTUAL}
+	 *             {@link ReflectionFactory#KIND_INVOKE_SPECIAL}
+	 *             {@link ReflectionFactory#KIND_INVOKE_STATIC}
+	 *             {@link ReflectionFactory#KIND_INVOKE_INTERFACE}
+	 * @return Chained call return
+	 */
 	public ReflectionFactory method(MethodKind implementation, MethodKind invocation, int kind)
 	{
 		CodeWriter code = this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString()).addCode();
@@ -431,6 +465,15 @@ public class ReflectionFactory
 		return this;
 	}
 
+	/**
+	 * Bind a field to the interface method
+	 * @param implementation Dynamically bound interface and must be an interface, generally a custom interface
+	 * @param operation The name of the bound field
+	 * @param kind Field operation type, it can be
+	 *             {@link ReflectionFactory#KIND_GET}
+	 *             {@link ReflectionFactory#KIND_PUT}
+	 * @return Chained call return
+	 */
 	public ReflectionFactory field(MethodKind implementation, String operation, int kind)
 	{
 		Field f = ACCESSOR.getField(target, operation);
@@ -493,6 +536,11 @@ public class ReflectionFactory
 		return this;
 	}
 
+	/**
+	 * Only allocate an object, do not call the constructor
+	 * @param implementation Dynamically bound interface and must be an interface, generally a custom interface
+	 * @return Chained call return
+	 */
 	public ReflectionFactory instantiation(MethodKind implementation)
 	{
 		this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString()).addCode()
@@ -502,6 +550,12 @@ public class ReflectionFactory
 		return this;
 	}
 
+	/**
+	 * Allocate an object and call constructor
+	 * @param implementation Dynamically bound interface and must be an interface, generally a custom interface
+	 * @param invocation The bound constructor
+	 * @return Chained call return
+	 */
 	public ReflectionFactory construct(MethodKind implementation, MethodKind invocation)
 	{
 		CodeWriter code = this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString()).addCode()
@@ -525,6 +579,10 @@ public class ReflectionFactory
 		return this;
 	}
 
+	/**
+	 * Add EnumHelper binding
+	 * @return Chained call return
+	 */
 	public ReflectionFactory enumHelper()
 	{
 		String values;
@@ -734,6 +792,11 @@ public class ReflectionFactory
 		return this;
 	}
 
+	/**
+	 * Complete the binding and return an instance of the interface implementation class
+	 * @param <T> Same type as "handle" when the constructor {@link ReflectionFactory#ReflectionFactory(Class, Class)} is called
+	 * @return The instance of "handle"
+	 */
 	public <T> T allocate()
 	{
 		byte[] classcode = this.generator.toByteArray();
