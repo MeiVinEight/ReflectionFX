@@ -1,4 +1,4 @@
-package org.mve.util.invoke;
+package org.mve.invoke;
 
 import org.mve.util.asm.ClassWriter;
 import org.mve.util.asm.Marker;
@@ -30,6 +30,181 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+/**
+ * ReflectionFactory is the core class of ReflectionFX
+ * All reflection operations must be implemented with this class
+ *
+ * The principle of all reflection is to bypass the bytecode
+ * check by inheriting MagicAccessorImpl
+ *
+ * it includes:
+ * @see ReflectionAccessor
+ * ReflectionAccessor is a universal reflection interface
+ * Realize reflection by implementing methods in interface through ReflectionFactory
+ * ReflectionFactory provides some methods to return ReflectionAccessor
+ * ReflectionAccessor declares a parameterless method
+ * @see ReflectionAccessor#invoke()
+ * Call this method when reflecting a parameterless static method
+ * or reflection to obtain a static field to skip the construction
+ * of variable parameters
+ *
+ * Passing parameters through variable parameters when reflecting with ReflectionAccessor
+ * @see ReflectionAccessor#invoke(Object...)
+ *
+ * When reflecting a static method, you can directly pass in the method parameters
+ *
+ * When reflecting non-static methods, you must first pass in the object to be called,
+ * and then pass in the method parameters
+ * When the method name is "<init>", it means that the construction method of the object to be called,
+ * of course, the object to be called must also be passed in
+ *
+ * Unlike the reflection library that comes with Java, it can reflect the
+ * construction method of already constructed objects
+ *
+ * Reflect a method
+ * @see ReflectionFactory#getReflectionAccessor(Class, String, boolean, boolean, boolean, Class, Class[])
+ * @see ReflectionFactory#getReflectionAccessor(Class, String, boolean, boolean, boolean, MethodType)
+ * @see ReflectionFactory#getReflectionAccessor(Method, boolean)
+ * @see ReflectionFactory#getReflectionAccessor(Method)
+ *
+ * Reflect a field
+ * @see ReflectionFactory#getReflectionAccessor(Class, String, Class, boolean, boolean, boolean)
+ * @see ReflectionFactory#getReflectionAccessor(Class, String, Class, boolean, boolean)
+ * @see ReflectionFactory#getReflectionAccessor(Field, boolean)
+ * @see ReflectionFactory#getReflectionAccessor(Field)
+ *
+ * Allocate an object
+ * @see ReflectionFactory#getReflectionAccessor(Class)
+ * @see ReflectionFactory#getReflectionAccessor(Class, boolean)
+ *
+ * Allocate an object and call constructor
+ * @see ReflectionFactory#getReflectionAccessor(Class, Class[])
+ * @see ReflectionFactory#getReflectionAccessor(Class, boolean)
+ * @see ReflectionFactory#getReflectionAccessor(Constructor)
+ *
+ *
+ * @see EnumHelper
+ * EnumHelper is an interface designed to manipulate
+ * enumeration lists in enumeration classes
+ *
+ * You can construct new enumeration instances,
+ * add/delete/modify enumeration lists,
+ * and this interface does not support modification
+ * for enumeration items in the enumeration class.
+ *
+ * @see EnumHelper#construct(String)
+ * Construct a new enumeration instance with the provided name
+ *
+ * @see EnumHelper#construct(String, int)
+ * Construct a new enumeration instance with the provided name and ordinal
+ *
+ * @see EnumHelper#values()
+ * Get enumeration list
+ * Unlike the static values method of the enumeration class,
+ * this method does not copy the list, the returned array
+ * is a reference to the list in the enumeration class
+ *
+ * @see EnumHelper#values(Object[])
+ * Replace the enumeration list in the enumeration class
+ * with the enumeration list passed in
+ *
+ * @see EnumHelper#add(Object)
+ * Add an enumeration item to the enumeration list
+ *
+ * @see EnumHelper#remove(int)
+ * Delete the enumeration item with the specified index in the enumeration list
+ *
+ * ReflectionFactory provides a method to return EnumHelper
+ * @see ReflectionFactory#getEnumHelper(Class)
+ *
+ *
+ * ReflectionFX provides a new reflection implementation
+ * It allows the user to customize the interface according
+ * to the specifications, and implement the methods declared
+ * in the interface through ReflectionFactory to achieve reflection
+ *
+ * I call this reflection implementation dynamic binding
+ *
+ * Just like java determines the method address of a virtual
+ * method at runtime, it allows to determine which method to
+ * call with a method in the interface at runtime
+ *
+ * Dynamic binding can also reflect field and construct objects
+ *
+ * Compared with ReflectionAccessor, when customizing
+ * a dynamically bound interface, the parameter list
+ * of the methods in the interface is clear, and there
+ * is no need to box and unbox the primitive types, nor does
+ * it need to construct variable parameters
+ *
+ *            *****************************************
+ *
+ * When using dynamic binding, an interface can only bind elements in the same class
+ *
+ *            *****************************************
+ *
+ * Usage:
+ * Suppose there is such a class to reflect the call
+ *
+ * public class PrintClass {
+ *     private void print(String text) {
+ *         System.out.println(text);
+ *     }
+ *
+ *     private int read(byte[] buf) {
+ *         return System.in.read(buf, 0, buf.length);
+ *     }
+ * }
+ *
+ * First declare an interface, declare the binding site in the interface
+ *
+ * public interface CallInterface {
+ *     // This method will be bound to the print method
+ *     // Because the target method is a non-static method, the first parameter needs to be passed in a target object
+ *     void print(PrintClass obj, String text);
+ *
+ *     // This method will be bound to the read method
+ *     int read(PrintClass obj, byte[] buf);
+ * }
+ *
+ * Binding through ReflectionFactory
+ * First instantiate a ReflectionFactory object
+ * @see ReflectionFactory#ReflectionFactory(Class, Class)
+ *
+ * Several bindings are provided in ReflectionFactory
+ *
+ * @see ReflectionFactory#method(MethodKind, MethodKind, int)
+ * Bind a method
+ *
+ * @see ReflectionFactory#field(MethodKind, String, int)
+ * Bind a field
+ *
+ * @see ReflectionFactory#instantiation(MethodKind)
+ * Only allocate an object, do not call the constructor
+ *
+ * @see ReflectionFactory#construct(MethodKind, MethodKind)
+ * Allocate an object and call constructor
+ *
+ * @see ReflectionFactory#enumHelper()
+ * Add EnumHelper binding
+ *
+ * ReflectionFactory factory = new ReflectionFactory(CallInterface.class, PrintClass.class);
+ * factory.method(new MethodKind("print", void.class, PrintClass.class, String.class), new MethodKind("print", void.class, String.class), ReflectionFactory.KIND_INVOKE_VIRTUAL);
+ * factory.method(new MethodKind("read", int.class, PrintClass.class, byte[].class), new MethodKind("read", int.class, byte[].class), ReflectionFactory.KIND_INVOKE_VIRTUAL);
+ * // Finally call the {@link ReflectionFactory#allocate()} method to complete the binding and return the instance
+ * CallInterface callsite = factory.allocate();
+ *
+ *
+ *
+ *
+ * This class provides some practical tools
+ * @see ReflectionFactory#UNSAFE
+ * @see ReflectionFactory#TRUSTED_LOOKUP
+ * @see ReflectionFactory#METHOD_HANDLE_INVOKER
+ * @see ReflectionFactory#ACCESSOR
+ *
+ * @author MeiVinEight QQ 3390038158
+ */
 @SuppressWarnings({"unchecked"})
 public class ReflectionFactory
 {
@@ -401,7 +576,7 @@ public class ReflectionFactory
 
 	public static ReflectionAccessor<Void> throwException()
 	{
-		String className = "org/mve/util/invoke/Throwable"+id++;
+		String className = "org/mve/invoke/Throwable" +id++;
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Thrower.java"));
 		cw.set(0x34, 0x21, className, "java/lang/Object", new String[]{getType(ReflectionAccessor.class)});
 		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<Ljava/lang/Void;>;");
@@ -417,7 +592,7 @@ public class ReflectionFactory
 
 	public static <T> ReflectionAccessor<T> constant(T value)
 	{
-		String className = "org/mve/util/invoke/ConstantValue"+id++;
+		String className = "org/mve/invoke/ConstantValue" +id++;
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstantValue.java"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, "java/lang/Object", new String[]{getType(ReflectionAccessor.class)});
 		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(value.getClass())+">;");
@@ -455,7 +630,7 @@ public class ReflectionFactory
 
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean special, boolean isAbstract)
 	{
-		String className = "org/mve/util/invoke/MethodAccessor"+id++;
+		String className = "org/mve/invoke/MethodAccessor" +id++;
 		String desc = type.toMethodDescriptorString();
 		final String owner = clazz.getTypeName().replace('.', '/');
 		Class<?> returnType = type.returnType();
@@ -489,7 +664,7 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal, boolean deepReflect)
 	{
 		if (typeWarp(type) == Void.class) throw new IllegalArgumentException("illegal type: void");
-		String className = "org/mve/util/invoke/FieldAccessor"+id++;
+		String className = "org/mve/invoke/FieldAccessor" +id++;
 		String desc = getDescriptor(type);
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
@@ -618,7 +793,7 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz, MethodType type)
 	{
 		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/util/invoke/ConstructorAccessor"+id++;
+		String className = "org/mve/invoke/ConstructorAccessor" +id++;
 		String desc = type.toMethodDescriptorString();
 		String owner = clazz.getTypeName().replace('.', '/');
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstructorAccessor.java"));
@@ -650,7 +825,7 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(ClassLoader callerLoader, Class<?> clazz)
 	{
 		if (typeWarp(clazz) == Void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/util/invoke/Allocator"+id++;
+		String className = "org/mve/invoke/Allocator" +id++;
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Allocator.java"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
 		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(clazz)+">;");
@@ -877,7 +1052,7 @@ public class ReflectionFactory
 			 */
 			{
 				Class<?> usfClass = Class.forName(majorVersion > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
-				String className = "org/mve/util/invoke/UnsafeWrapper";
+				String className = "org/mve/invoke/UnsafeWrapper";
 				Class<?> clazz;
 				try
 				{
@@ -1516,7 +1691,7 @@ public class ReflectionFactory
 				catch (Throwable t)
 				{
 					ClassWriter cw = new ClassWriter();
-					cw.set(52, AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC, "org/mve/util/invoke/MethodHandleInvoker", "java/lang/Object", new String[]{getType(ReflectionAccessor.class)});
+					cw.set(52, AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC, "org/mve/invoke/MethodHandleInvoker", "java/lang/Object", new String[]{getType(ReflectionAccessor.class)});
 					cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<Ljava/lang/Class<*>;>;");
 					/*
 					 * void MethodHandleInvoker();
@@ -1566,7 +1741,7 @@ public class ReflectionFactory
 				}
 				catch (Throwable t)
 				{
-					String className = "org/mve/util/invoke/ReflectionMagicAccessor";
+					String className = "org/mve/invoke/ReflectionMagicAccessor";
 					ClassWriter cw = new ClassWriter();
 					cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER | AccessFlag.ACC_FINAL, className, CONSTANT_POOL[0], new String[]{getType(MagicAccessor.class)});
 					cw.addSource("MagicAccessor.java");

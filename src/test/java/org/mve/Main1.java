@@ -1,7 +1,7 @@
 package org.mve;
 
-import org.mve.util.invoke.ReflectionAccessor;
-import org.mve.util.invoke.ReflectionFactory;
+import org.mve.invoke.ReflectionAccessor;
+import org.mve.invoke.ReflectionFactory;
 
 import java.lang.invoke.MethodType;
 

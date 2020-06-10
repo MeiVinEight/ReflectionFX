@@ -1,4 +1,4 @@
-package org.mve.util.invoke;
+package org.mve.invoke;
 
 public interface EnumHelper<T>
 {
