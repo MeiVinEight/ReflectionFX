@@ -143,6 +143,51 @@ import java.util.function.Consumer;
  *
  *            *****************************************
  *
+ * Binding through ReflectionFactory
+ * Instantiate a ReflectionFactory object
+ * @see ReflectionFactory#ReflectionFactory(Class, Class)
+ *
+ * Several binding methods are provided in ReflectionFactory
+ *
+ * @see ReflectionFactory#method(MethodKind, MethodKind, int)
+ * Bind a method
+ *
+ * @see ReflectionFactory#field(MethodKind, String, int)
+ * Bind a field
+ *
+ * @see ReflectionFactory#instantiation(MethodKind)
+ * Only allocate an object, do not call the constructor
+ *
+ * @see ReflectionFactory#construct(MethodKind, MethodKind)
+ * Allocate an object and call constructor
+ *
+ * @see ReflectionFactory#enumHelper()
+ * Add EnumHelper binding
+ *
+ * When binding a method or field, you need to pass in a "kind" to specify the call type
+ * Kinds available when binding methods:
+ * @see ReflectionFactory#KIND_INVOKE_VIRTUAL
+ * Standard call for non-static methods of kind
+ *
+ * @see ReflectionFactory#KIND_INVOKE_SPECIAL
+ * Ignore method override call method
+ *
+ * @see ReflectionFactory#KIND_INVOKE_INTERFACE
+ * Call an abstract method
+ *
+ * @see ReflectionFactory#KIND_INVOKE_STATIC
+ * Call a static method
+ *
+ * Kinds available when binding fields:
+ * @see ReflectionFactory#KIND_PUT
+ * Modify the field value
+ *
+ * @see ReflectionFactory#KIND_GET
+ * Get the field value
+ *
+ * When binding, the MethodKind of the binding site must be passed first,
+ * and then the information of the bound element
+ *
  * Usage:
  * Suppose there is such a class to reflect the call
  *
@@ -161,38 +206,155 @@ import java.util.function.Consumer;
  * public interface CallInterface {
  *     // This method will be bound to the print method
  *     // Because the target method is a non-static method, the first parameter needs to be passed in a target object
- *     void print(PrintClass obj, String text);
+ *     void callPrint(PrintClass obj, String text);
  *
  *     // This method will be bound to the read method
- *     int read(PrintClass obj, byte[] buf);
+ *     int callRead(PrintClass obj, byte[] buf);
  * }
  *
- * Binding through ReflectionFactory
- * First instantiate a ReflectionFactory object
- * @see ReflectionFactory#ReflectionFactory(Class, Class)
- *
- * Several bindings are provided in ReflectionFactory
- *
- * @see ReflectionFactory#method(MethodKind, MethodKind, int)
- * Bind a method
- *
- * @see ReflectionFactory#field(MethodKind, String, int)
- * Bind a field
- *
- * @see ReflectionFactory#instantiation(MethodKind)
- * Only allocate an object, do not call the constructor
- *
- * @see ReflectionFactory#construct(MethodKind, MethodKind)
- * Allocate an object and call constructor
- *
- * @see ReflectionFactory#enumHelper()
- * Add EnumHelper binding
+ * Then use the ReflectionFactory binding method
  *
  * ReflectionFactory factory = new ReflectionFactory(CallInterface.class, PrintClass.class);
- * factory.method(new MethodKind("print", void.class, PrintClass.class, String.class), new MethodKind("print", void.class, String.class), ReflectionFactory.KIND_INVOKE_VIRTUAL);
- * factory.method(new MethodKind("read", int.class, PrintClass.class, byte[].class), new MethodKind("read", int.class, byte[].class), ReflectionFactory.KIND_INVOKE_VIRTUAL);
+ * factory.method(new MethodKind("callPrint", void.class, PrintClass.class, String.class), new MethodKind("print", void.class, String.class), ReflectionFactory.KIND_INVOKE_VIRTUAL);
+ * factory.method(new MethodKind("callRead", int.class, PrintClass.class, byte[].class), new MethodKind("read", int.class, byte[].class), ReflectionFactory.KIND_INVOKE_VIRTUAL);
  * // Finally call the {@link ReflectionFactory#allocate()} method to complete the binding and return the instance
  * CallInterface callsite = factory.allocate();
+ *
+ *
+ *        **************************************
+ *
+ * Dynamic binding interface method declaration specification:
+ * When binding a static method:
+ *
+ * public class Something {
+ *     private static int cal(int a, int b) {
+ *         return a + b;
+ *     }
+ * }
+ *
+ * The return value and parameter list of the method declaration
+ * in the interface should be the same as the return value and
+ * parameter list of the bound method
+ *
+ * public interface BindSite {
+ *     int callCal(int a, int b);
+ * }
+ *
+ *
+ * When binding a non-static method:
+ *
+ * public class Something {
+ *     public int cal(int a, int b) {
+ *         return a + b;
+ *     }
+ * }
+ *
+ * The return value of the method declaration in the interface
+ * must be the same as the return value type of the bound method
+ * The first parameter in the parameter list of the binding site
+ * must specify the object passed into the class of the bound method,
+ * and then declare the same parameter list as the bound method
+ *
+ * public interface BindSite {
+ *     int callCal(Something obj, int a, int b);
+ * }
+ *
+ *
+ * When binding a static field:
+ *
+ * public class Something {
+ *     private static String some;
+ * }
+ *
+ * When using the PUT kind, the return value needs to be defined
+ * as void, and the parameter list is declared to pass in a value
+ * of the same type as the bound field
+ *
+ * When using the SET kind, the return value is declared as the
+ * type of the bound field, and the parameter list is empty
+ *
+ * public interface BindSite {
+ *     void put(String str);
+ *
+ *     String get();
+ * }
+ *
+ *
+ * When binding a non-static field:
+ *
+ * public class Something {
+ *     private String some;
+ * }
+ *
+ * When using the PUT type, the return value is declared as void,
+ * the first parameter of the parameter list is declared as the
+ * changed object, and the second parameter is declared as the
+ * type of the bound field
+ *
+ * When using the SET type, the return value is declared as the
+ * type of the bound field, the parameter list has only one parameter,
+ * and the type is the object to be obtained
+ *
+ * public interface BindSite {
+ *     void put(Something obj, String str);
+ *
+ *     String get(Something obj);
+ * }
+ *
+ *
+ * When binding to instantiation:
+ *
+ * public class Something {}
+ *
+ * The return value type is the type of the target class, the parameter list is empty
+ * Any constructor of the target class will not be called
+ *
+ * public interface BindSite {
+ *     Something allocateSomething();
+ * }
+ *
+ *
+ * When binding a constructor:
+ *
+ * public class Something {
+ *     private Something(int a, double b) {
+ *     }
+ * }
+ *
+ * The return value is the type of the target class,
+ * the parameter list is the same as the parameter
+ * list of the bound constructor
+ *
+ * public interface BindSite {
+ *     Something construct(int a, double b);
+ * }
+ *
+ *
+ * When binding an enum helper:
+ *
+ * public enum Something {
+ * }
+ *
+ * When binding enum helper, you can let the binding
+ * interface inherit {@link EnumHelper}, or you can define your own method
+ * When you define a method yourself, the method declaration needs to be the
+ * same as the method declaration in {@link EnumHelper}.
+ * The generic T can be replaced with the type of the target enumeration,
+ * and you can optionally define one or more methods such as adding only the
+ * {@link  EnumHelper#construct(String)} method
+ *
+ * public interface BindSite extends EnumHelper<Something> {
+ * }
+ *
+ * or
+ *
+ * public interface BindSite {
+ *     Something construct(String name);
+ *     Something construct(String name, int ordinal);
+ * }
+ *
+ *        **************************************
+ *
  *
  *
  *
@@ -222,9 +384,7 @@ public class ReflectionFactory
 		KIND_INVOKE_STATIC		= 2,
 		KIND_INVOKE_INTERFACE	= 3,
 		KIND_GET				= 4,
-		KIND_PUT				= 5,
-		KIND_NEW				= 6,
-		KIND_NEW_CONSTRUCT		= 7;
+		KIND_PUT				= 5;
 
 	private static int id = 0;
 
@@ -294,7 +454,7 @@ public class ReflectionFactory
 			{
 				long offset = UNSAFE.staticFieldOffset(f);
 				code.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class));
-				if (isStatic) code.addConstantInstruction(Opcodes.LDC, new Type(target));
+				if (isStatic) code.addConstantInstruction(Opcodes.LDC_W, new Type(target));
 				else code.addInstruction(Opcodes.ALOAD_1);
 				code.addConstantInstruction(Opcodes.LDC2_W, offset);
 				code.addInstruction(load);
@@ -386,8 +546,18 @@ public class ReflectionFactory
 		long offset = UNSAFE.staticFieldOffset(ACCESSOR.getField(this.target, values));
 		Marker m1 = new Marker();
 		this.generator
-			.addSignature("Ljava/lang/Object;L"+getType(EnumHelper.class)+"<".concat(getDescriptor(target)).concat(">;"))
 			.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, String.class).toMethodDescriptorString())
+			.addCode()
+			.addTypeInstruction(Opcodes.NEW, getType(target))
+			.addInstruction(Opcodes.DUP)
+			.addInstruction(Opcodes.ALOAD_1)
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
+			.addInstruction(Opcodes.ARRAYLENGTH)
+			.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Enum.class), "<init>", MethodType.methodType(void.class, String.class, int.class).toMethodDescriptorString(), false)
+			.addInstruction(Opcodes.ARETURN)
+			.setMaxs(4, 2)
+			.getClassWriter()
+			.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(this.target, String.class).toMethodDescriptorString())
 			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
 			.addInstruction(Opcodes.DUP)
@@ -408,7 +578,23 @@ public class ReflectionFactory
 			.addInstruction(Opcodes.ARETURN)
 			.setMaxs(4, 3)
 			.getClassWriter()
+			.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(this.target, String.class, int.class).toMethodDescriptorString())
+			.addCode()
+			.addTypeInstruction(Opcodes.NEW, getType(target))
+			.addInstruction(Opcodes.DUP)
+			.addInstruction(Opcodes.ALOAD_1)
+			.addInstruction(Opcodes.ILOAD_2)
+			.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Enum.class), "<init>", MethodType.methodType(void.class, String.class, int.class).toMethodDescriptorString(), false)
+			.addInstruction(Opcodes.ARETURN)
+			.setMaxs(4, 3)
+			.getClassWriter()
 			.addMethod(AccessFlag.ACC_PUBLIC, "values", MethodType.methodType(Object[].class).toMethodDescriptorString())
+			.addCode()
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
+			.addInstruction(Opcodes.ARETURN)
+			.setMaxs(1, 1)
+			.getClassWriter()
+			.addMethod(AccessFlag.ACC_PUBLIC, "values", "()[".concat(getDescriptor(target)))
 			.addCode()
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.ARETURN)
@@ -416,14 +602,30 @@ public class ReflectionFactory
 			.getClassWriter()
 			.addMethod(AccessFlag.ACC_PUBLIC, "values", MethodType.methodType(void.class, Object[].class).toMethodDescriptorString())
 			.addCode()
-			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
 			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
-			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
 			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
-			.addConstantInstruction(Opcodes.LDC, new Type(target))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(target))
+			.addConstantInstruction(Opcodes.LDC2_W, offset)
+			.addInstruction(Opcodes.ALOAD_1)
+			.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true)
+			.addInstruction(Opcodes.RETURN)
+			.setMaxs(5, 2)
+			.getClassWriter()
+			.addMethod(AccessFlag.ACC_PUBLIC, "values", "([".concat(getDescriptor(this.target)).concat(")V"))
+			.addCode()
+			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
+			.addInstruction(Opcodes.ACONST_NULL)
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
+			.addInstruction(Opcodes.ACONST_NULL)
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
 			.addInstruction(Opcodes.ALOAD_1)
 			.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true)
@@ -432,14 +634,40 @@ public class ReflectionFactory
 			.getClassWriter()
 			.addMethod(AccessFlag.ACC_PUBLIC, "add", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
 			.addCode()
-			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
 			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
-			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
 			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
-			.addConstantInstruction(Opcodes.LDC, new Type(target))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(target))
+			.addConstantInstruction(Opcodes.LDC2_W, offset)
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
+			.addInstruction(Opcodes.DUP)
+			.addInstruction(Opcodes.ARRAYLENGTH)
+			.addInstruction(Opcodes.DUP_X1)
+			.addInstruction(Opcodes.ICONST_1)
+			.addInstruction(Opcodes.IADD)
+			.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Arrays.class), "copyOf", MethodType.methodType(Object[].class, Object[].class, int.class).toMethodDescriptorString(), false)
+			.addInstruction(Opcodes.DUP_X1)
+			.addInstruction(Opcodes.SWAP)
+			.addInstruction(Opcodes.ALOAD_1)
+			.addInstruction(Opcodes.AASTORE)
+			.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true)
+			.addInstruction(Opcodes.RETURN)
+			.setMaxs(8, 2)
+			.getClassWriter()
+			.addMethod(AccessFlag.ACC_PUBLIC, "add", MethodType.methodType(void.class, target).toMethodDescriptorString())
+			.addCode()
+			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
+			.addInstruction(Opcodes.ACONST_NULL)
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
+			.addInstruction(Opcodes.ACONST_NULL)
+			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
+			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.DUP)
@@ -458,14 +686,14 @@ public class ReflectionFactory
 			.getClassWriter()
 			.addMethod(AccessFlag.ACC_PUBLIC, "remove", MethodType.methodType(void.class, int.class).toMethodDescriptorString())
 			.addCode()
-			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
 			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
-			.addConstantInstruction(Opcodes.LDC, new Type(this.target))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
 			.addInstruction(Opcodes.ACONST_NULL)
 			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
-			.addConstantInstruction(Opcodes.LDC, new Type(target))
+			.addConstantInstruction(Opcodes.LDC_W, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.ARRAYLENGTH)
@@ -611,16 +839,6 @@ public class ReflectionFactory
 		code.addInstruction(Opcodes.ARETURN);
 		code.setMaxs(1, 2);
 		return ACCESSOR.construct(getClassLoader(AccessController.doPrivileged((PrivilegedAction<ClassLoader>) (ACCESSOR.getCallerClass()::getClassLoader))).define(cw.toByteArray()), new Class[]{Object.class}, new Object[]{value});
-	}
-
-	public static <T> T reflection(Class<T> handle, String implName, MethodType implType, Class<?> target, String name, MethodType methodType, int kind)
-	{
-		ReflectionFactory factory = new ReflectionFactory(handle, target);
-		if (kind == KIND_INVOKE_VIRTUAL || kind == KIND_INVOKE_SPECIAL || kind == KIND_INVOKE_STATIC || kind == KIND_INVOKE_INTERFACE) factory.method(new MethodKind(implName, implType), new MethodKind(name, methodType), kind);
-		else if (kind == KIND_GET || kind == KIND_PUT) factory.field(new MethodKind(implName, implType), name, kind);
-		else if (kind == KIND_NEW) factory.instantiation(new MethodKind(implName, implType));
-		else if (kind == KIND_NEW_CONSTRUCT) factory.construct(new MethodKind(implName, implType), new MethodKind(name, methodType));
-		return factory.allocate();
 	}
 
 	public static <T> EnumHelper<T> getEnumHelper(Class<?> target)
@@ -1686,7 +1904,7 @@ public class ReflectionFactory
 				Class<?> handleInvoker;
 				try
 				{
-					handleInvoker = Class.forName("org.mve.util.invoke.MethodHandleInvoker");
+					handleInvoker = Class.forName("org.mve.invoke.MethodHandleInvoker");
 				}
 				catch (Throwable t)
 				{
@@ -1737,7 +1955,7 @@ public class ReflectionFactory
 				Class<?> c;
 				try
 				{
-					c = Class.forName("org.mve.util.invoke.ReflectionMagicAccessor");
+					c = Class.forName("org.mve.invoke.ReflectionMagicAccessor");
 				}
 				catch (Throwable t)
 				{
