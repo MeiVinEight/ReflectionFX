@@ -493,7 +493,7 @@ public class ReflectionFactory
 		{
 			if (isFinal)
 			{
-				long offset = UNSAFE.staticFieldOffset(f);
+				long offset = isStatic ? UNSAFE.staticFieldOffset(f) : UNSAFE.objectFieldOffset(f);
 				code.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class));
 				if (isStatic) code.addConstantInstruction(Opcodes.LDC_W, new Type(target));
 				else code.addInstruction(Opcodes.ALOAD_1);
