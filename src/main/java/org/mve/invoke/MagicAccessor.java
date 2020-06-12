@@ -6,6 +6,25 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+/**
+ * @see MagicAccessor#setAccessible(AccessibleObject, boolean)
+ * @see MagicAccessor#forName(String)
+ * @see MagicAccessor#forName(String, boolean, ClassLoader)
+ * @see MagicAccessor#defineClass(ClassLoader, byte[])
+ * @see MagicAccessor#getCallerClass()
+ * @see MagicAccessor#getClassContext()
+ * @see MagicAccessor#construct(Class)
+ * @see MagicAccessor#construct(Class, Class[], Object[])
+ * @see MagicAccessor#invokeMethodHandle(MethodHandle, Object...)
+ * @see MagicAccessor#getField(Class, String)
+ * @see MagicAccessor#getMethod(Class, String, Class[])
+ * @see MagicAccessor#getConstructor(Class, Class[])
+ * @see MagicAccessor#getFields(Class)
+ * @see MagicAccessor#getMethods(Class)
+ * @see MagicAccessor#getConstructors(Class)
+ * @see MagicAccessor#throwException(Throwable)
+ * @see MagicAccessor#initialize(Object)
+ */
 public interface MagicAccessor
 {
 	void setAccessible(AccessibleObject acc, boolean flag);

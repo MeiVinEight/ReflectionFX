@@ -11,6 +11,7 @@ import org.mve.util.asm.attribute.SourceWriter;
 import org.mve.util.asm.file.AccessFlag;
 
 import java.io.DataInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -353,6 +354,12 @@ import java.util.function.Consumer;
  *
  *        **************************************
  *
+ *
+ *
+ *
+ *
+ * @see ReflectionFactory#constant(Object)
+ * @see ReflectionFactory#throwException()
  *
  *
  *
@@ -906,7 +913,7 @@ public class ReflectionFactory
 		Class<?>[] params = type.parameterArray();
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("MethodAccessor.java"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
-		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(typeWarp(returnType))+">;");
+//		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(typeWarp(returnType))+">;");
 		Consumer<CodeWriter> gen = code ->
 		{
 			final OperandStack stack = new OperandStack();
@@ -2351,6 +2358,10 @@ public class ReflectionFactory
 
 					byte[] code = cw.toByteArray();
 					c = INTERNAL_CLASS_LOADER.define(code);
+					FileOutputStream out = new FileOutputStream("ReflectionMagicAccessor.class");
+					out.write(code);
+					out.flush();
+					out.close();
 				}
 				ACCESSOR = (MagicAccessor) UNSAFE.allocateInstance(c);
 			}
