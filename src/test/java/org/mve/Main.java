@@ -11,7 +11,7 @@ public class Main
 	{
 		I i =
 			new ReflectionFactory(I.class, Object.class)
-			.method(new MethodKind("init", void.class, Object.class), new MethodKind("<init>", void.class), ReflectionFactory.KIND_INVOKE_VIRTUAL)
+			.method(new MethodKind("init", void.class, Object.class), new MethodKind("<init>", void.class), ReflectionFactory.KIND_INVOKE_SPECIAL)
 			.allocate();
 		Main m = (Main) ReflectionFactory.UNSAFE.allocateInstance(Main.class);
 		i.init(m);
