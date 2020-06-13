@@ -34,6 +34,11 @@ public class Main6
 			.field(new MethodKind("getDefaultPrefix", String.class, Test.class), "defaultPrefix", ReflectionFactory.KIND_GET)
 			.field(new MethodKind("getPrefix", String.class, Test.class), "prefix", ReflectionFactory.KIND_GET)
 			.allocate();
+		System.out.println(site.newTest("A"));
+		System.out.println(site.allocateTest());
+		site.staticPrint("A");
+
+		System.out.println();
 
 		EnumSite enumSite = new ReflectionFactory(EnumSite.class, Test.TestEnum.class).enumHelper().allocate();
 		System.out.println(Arrays.toString(enumSite.values()));

@@ -20,36 +20,36 @@ public class Transformer
 
 	public static void premain(String agentArgs, Instrumentation instrumentation)
 	{
-		instrumentation.addTransformer((loader, className, classBeingRedefined, protectionDomain, classfileBuffer) ->
-		{
-			ClassFile file = new ClassFile(classfileBuffer);
-			ConstantPool pool = file.getConstantPool();
-			ConstantClass clazz = (ConstantClass) pool.getConstantPoolElement(file.getThisClassIndex());
-			ConstantUTF8 utf = (ConstantUTF8) pool.getConstantPoolElement(clazz.getNameIndex());
-			String name = utf.getUTF8();
-			System.out.println(name);
-			for (int i=0; i<file.getMethodCount(); i++)
-			{
-				ClassMethod method = file.getMethod(i);
-				String methodname = ((ConstantUTF8) pool.getConstantPoolElement(method.getNameIndex())).getUTF8();
-				if (methodname.equals("invokeStatic_L_V"))
-				{
-					try
-					{
-						FileOutputStream out = new FileOutputStream("invokeStatic_L_V.class");
-						out.write(classfileBuffer);
-						out.flush();
-						out.close();
-					}
-					catch (Exception E)
-					{
-						E.printStackTrace();
-					}
-					return classfileBuffer;
-				}
-			}
-			return classfileBuffer;
-		});
+//		instrumentation.addTransformer((loader, className, classBeingRedefined, protectionDomain, classfileBuffer) ->
+//		{
+//			ClassFile file = new ClassFile(classfileBuffer);
+//			ConstantPool pool = file.getConstantPool();
+//			ConstantClass clazz = (ConstantClass) pool.getConstantPoolElement(file.getThisClassIndex());
+//			ConstantUTF8 utf = (ConstantUTF8) pool.getConstantPoolElement(clazz.getNameIndex());
+//			String name = utf.getUTF8();
+//			System.out.println(name);
+//			for (int i=0; i<file.getMethodCount(); i++)
+//			{
+//				ClassMethod method = file.getMethod(i);
+//				String methodname = ((ConstantUTF8) pool.getConstantPoolElement(method.getNameIndex())).getUTF8();
+//				if (methodname.equals("invokeStatic_L_V"))
+//				{
+//					try
+//					{
+//						FileOutputStream out = new FileOutputStream("invokeStatic_L_V.class");
+//						out.write(classfileBuffer);
+//						out.flush();
+//						out.close();
+//					}
+//					catch (Exception E)
+//					{
+//						E.printStackTrace();
+//					}
+//					return classfileBuffer;
+//				}
+//			}
+//			return classfileBuffer;
+//		});
 	}
 
 	private static String filter(String name)
