@@ -11,7 +11,6 @@ import org.mve.util.asm.attribute.SourceWriter;
 import org.mve.util.asm.file.AccessFlag;
 
 import java.io.DataInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -2358,10 +2357,6 @@ public class ReflectionFactory
 
 					byte[] code = cw.toByteArray();
 					c = INTERNAL_CLASS_LOADER.define(code);
-					FileOutputStream out = new FileOutputStream("ReflectionMagicAccessor.class");
-					out.write(code);
-					out.flush();
-					out.close();
 				}
 				ACCESSOR = (MagicAccessor) UNSAFE.allocateInstance(c);
 			}
