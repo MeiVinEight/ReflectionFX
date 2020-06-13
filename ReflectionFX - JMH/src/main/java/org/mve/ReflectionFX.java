@@ -42,6 +42,7 @@ public class ReflectionFX
 
 	static
 	{
+		System.out.println("<clinit>");
 		try
 		{
 			METHOD = Test.class.getDeclaredMethod("a", int.class, double.class);
