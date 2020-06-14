@@ -1238,8 +1238,11 @@ public class ReflectionFactory
 			if (url == null) throw new NullPointerException();
 			InputStream in = url.openStream();
 			if (6 != in.skip(6)) throw new UnknownError();
-			int majorVersion = new DataInputStream(in).readShort() & 0XFFFF;
+			int majorVersion = new DataInputStream(in).readUnsignedShort();
 			in.close();
+
+			if (majorVersion <= 0X34) CONSTANT_POOL[0] = "sun/reflect/MagicAccessorImpl";
+			else CONSTANT_POOL[0] = "jdk/internal/reflect/MagicAccessorImpl";
 
 			final MethodHandle DEFINE;
 
@@ -1257,54 +1260,61 @@ public class ReflectionFactory
 			 * trusted lookup
 			 */
 			{
-				Object illegalAccessLogger = null;
-				if (majorVersion > 0X34)
-				{
-					String name = "jdk.internal.module.IllegalAccessLogger";
-					Class<?> clazz = Class.forName(name);
-					Field loggerField = clazz.getDeclaredField("logger");
-					long offset = usf.staticFieldOffset(loggerField);
-					illegalAccessLogger = usf.getObjectVolatile(clazz, offset);
-					usf.putObjectVolatile(clazz, offset, null);
-				}
-
-				{
-					Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-					field.setAccessible(true);
-					MethodHandles.Lookup lookup = TRUSTED_LOOKUP = (MethodHandles.Lookup) field.get(null);
-					DEFINE = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
-				}
-
-				if (majorVersion > 0X34)
-				{
-					String name = "jdk.internal.module.IllegalAccessLogger";
-					Class<?> clazz = Class.forName(name);
-					Field loggerField = clazz.getDeclaredField("logger");
-					long offset = usf.staticFieldOffset(loggerField);
-					usf.putObjectVolatile(clazz, offset, illegalAccessLogger);
-				}
-
-				if (majorVersion <= 0X34) CONSTANT_POOL[0] = "sun/reflect/MagicAccessorImpl";
-				else CONSTANT_POOL[0] = "jdk/internal/reflect/MagicAccessorImpl";
+				Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+				long off = usf.staticFieldOffset(field);
+				MethodHandles.Lookup lookup = TRUSTED_LOOKUP = (MethodHandles.Lookup) usf.getObjectVolatile(MethodHandles.Lookup.class, off);
+				DEFINE = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
 			}
 
 			/*
-			 * check jdk.internal accessible
+			 * Method Handle Invoker
 			 */
-			CHECK:
 			{
-				String packageName;
-				if (majorVersion == 0x34) break CHECK;
-				else if (majorVersion >= 0x35 && majorVersion <= 0x37) packageName = "jdk.internal.misc";
-				else packageName = "jdk.internal.access";
-				Class<?> sharedSecretsClass = Class.forName(packageName + ".SharedSecrets");
-				Class<?> javaLangAccessClass = Class.forName(packageName + ".JavaLangAccess");
-				MethodHandle jlaHandle = TRUSTED_LOOKUP.findStaticGetter(sharedSecretsClass, "javaLangAccess", javaLangAccessClass);
-				Object jla = jlaHandle.invoke();
-				MethodHandle handle = TRUSTED_LOOKUP.findVirtual(javaLangAccessClass, "addExportsToAllUnnamed", MethodType.methodType(void.class, Class.forName("java.lang.Module"), String.class));
-				handle.invoke(jla, Class.class.getMethod("getModule").invoke(Object.class), "jdk.internal.loader");
-				handle.invoke(jla, Class.class.getMethod("getModule").invoke(Object.class), "jdk.internal.misc");
+				Class<?> handleInvoker;
+				try
+				{
+					handleInvoker = Class.forName("org.mve.invoke.MethodHandleInvoker");
+				}
+				catch (Throwable t)
+				{
+					ClassWriter cw = new ClassWriter();
+					cw.set(52, AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC, "org/mve/invoke/MethodHandleInvoker", "java/lang/Object", new String[]{getType(ReflectionAccessor.class)});
+					cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<Ljava/lang/Class<*>;>;");
+					/*
+					 * MethodHandleInvoker();
+					 */
+					{
+						CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "<init>", "()V").addCode();
+						code.addInstruction(Opcodes.ALOAD_0);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+						code.addInstruction(Opcodes.RETURN);
+						code.setMaxs(1, 1);
+					}
+					/*
+					 * Object invoke(Object...);
+					 */
+					{
+						CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_0);
+						code.addInstruction(Opcodes.AALOAD);
+						code.addTypeInstruction(Opcodes.CHECKCAST, getType(MethodHandle.class));
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ICONST_1);
+						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ARRAYLENGTH);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, Arrays.class.getTypeName().replace('.', '/'), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+						code.addInstruction(Opcodes.ARETURN);
+						code.setMaxs(4, 2);
+					}
+					byte[] code = cw.toByteArray();
+					handleInvoker = (Class<?>) DEFINE.invoke(ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
+				}
+				METHOD_HANDLE_INVOKER = (ReflectionAccessor<Object>) handleInvoker.getDeclaredConstructor().newInstance();
 			}
+
+			INTERNAL_CLASS_LOADER = new StandardReflectionClassLoader(ReflectionFactory.class.getClassLoader());
 
 			/*
 			 * Unsafe wrapper
@@ -1320,7 +1330,7 @@ public class ReflectionFactory
 				catch (Throwable t)
 				{
 					ClassWriter cw = new ClassWriter();
-					cw.set(0x34, 0x21, className, "java/lang/Object", new String[]{getType(Unsafe.class)});
+					cw.set(0x34, 0x21, className, CONSTANT_POOL[0], new String[]{getType(Unsafe.class)});
 					cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "final", getDescriptor(usfClass));
 
 					// implement methods
@@ -1932,62 +1942,11 @@ public class ReflectionFactory
 					}
 
 					byte[] code = cw.toByteArray();
-					clazz = (Class<?>) DEFINE.invoke(ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
+					clazz = INTERNAL_CLASS_LOADER.define(code);
 				}
 
 				UNSAFE = (Unsafe) usf.allocateInstance(clazz);
 			}
-
-			/*
-			 * Method Handle Invoker
-			 */
-			{
-				Class<?> handleInvoker;
-				try
-				{
-					handleInvoker = Class.forName("org.mve.invoke.MethodHandleInvoker");
-				}
-				catch (Throwable t)
-				{
-					ClassWriter cw = new ClassWriter();
-					cw.set(52, AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC, "org/mve/invoke/MethodHandleInvoker", "java/lang/Object", new String[]{getType(ReflectionAccessor.class)});
-					cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<Ljava/lang/Class<*>;>;");
-					/*
-					 * void MethodHandleInvoker();
-					 */
-					{
-						CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "<init>", "()V").addCode();
-						code.addInstruction(Opcodes.ALOAD_0);
-						code.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-						code.addInstruction(Opcodes.RETURN);
-						code.setMaxs(1, 1);
-					}
-					/*
-					 * Object invoke(Object...);
-					 */
-					{
-						CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;").addCode();
-						code.addInstruction(Opcodes.ALOAD_1);
-						code.addInstruction(Opcodes.ICONST_0);
-						code.addInstruction(Opcodes.AALOAD);
-						code.addTypeInstruction(Opcodes.CHECKCAST, getType(MethodHandle.class));
-						code.addInstruction(Opcodes.ALOAD_1);
-						code.addInstruction(Opcodes.ICONST_1);
-						code.addInstruction(Opcodes.ALOAD_1);
-						code.addInstruction(Opcodes.ARRAYLENGTH);
-						code.addMethodInstruction(Opcodes.INVOKESTATIC, Arrays.class.getTypeName().replace('.', '/'), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false);
-						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
-						code.addInstruction(Opcodes.ARETURN);
-						code.setMaxs(4, 2);
-					}
-					byte[] code = cw.toByteArray();
-					handleInvoker = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
-				}
-				METHOD_HANDLE_INVOKER = (ReflectionAccessor<Object>) handleInvoker.getDeclaredConstructor().newInstance();
-
-			}
-
-			INTERNAL_CLASS_LOADER = new StandardReflectionClassLoader(ReflectionFactory.class.getClassLoader());
 
 			/*
 			 * accessor
