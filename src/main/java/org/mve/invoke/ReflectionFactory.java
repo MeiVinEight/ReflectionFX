@@ -547,7 +547,9 @@ public class ReflectionFactory
 	 */
 	public ReflectionFactory instantiation(MethodKind implementation)
 	{
-		this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString()).addCode()
+		this.generator
+			.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
+			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
 			.addInstruction(Opcodes.ARETURN)
 			.setMaxs(1, 1 + parameterSize(implementation.type().parameterArray()));
@@ -562,7 +564,9 @@ public class ReflectionFactory
 	 */
 	public ReflectionFactory construct(MethodKind implementation, MethodKind invocation)
 	{
-		CodeWriter code = this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString()).addCode()
+		CodeWriter code = this.generator
+			.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
+			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
 			.addInstruction(Opcodes.DUP)
 			.setMaxs(2 + parameterSize(implementation.type().parameterArray()), 1 + parameterSize(implementation.type().parameterArray()));
@@ -1241,8 +1245,13 @@ public class ReflectionFactory
 			int majorVersion = new DataInputStream(in).readUnsignedShort();
 			in.close();
 
-			if (majorVersion <= 0X34) CONSTANT_POOL[0] = "sun/reflect/MagicAccessorImpl";
-			else CONSTANT_POOL[0] = "jdk/internal/reflect/MagicAccessorImpl";
+			/*
+			 * MagicAccessorImpl
+			 */
+			{
+				if (majorVersion <= 0X34) CONSTANT_POOL[0] = "sun/reflect/MagicAccessorImpl";
+				else CONSTANT_POOL[0] = "jdk/internal/reflect/MagicAccessorImpl";
+			}
 
 			final MethodHandle DEFINE;
 
@@ -1260,6 +1269,7 @@ public class ReflectionFactory
 			 * trusted lookup
 			 */
 			{
+				MethodHandles.lookup();
 				Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
 				long off = usf.staticFieldOffset(field);
 				MethodHandles.Lookup lookup = TRUSTED_LOOKUP = (MethodHandles.Lookup) usf.getObjectVolatile(MethodHandles.Lookup.class, off);

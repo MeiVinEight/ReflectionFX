@@ -77,7 +77,7 @@ public class MethodWriter
 
 	public CodeWriter addCode()
 	{
-		CodeWriter writer = new CodeWriter(this.classWriter);
+		CodeWriter writer = new CodeWriter(this);
 		this.addAttribute(writer);
 		return writer;
 	}
