@@ -998,7 +998,7 @@ public class ReflectionFactory
 
 	private static <T> ReflectionAccessor<T> generic(Class<?> target, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean special, boolean isAbstract)
 	{
-		String className = "org/mve/invoke/MethodAccessor";
+		String className = target.getPackage().getName().replace('.', '/').concat("/MethodAccessor");
 		String desc = type.toMethodDescriptorString();
 		final String owner = clazz.getTypeName().replace('.', '/');
 		Class<?> returnType = type.returnType();
@@ -1047,7 +1047,7 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(Class<?> target, Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal)
 	{
 		if (typeWarp(type) == Void.class) throw new IllegalArgumentException("illegal type: void");
-		String className = "org/mve/invoke/FieldAccessor";
+		String className = target.getPackage().getName().replace('.', '/').concat("/FieldAccessor");
 		String desc = getDescriptor(type);
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
@@ -1174,7 +1174,7 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(Class<?> target, Class<?> clazz, MethodType type)
 	{
 		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = "org/mve/invoke/ConstructorAccessor";
+		String className = target.getPackage().getName().replace('.', '/').concat("/ConstructorAccessor");
 		String desc = type.toMethodDescriptorString();
 		String owner = clazz.getTypeName().replace('.', '/');
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstructorAccessor.java"));
@@ -1221,7 +1221,7 @@ public class ReflectionFactory
 	private static <T> ReflectionAccessor<T> generic(Class<?> target)
 	{
 		if (typeWarp(target) == Void.class || target.isPrimitive() || target.isArray()) throw new IllegalArgumentException("illegal type: "+target);
-		String className = "org/mve/invoke/Allocator";
+		String className = target.getPackage().getName().replace('.', '/').concat("/Allocator");
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Allocator.java"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
 		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(target)+">;");
