@@ -406,6 +406,7 @@ public class ReflectionFactory
 
 	private final ClassWriter generator = new ClassWriter();
 	private final Class<?> target;
+	private final Class<?> define;
 
 	/**
 	 * Construct a ReflectionFactory instance
@@ -415,8 +416,10 @@ public class ReflectionFactory
 	 */
 	public ReflectionFactory(Class<?> handle, Class<?> target)
 	{
+		Class<?> c = checkAccessible(handle.getClassLoader(), target.getClassLoader()) ? handle : target;
+		this.define = checkAccessible(c.getClassLoader()) ? c : ReflectionFactory.class;
 		this.target = target;
-		this.generator.set(0x34, 0x21, target.getPackage().getName().concat("/").concat(handle.getSimpleName()).replace('.', '/'), CONSTANT_POOL[0], new String[]{getType(handle)});
+		this.generator.set(0x34, 0x21, this.define.getPackage().getName().concat("/").concat(handle.getSimpleName()).replace('.', '/'), CONSTANT_POOL[0], new String[]{getType(handle)});
 	}
 
 	/**
@@ -895,7 +898,7 @@ public class ReflectionFactory
 	public <T> T allocate()
 	{
 		byte[] classcode = this.generator.toByteArray();
-		T value = (T) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(this.target, classcode, null));
+		T value = (T) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(this.define, classcode, null));
 		ACCESSOR.initialize(value);
 		return value;
 	}
@@ -1249,6 +1252,17 @@ public class ReflectionFactory
 			.setMaxs(1, 1);
 		byte[] classcode = cw.toByteArray();
 		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(target, classcode, null));
+	}
+
+	private static boolean checkAccessible(ClassLoader c1, ClassLoader c2)
+	{
+		while (true)
+		{
+			if (c1 == c2) return true;
+			if (c1 == null) break;
+			c1 = c1.getParent();
+		}
+		return false;
 	}
 
 	private static void arrayFirst(CodeWriter code, OperandStack stack)
