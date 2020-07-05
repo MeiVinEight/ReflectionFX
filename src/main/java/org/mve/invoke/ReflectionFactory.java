@@ -1062,7 +1062,7 @@ public class ReflectionFactory
 		else if (acc instanceof Field)
 		{
 			Field field = (Field) acc;
-			code = cw.addMethod(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class).toMethodDescriptorString())
+			cw.addMethod(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class).toMethodDescriptorString())
 				.addCode()
 				.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "ACCESSOR", getDescriptor(MagicAccessor.class))
 				.addConstantInstruction(Opcodes.LDC_W, new Type(field.getDeclaringClass()))
