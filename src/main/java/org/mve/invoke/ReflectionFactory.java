@@ -1068,7 +1068,7 @@ public class ReflectionFactory
 				.addConstantInstruction(Opcodes.LDC_W, new Type(field.getDeclaringClass()))
 				.addConstantInstruction(Opcodes.LDC_W, field.getName())
 				.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(MagicAccessor.class), "getField", MethodType.methodType(Field.class, Class.class, String.class).toMethodDescriptorString(), true)
-				.addFieldInstruction(Opcodes.PUTSTATIC, cw.getName(), "0", getDescriptor(AccessibleObject.class))
+				.addFieldInstruction(Opcodes.ARETURN, cw.getName(), "0", getDescriptor(AccessibleObject.class))
 				.setMaxs(3, 1);
 		}
 	}
