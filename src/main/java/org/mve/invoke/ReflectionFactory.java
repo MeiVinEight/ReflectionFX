@@ -60,24 +60,6 @@ import java.util.function.Consumer;
  * Unlike the reflection library that comes with Java, it can reflect the
  * construction method of already constructed objects
  *
- * Reflect a method
- * @see ReflectionFactory#getReflectionAccessor(Class, String, boolean, boolean, boolean, Class, Class[])
- * @see ReflectionFactory#getReflectionAccessor(Class, String, boolean, boolean, boolean, MethodType)
- * @see ReflectionFactory#getReflectionAccessor(Method, boolean)
- * @see ReflectionFactory#getReflectionAccessor(Method)
- *
- * Reflect a field
- * @see ReflectionFactory#getReflectionAccessor(Class, String, Class, boolean, boolean)
- * @see ReflectionFactory#getReflectionAccessor(Field)
- *
- * Allocate an object
- * @see ReflectionFactory#getReflectionAccessor(Class)
- * @see ReflectionFactory#getReflectionAccessor(Class, boolean)
- *
- * Allocate an object and call constructor
- * @see ReflectionFactory#getReflectionAccessor(Class, Class[])
- * @see ReflectionFactory#getReflectionAccessor(Class, boolean)
- * @see ReflectionFactory#getReflectionAccessor(Constructor)
  *
  *
  * @see EnumHelper
@@ -953,6 +935,36 @@ public class ReflectionFactory
 		return generic(ctr.getDeclaringClass(), ctr.getDeclaringClass(), MethodType.methodType(void.class, ctr.getParameterTypes()));
 	}
 
+	public static <T> MethodAccessor<T> access(Method method, int kind)
+	{
+		return generic(method, kind);
+	}
+
+	public static <T> FieldAccessor<T> access(Class<?> target, String name)
+	{
+		return generic(ACCESSOR.getField(target, name));
+	}
+
+	public static <T> FieldAccessor<T> access(Field field)
+	{
+		return generic(field);
+	}
+
+	public static <T> ConstructorAccessor<T> access(Class<?> target, MethodType type)
+	{
+		return generic(ACCESSOR.getConstructor(target, type.parameterArray()));
+	}
+
+	public static <T> ConstructorAccessor<T> access(Constructor<?> constructor)
+	{
+		return generic(constructor);
+	}
+
+	public static <T> ReflectionAccessor<T> access(Class<?> target)
+	{
+		return generic(target);
+	}
+
 	public static ReflectionAccessor<Void> throwException()
 	{
 		String className = "org/mve/invoke/Thrower";
@@ -999,29 +1011,93 @@ public class ReflectionFactory
 		return new ReflectionFactory(EnumHelper.class, target).enumHelper().allocate();
 	}
 
+	private static void pregeneric(ClassWriter cw, AccessibleObject acc)
+	{
+		CodeWriter code;
+		if (acc instanceof Method)
+		{
+			Method method = (Method) acc;
+			Class<?>[] parameters = method.getParameterTypes();
+			code = cw.addMethod(AccessFlag.ACC_PUBLIC, "getMethod", MethodType.methodType(Method.class).toMethodDescriptorString())
+				.addCode()
+				.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "ACCESSOR", getDescriptor(MagicAccessor.class))
+				.addConstantInstruction(Opcodes.LDC_W, new Type(method.getDeclaringClass()))
+				.addConstantInstruction(Opcodes.LDC_W, method.getName())
+				.addNumberInstruction(Opcodes.BIPUSH, parameters.length)
+				.addTypeInstruction(Opcodes.ANEWARRAY, getType(Class.class));
+			int i = 0;
+			for (Class<?> c : parameters)
+			{
+				code.addInstruction(Opcodes.DUP)
+					.addNumberInstruction(Opcodes.BIPUSH, i++)
+					.addConstantInstruction(Opcodes.LDC_W, new Type(c))
+					.addInstruction(Opcodes.AASTORE);
+			}
+			code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(MagicAccessor.class), "getMethod", MethodType.methodType(Method.class, Class.class, String.class, Class[].class).toMethodDescriptorString(), true)
+				.addInstruction(Opcodes.ARETURN)
+				.setMaxs(7, 1);
+		}
+		else if (acc instanceof Constructor)
+		{
+			Constructor<?> ctr  = (Constructor<?>) acc;
+			Class<?>[] parameters = ctr.getParameterTypes();
+			code = cw.addMethod(AccessFlag.ACC_PUBLIC, "getConstructor", MethodType.methodType(Constructor.class).toMethodDescriptorString())
+				.addCode()
+				.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "ACCESSOR", getDescriptor(MagicAccessor.class))
+				.addConstantInstruction(Opcodes.LDC_W, new Type(ctr.getDeclaringClass()))
+				.addNumberInstruction(Opcodes.BIPUSH, parameters.length)
+				.addTypeInstruction(Opcodes.ANEWARRAY, getType(Class.class));
+			int i = 0;
+			for (Class<?> c : parameters)
+			{
+				code.addInstruction(Opcodes.DUP)
+					.addNumberInstruction(Opcodes.BIPUSH, i++)
+					.addConstantInstruction(Opcodes.LDC_W, new Type(c))
+					.addInstruction(Opcodes.AASTORE);
+			}
+			code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(MagicAccessor.class), "getConstructor", MethodType.methodType(Constructor.class, Class.class, Class[].class).toMethodDescriptorString(), true)
+				.addInstruction(Opcodes.ARETURN)
+				.setMaxs(6, 1);
+		}
+		else if (acc instanceof Field)
+		{
+			Field field = (Field) acc;
+			code = cw.addMethod(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class).toMethodDescriptorString())
+				.addCode()
+				.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "ACCESSOR", getDescriptor(MagicAccessor.class))
+				.addConstantInstruction(Opcodes.LDC_W, new Type(field.getDeclaringClass()))
+				.addConstantInstruction(Opcodes.LDC_W, field.getName())
+				.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(MagicAccessor.class), "getField", MethodType.methodType(Field.class, Class.class, String.class).toMethodDescriptorString(), true)
+				.addFieldInstruction(Opcodes.PUTSTATIC, cw.getName(), "0", getDescriptor(AccessibleObject.class))
+				.setMaxs(3, 1);
+		}
+	}
+
 	private static <T> ReflectionAccessor<T> generic(Class<?> target, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean special, boolean isAbstract)
 	{
 		String className = target.getPackage().getName().replace('.', '/').concat("/MethodAccessor");
 		String desc = type.toMethodDescriptorString();
 		final String owner = clazz.getTypeName().replace('.', '/');
-		Class<?> returnType = type.returnType();
-		Class<?>[] params = type.parameterArray();
+		Class<?> returnType = target.getReturnType();
+		Class<?>[] params = target.getParameterTypes();
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("MethodAccessor.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
-//		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(typeWarp(returnType))+">;");
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(MethodAccessor.class)});
+		pregeneric(cw, target);
+		boolean statics = Modifier.isStatic(target.getModifiers());
+		boolean abstracts = Modifier.isAbstract(target.getModifiers());
 		Consumer<CodeWriter> gen = code ->
 		{
 			final OperandStack stack = new OperandStack();
-			if (!isStatic) arrayFirst(code, stack);
-			pushArguments(params, code, isStatic ? 0 : 1, stack);
-			int invoke = isStatic ? Opcodes.INVOKESTATIC : special ? Opcodes.INVOKESPECIAL : isAbstract ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL;
-			code.addMethodInstruction(invoke, owner, methodName, desc, isAbstract);
+			if (!statics) arrayFirst(code, stack);
+			pushArguments(params, code, statics ? 0 : 1, stack);
+			int invoke = 0xB6 + kind;
+			code.addMethodInstruction(invoke, owner, target.getName(), desc, abstracts);
 			for (Class<?> c : params)
 			{
 				stack.pop();
 				if (c == long.class || c == double.class) stack.pop();
 			}
-			if (!isStatic) stack.pop();
+			if (!statics) stack.pop();
 			if (returnType == void.class) { code.addInstruction(Opcodes.ACONST_NULL); stack.push(); }
 			else warp(returnType, code, stack);
 			code.addInstruction(Opcodes.ARETURN);
@@ -1035,7 +1111,7 @@ public class ReflectionFactory
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode());
-		if (params.length == 0 && isStatic) gen.accept(cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "()Ljava/lang/Object;")
+		if (params.length == 0 && statics) gen.accept(cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "()Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
@@ -1049,14 +1125,19 @@ public class ReflectionFactory
 
 	private static <T> ReflectionAccessor<T> generic(Class<?> target, Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal)
 	{
-		if (typeWarp(type) == Void.class) throw new IllegalArgumentException("illegal type: void");
-		String className = target.getPackage().getName().replace('.', '/').concat("/FieldAccessor");
+		Class<?> clazz = target.getDeclaringClass();
+		Class<?> type = target.getType();
+		boolean acc = checkAccessible(clazz.getClassLoader());
+		String fieldName = target.getName();
+		String className = acc ? clazz.getPackage().getName().replace('.', '/').concat("/FieldAccessor") : "org/mve/invoke/FieldAccessor";
 		String desc = getDescriptor(type);
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("FieldAccessor.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
-		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(typeWarp(type))+">;");
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(FieldAccessor.class)});
+		pregeneric(cw, target);
+		boolean statics = Modifier.isStatic(target.getModifiers());
+		boolean finals = Modifier.isFinal(target.getModifiers());
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
@@ -1073,7 +1154,7 @@ public class ReflectionFactory
 		code.addInstruction(Opcodes.ALOAD_1);
 		stack.push();
 		code.addInstruction(Opcodes.ARRAYLENGTH);
-		code.addInstruction(isStatic ? Opcodes.ICONST_1 : Opcodes.ICONST_2);
+		code.addInstruction(statics ? Opcodes.ICONST_1 : Opcodes.ICONST_2);
 		stack.push();
 		code.addJumpInstruction(Opcodes.IF_ICMPLT, marker);
 		stack.pop();
@@ -1082,14 +1163,14 @@ public class ReflectionFactory
 		{
 			code.addInstruction(Opcodes.ALOAD_1);
 			stack.push();
-			code.addInstruction(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
+			code.addInstruction(statics ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
 			stack.push();
 			code.addInstruction(Opcodes.AALOAD);
 			stack.pop();
 			code.addJumpInstruction(Opcodes.IFNULL, marker);
 			stack.pop();
 		}
-		if (isFinal)
+		if (finals)
 		{
 			Field field1 = ACCESSOR.getField(clazz, fieldName);
 			long offset = isStatic ? UNSAFE.staticFieldOffset(field1) : UNSAFE.objectFieldOffset(field1);
@@ -1101,7 +1182,7 @@ public class ReflectionFactory
 			stack.push();
 			code.addInstruction(Opcodes.ALOAD_1);
 			stack.push();
-			code.addInstruction(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
+			code.addInstruction(statics ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
 			stack.push();
 			code.addInstruction(Opcodes.AALOAD);
 			stack.pop();
@@ -1126,10 +1207,10 @@ public class ReflectionFactory
 		}
 		else
 		{
-			if (!isStatic) arrayFirst(code, stack);
+			if (!statics) arrayFirst(code, stack);
 			code.addInstruction(Opcodes.ALOAD_1);
 			stack.push();
-			code.addInstruction(isStatic ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
+			code.addInstruction(statics ? Opcodes.ICONST_0 : Opcodes.ICONST_1);
 			stack.push();
 			code.addInstruction(Opcodes.AALOAD);
 			stack.pop();
@@ -1138,14 +1219,14 @@ public class ReflectionFactory
 				unwarp(type, code, stack);
 				if (type == long.class || type == double.class) stack.push();
 			}
-			code.addFieldInstruction(isStatic ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD, owner, fieldName, desc);
+			code.addFieldInstruction(statics ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD, owner, fieldName, desc);
 			stack.pop();
-			if (!isStatic) stack.pop();
+			if (!statics) stack.pop();
 		}
 		code.mark(marker);
-		if (!isStatic) arrayFirst(code, stack);
-		code.addFieldInstruction(isStatic ? Opcodes.GETSTATIC : Opcodes.GETFIELD, owner, fieldName, desc);
-		if (isStatic) stack.push();
+		if (!statics) arrayFirst(code, stack);
+		code.addFieldInstruction(statics ? Opcodes.GETSTATIC : Opcodes.GETFIELD, owner, fieldName, desc);
+		if (statics) stack.push();
 		if (type.isPrimitive())
 		{
 			warp(type, code, stack);
@@ -1154,7 +1235,7 @@ public class ReflectionFactory
 		code.addInstruction(Opcodes.ARETURN);
 		stack.pop();
 		code.setMaxs(stack.getMaxSize(), 2);
-		if (isStatic)
+		if (statics)
 		{
 			code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "()Ljava/lang/Object;")
 				.addAttribute(
@@ -1176,13 +1257,14 @@ public class ReflectionFactory
 
 	private static <T> ReflectionAccessor<T> generic(Class<?> target, Class<?> clazz, MethodType type)
 	{
+		Class<?> clazz = target.getDeclaringClass();
 		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
 		String className = target.getPackage().getName().replace('.', '/').concat("/ConstructorAccessor");
 		String desc = type.toMethodDescriptorString();
 		String owner = clazz.getTypeName().replace('.', '/');
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstructorAccessor.java"));
-		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
-		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(clazz)+">;");
+		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ConstructorAccessor.class)});
+		pregeneric(cw, target);
 		Consumer<CodeWriter> gen = code ->
 		{
 			final OperandStack stack = new OperandStack();
@@ -1190,9 +1272,9 @@ public class ReflectionFactory
 			stack.push();
 			code.addInstruction(Opcodes.DUP);
 			stack.push();
-			pushArguments(type.parameterArray(), code, 0, stack);
+			pushArguments(target.getParameterTypes(), code, 0, stack);
 			code.addMethodInstruction(Opcodes.INVOKESPECIAL, owner, "<init>", desc, false);
-			for (Class<?> c : type.parameterArray())
+			for (Class<?> c : target.getParameterTypes())
 			{
 				stack.pop();
 				if (c == long.class || c == double.class) stack.pop();
@@ -1209,7 +1291,7 @@ public class ReflectionFactory
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode());
-		if (type.parameterArray().length == 0) gen.accept(cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "()Ljava/lang/Object;")
+		if (target.getParameterTypes().length == 0) gen.accept(cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "()Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
@@ -1227,7 +1309,6 @@ public class ReflectionFactory
 		String className = target.getPackage().getName().replace('.', '/').concat("/Allocator");
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Allocator.java"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
-		cw.addSignature("Ljava/lang/Object;L"+getType(ReflectionAccessor.class)+"<"+getDescriptor(target)+">;");
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
