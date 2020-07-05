@@ -885,54 +885,9 @@ public class ReflectionFactory
 		return value;
 	}
 
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, String methodName, boolean isStatic, boolean special, boolean isAbstract, Class<?> returnType, Class<?>... params)
+	public static <T> MethodAccessor<T> access(Class<?> target, String name, MethodType type, int kind)
 	{
-		return generic(target, target, methodName, MethodType.methodType(returnType, params), isStatic, special, isAbstract);
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, String methodName, boolean isStatic, boolean special, boolean isAbstract, MethodType type)
-	{
-		return generic(target, target, methodName, type, isStatic, special, isAbstract);
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Method method)
-	{
-		return generic(method.getDeclaringClass(), method.getDeclaringClass(), method.getName(), MethodType.methodType(method.getReturnType(), method.getParameterTypes()), Modifier.isStatic(method.getModifiers()), false, Modifier.isAbstract(method.getModifiers()));
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Method method, boolean special)
-	{
-		return generic(method.getDeclaringClass(), method.getDeclaringClass(), method.getName(), MethodType.methodType(method.getReturnType(), method.getParameterTypes()), Modifier.isStatic(method.getModifiers()), special, Modifier.isAbstract(method.getModifiers()));
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, String fieldName, Class<?> type, boolean isStatic, boolean isFinal)
-	{
-		return generic(target, target, fieldName, type, isStatic, isFinal);
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Field field)
-	{
-		return generic(field.getDeclaringClass(), field.getDeclaringClass(), field.getName(), field.getType(), Modifier.isStatic(field.getModifiers()), Modifier.isFinal(field.getModifiers()));
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target)
-	{
-		return generic(target);
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, boolean initialize)
-	{
-		return initialize ? generic(target, target, MethodType.methodType(void.class)) : generic(target);
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Class<?> target, Class<?>... params)
-	{
-		return generic(target, target, MethodType.methodType(void.class, params));
-	}
-
-	public static <T> ReflectionAccessor<T> getReflectionAccessor(Constructor<?> ctr)
-	{
-		return generic(ctr.getDeclaringClass(), ctr.getDeclaringClass(), MethodType.methodType(void.class, ctr.getParameterTypes()));
+		return generic(ACCESSOR.getMethod(target, name, type.parameterArray()), kind);
 	}
 
 	public static <T> MethodAccessor<T> access(Method method, int kind)
@@ -1073,10 +1028,12 @@ public class ReflectionFactory
 		}
 	}
 
-	private static <T> ReflectionAccessor<T> generic(Class<?> target, Class<?> clazz, String methodName, MethodType type, boolean isStatic, boolean special, boolean isAbstract)
+	private static <T> MethodAccessor<T> generic(Method target, int kind)
 	{
-		String className = target.getPackage().getName().replace('.', '/').concat("/MethodAccessor");
-		String desc = type.toMethodDescriptorString();
+		Class<?> clazz = target.getDeclaringClass();
+		boolean access = checkAccessible(clazz.getClassLoader());
+		String className = access ? clazz.getPackage().getName().replace('.', '/').concat("/MethodAccessor") : "org/mve/invoke/MethodAccessor";
+		String desc = MethodType.methodType(target.getReturnType(), target.getParameterTypes()).toMethodDescriptorString();
 		final String owner = clazz.getTypeName().replace('.', '/');
 		Class<?> returnType = target.getReturnType();
 		Class<?>[] params = target.getParameterTypes();
@@ -1120,10 +1077,10 @@ public class ReflectionFactory
 			)
 			.addCode());
 		byte[] classcode = cw.toByteArray();
-		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(target, classcode, null));
+		return (MethodAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null));
 	}
 
-	private static <T> ReflectionAccessor<T> generic(Class<?> target, Class<?> clazz, String fieldName, Class<?> type, boolean isStatic, boolean isFinal)
+	private static <T> FieldAccessor<T> generic(Field target)
 	{
 		Class<?> clazz = target.getDeclaringClass();
 		Class<?> type = target.getType();
@@ -1172,11 +1129,10 @@ public class ReflectionFactory
 		}
 		if (finals)
 		{
-			Field field1 = ACCESSOR.getField(clazz, fieldName);
-			long offset = isStatic ? UNSAFE.staticFieldOffset(field1) : UNSAFE.objectFieldOffset(field1);
+			long offset = statics ? UNSAFE.staticFieldOffset(target) : UNSAFE.objectFieldOffset(target);
 			code.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class));
 			stack.push();
-			if (isStatic) { code.addConstantInstruction(Opcodes.LDC, new Type(clazz)); stack.push(); }
+			if (statics) { code.addConstantInstruction(Opcodes.LDC, new Type(clazz)); stack.push(); }
 			else arrayFirst(code, stack);
 			code.addConstantInstruction(Opcodes.LDC2_W, offset);
 			stack.push();
@@ -1252,15 +1208,16 @@ public class ReflectionFactory
 		}
 
 		byte[] classcode = cw.toByteArray();
-		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(target, classcode, null));
+		return (FieldAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(acc ? clazz : ReflectionFactory.class, classcode, null));
 	}
 
-	private static <T> ReflectionAccessor<T> generic(Class<?> target, Class<?> clazz, MethodType type)
+	private static <T> ConstructorAccessor<T> generic(Constructor<?> target)
 	{
 		Class<?> clazz = target.getDeclaringClass();
 		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
-		String className = target.getPackage().getName().replace('.', '/').concat("/ConstructorAccessor");
-		String desc = type.toMethodDescriptorString();
+		boolean access = checkAccessible(clazz.getClassLoader());
+		String className = access ? clazz.getPackage().getName().replace('.', '/').concat("/ConstructorAccessor") : "org/mve/invoke/ConstructorAccessor";
+		String desc = MethodType.methodType(void.class, target.getParameterTypes()).toMethodDescriptorString();
 		String owner = clazz.getTypeName().replace('.', '/');
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstructorAccessor.java"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ConstructorAccessor.class)});
@@ -1300,13 +1257,14 @@ public class ReflectionFactory
 			)
 			.addCode());
 		byte[] classcode = cw.toByteArray();
-		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(target, classcode, null));
+		return (ConstructorAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null));
 	}
 
 	private static <T> ReflectionAccessor<T> generic(Class<?> target)
 	{
 		if (typeWarp(target) == Void.class || target.isPrimitive() || target.isArray()) throw new IllegalArgumentException("illegal type: "+target);
-		String className = target.getPackage().getName().replace('.', '/').concat("/Allocator");
+		boolean access = checkAccessible(target.getClassLoader());
+		String className = access ? target.getPackage().getName().replace('.', '/').concat("/Allocator") : "org/mve/invoke/Allocator";
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Allocator.java"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
@@ -1332,7 +1290,12 @@ public class ReflectionFactory
 			.addInstruction(Opcodes.ARETURN)
 			.setMaxs(1, 1);
 		byte[] classcode = cw.toByteArray();
-		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(target, classcode, null));
+		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? target : ReflectionFactory.class, classcode, null));
+	}
+
+	private static boolean checkAccessible(ClassLoader loader)
+	{
+		return checkAccessible(loader, ReflectionFactory.class.getClassLoader());
 	}
 
 	private static boolean checkAccessible(ClassLoader c1, ClassLoader c2)
