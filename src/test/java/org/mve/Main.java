@@ -1,24 +1,34 @@
 package org.mve;
 
-import org.mve.invoke.ReflectionAccessor;
+import org.mve.invoke.MethodAccessor;
+import org.mve.invoke.MethodKind;
 import org.mve.invoke.ReflectionFactory;
-import org.mve.util.SystemUtil;
+import org.mve.util.IO;
 
-import java.util.Arrays;
+import java.io.InputStream;
+import java.lang.invoke.MethodType;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 public class Main
 {
-	public static void main(String[] args)
+	private static Object o;
+
+	public Main()
 	{
-		ReflectionAccessor<Void> a = ReflectionFactory.getReflectionAccessor(Main.class, "a", true, false, false, void.class);
-		a.invoke();
-		a = ReflectionFactory.getReflectionAccessor(Main.class, "a", true, false, false, void.class);
-		a.invoke();
+		System.out.println("Construct");
 	}
 
-	private static void a()
+	public static void main(String[] args) throws Throwable
 	{
-		SystemUtil.printStackTrace();
-		System.out.println(Arrays.toString(ReflectionFactory.ACCESSOR.getClassContext()));
+		URLClassLoader loader = new URLClassLoader(new URL[0], Main.class.getClassLoader());
+		InputStream in = Main.class.getClassLoader().getResourceAsStream("org/mve/A.class");
+		if (in == null) throw new NullPointerException();
+		byte[] classcode = IO.toByteArray(in);
+		Class<?> c = ReflectionFactory.UNSAFE.defineClass(null, classcode, 0, classcode.length, loader, null);
+		MethodAccessor<Void> main = ReflectionFactory.access(c, "main", MethodType.methodType(void.class, String[].class), ReflectionFactory.KIND_INVOKE_STATIC);
+		main.invoke((Object) args);
+		System.out.println(main.getMethod());
+		System.out.println(main);
 	}
 }
