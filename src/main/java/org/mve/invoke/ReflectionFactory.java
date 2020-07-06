@@ -26,6 +26,7 @@ import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -401,7 +402,7 @@ public class ReflectionFactory
 		Class<?> c = checkAccessible(handle.getClassLoader(), target.getClassLoader()) ? handle : target;
 		this.define = checkAccessible(c.getClassLoader()) ? c : ReflectionFactory.class;
 		this.target = target;
-		this.generator.set(0x34, 0x21, this.define.getPackage().getName().concat("/").concat(handle.getSimpleName()).replace('.', '/'), CONSTANT_POOL[0], new String[]{getType(handle)});
+		this.generator.set(0x34, 0x21, UUID.randomUUID().toString().toUpperCase(), CONSTANT_POOL[0], new String[]{getType(handle)});
 	}
 
 	/**
@@ -1032,12 +1033,12 @@ public class ReflectionFactory
 	{
 		Class<?> clazz = target.getDeclaringClass();
 		boolean access = checkAccessible(clazz.getClassLoader());
-		String className = access ? clazz.getPackage().getName().replace('.', '/').concat("/MethodAccessor") : "org/mve/invoke/MethodAccessor";
+		String className = UUID.randomUUID().toString().toUpperCase();
 		String desc = MethodType.methodType(target.getReturnType(), target.getParameterTypes()).toMethodDescriptorString();
 		final String owner = clazz.getTypeName().replace('.', '/');
 		Class<?> returnType = target.getReturnType();
 		Class<?>[] params = target.getParameterTypes();
-		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("MethodAccessor.java"));
+		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ReflectionMethodAccessor.java"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(MethodAccessor.class)});
 		pregeneric(cw, target);
 		boolean statics = Modifier.isStatic(target.getModifiers());
@@ -1086,7 +1087,7 @@ public class ReflectionFactory
 		Class<?> type = target.getType();
 		boolean acc = checkAccessible(clazz.getClassLoader());
 		String fieldName = target.getName();
-		String className = acc ? clazz.getPackage().getName().replace('.', '/').concat("/FieldAccessor") : "org/mve/invoke/FieldAccessor";
+		String className = UUID.randomUUID().toString().toUpperCase();
 		String desc = getDescriptor(type);
 		String owner = clazz.getTypeName().replace('.', '/');
 		final OperandStack stack = new OperandStack();
@@ -1216,7 +1217,7 @@ public class ReflectionFactory
 		Class<?> clazz = target.getDeclaringClass();
 		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
 		boolean access = checkAccessible(clazz.getClassLoader());
-		String className = access ? clazz.getPackage().getName().replace('.', '/').concat("/ConstructorAccessor") : "org/mve/invoke/ConstructorAccessor";
+		String className = UUID.randomUUID().toString().toUpperCase();
 		String desc = MethodType.methodType(void.class, target.getParameterTypes()).toMethodDescriptorString();
 		String owner = clazz.getTypeName().replace('.', '/');
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("ConstructorAccessor.java"));
@@ -1264,7 +1265,7 @@ public class ReflectionFactory
 	{
 		if (typeWarp(target) == Void.class || target.isPrimitive() || target.isArray()) throw new IllegalArgumentException("illegal type: "+target);
 		boolean access = checkAccessible(target.getClassLoader());
-		String className = access ? target.getPackage().getName().replace('.', '/').concat("/Allocator") : "org/mve/invoke/Allocator";
+		String className = UUID.randomUUID().toString().toUpperCase();
 		ClassWriter cw = new ClassWriter().addAttribute(new SourceWriter("Allocator.java"));
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL | AccessFlag.ACC_SUPER, className, CONSTANT_POOL[0], new String[]{getType(ReflectionAccessor.class)});
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
