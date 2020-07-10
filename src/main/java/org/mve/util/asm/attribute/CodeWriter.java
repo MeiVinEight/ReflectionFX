@@ -113,7 +113,7 @@ public class CodeWriter implements AttributeWriter
 
 	public CodeWriter addConstantInstruction(int opcode, Object value)
 	{
-		return this.addInstruction(new ConstantInstruction(opcode, value));
+		return this.addInstruction(new ConstantInstruction(value));
 	}
 
 	public CodeWriter addFieldInstruction(int opcode, String type, String name, String desc)
@@ -188,21 +188,86 @@ public class CodeWriter implements AttributeWriter
 				}
 				else if (instruction instanceof ConstantInstruction)
 				{
+					arr.skip(-1);
 					ConstantInstruction insn = (ConstantInstruction) instruction;
 					Object value = insn.value;
-					int index = 0;
 					if (value instanceof Number)
 					{
-						Number number = (Number) value;
-						if (number instanceof Long) index = ConstantPoolFinder.findLong(pool, number.longValue());
-						else if (number instanceof Double) index = ConstantPoolFinder.findDouble(pool, number.doubleValue());
-						else if (number instanceof Float) index = ConstantPoolFinder.findFloat(pool, number.floatValue());
-						else index = ConstantPoolFinder.findInteger(pool, number.intValue());
+						if (value instanceof Long)
+						{
+							long val = ((Number) value).longValue();
+							int index = ConstantPoolFinder.findLong(pool, val);
+							arr.write(Opcodes.LDC2_W);
+							arr.writeShort(index);
+						}
+						else if (value instanceof Double)
+						{
+							double val = ((Number) value).doubleValue();
+							int index = ConstantPoolFinder.findDouble(pool, val);
+							arr.write(Opcodes.LDC2_W);
+							arr.writeShort(index);
+						}
+						else if (value instanceof Float)
+						{
+							float val = ((Number) value).floatValue();
+							int index = ConstantPoolFinder.findFloat(pool, val);
+							if (index > 255)
+							{
+								arr.write(Opcodes.LDC_W);
+								arr.writeShort(index);
+							}
+							else
+							{
+								arr.write(Opcodes.LDC);
+								arr.write(index);
+							}
+						}
+						else
+						{
+							int val = ((Number) value).intValue();
+							int index = ConstantPoolFinder.findInteger(pool, val);
+							if (index > 255)
+							{
+								arr.write(Opcodes.LDC_W);
+								arr.writeShort(index);
+							}
+							else
+							{
+								arr.write(Opcodes.LDC);
+								arr.write(index);
+							}
+						}
 					}
-					else if (value instanceof String) index = ConstantPoolFinder.findString(pool, value.toString());
-					else if (value instanceof Type) index = ConstantPoolFinder.findClass(pool, ((Type)value).getType());
-					if (insn.opcode == Opcodes.LDC) arr.write(index);
-					else arr.writeShort(index);
+					else if (value instanceof String)
+					{
+						String str = value.toString();
+						int index = ConstantPoolFinder.findString(pool, str);
+						if (index > 255)
+						{
+							arr.write(Opcodes.LDC_W);
+							arr.writeShort(index);
+						}
+						else
+						{
+							arr.write(Opcodes.LDC);
+							arr.write(index);
+						}
+					}
+					else if (value instanceof Type)
+					{
+						String type = ((Type) value).getType();
+						int index = ConstantPoolFinder.findClass(pool, type);
+						if (index > 255)
+						{
+							arr.write(Opcodes.LDC_W);
+							arr.writeShort(index);
+						}
+						else
+						{
+							arr.write(Opcodes.LDC);
+							arr.write(index);
+						}
+					}
 				}
 				else if (instruction instanceof LocalVariableInstruction)
 				{
