@@ -17,7 +17,7 @@ import java.lang.reflect.Method;
  * @see MagicAccessor#construct(Class, Class[], Object[])
  * @see MagicAccessor#invokeMethodHandle(MethodHandle, Object...)
  * @see MagicAccessor#getField(Class, String)
- * @see MagicAccessor#getMethod(Class, String, Class[])
+ * @see MagicAccessor#getMethod(Class, String, Class, Class[])
  * @see MagicAccessor#getConstructor(Class, Class[])
  * @see MagicAccessor#getFields(Class)
  * @see MagicAccessor#getMethods(Class)
@@ -47,7 +47,7 @@ public interface MagicAccessor
 
 	Field getField(Class<?> target, String name);
 
-	Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes);
+	Method getMethod(Class<?> clazz, String name, Class<?> returnType, Class<?>... parameterTypes);
 
 	<T> Constructor<T> getConstructor(Class<?> target, Class<?>... parameterTypes);
 
