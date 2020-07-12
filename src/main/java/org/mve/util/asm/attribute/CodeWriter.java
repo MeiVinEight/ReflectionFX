@@ -116,6 +116,11 @@ public class CodeWriter implements AttributeWriter
 		return this.addInstruction(new ConstantInstruction(value));
 	}
 
+	public CodeWriter addConstantInstruction(Object value)
+	{
+		return this.addInstruction(new ConstantInstruction(value));
+	}
+
 	public CodeWriter addFieldInstruction(int opcode, String type, String name, String desc)
 	{
 		return this.addInstruction(new FieldInstruction(opcode, type, name, desc));
