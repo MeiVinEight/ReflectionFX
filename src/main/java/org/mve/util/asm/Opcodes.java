@@ -223,4 +223,25 @@ public class Opcodes
 	REFERENCE_KIND_INVOKE_SPECIAL		= 7,
 	REFERENCE_KIND_NEW_INVOKE_SPECIAL	= 8,
 	REFERENCE_KIND_INVOKE_INTERFACE		= 9;
+
+	// frame_type = offset
+	public static final short STACK_MAP_SAME_FRAME								= 0;
+
+	// frame_type = 64 + offset
+	public static final short STACK_MAP_SAME_LOCALS_1_STACK_ITEM_FRAME			= 64;
+
+	// frame_type = 247
+	public static final short STACK_MAP_SAME_LOCALS_1_STACK_ITEM_FRAME_EXTENDED	= 247;
+
+	// frame_type = 251 - k
+	public static final short STACK_MAP_CHOP_FRAME								= 251;
+
+	// frame_type = 251
+	public static final short STACK_MAP_SAME_FRAME_EXTENDED						= 251;
+
+	// frame_type = 251 + k
+	public static final short STACK_MAP_APPEND_FRAME							= 251;
+
+	// frame_type = 255;
+	public static final short STACK_MAP_FULL_FRAME								= 255;
 }
