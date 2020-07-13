@@ -273,6 +273,21 @@ public class CodeWriter implements AttributeWriter
 							arr.write(index);
 						}
 					}
+					else if (value instanceof Class)
+					{
+						Class<?> clazz = (Class<?>) value;
+						int index = ConstantPoolFinder.findClass(pool, clazz.getTypeName().replace('.', '/'));
+						if (index > 255)
+						{
+							arr.write(Opcodes.LDC_W);
+							arr.writeShort(index);
+						}
+						else
+						{
+							arr.write(Opcodes.LDC);
+							arr.write(index);
+						}
+					}
 				}
 				else if (instruction instanceof LocalVariableInstruction)
 				{
