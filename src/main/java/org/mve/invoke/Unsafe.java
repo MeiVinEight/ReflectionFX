@@ -6,6 +6,7 @@ import java.security.ProtectionDomain;
 
 public interface Unsafe
 {
+	String getJavaVMVendor();
 	int getJavaVMVersion();
 	byte getByte(long offset);
 	byte getByte(Object obj, long offset);

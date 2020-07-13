@@ -17,6 +17,8 @@ import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -385,7 +387,7 @@ public class ReflectionFactory
 		KIND_GET				= 4,
 		KIND_PUT				= 5;
 
-	private static final String[] CONSTANT_POOL = new String[6];
+	private static final String[] CONSTANT_POOL = new String[4];
 
 	private final ClassWriter generator = new ClassWriter();
 	private final Class<?> target;
@@ -421,9 +423,9 @@ public class ReflectionFactory
 		CodeWriter code = this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+				.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+				.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 				.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-				.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-				.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode();
 		int local = 1;
@@ -474,9 +476,9 @@ public class ReflectionFactory
 		CodeWriter code = this.generator.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode();
 		code.setMaxLocals(1 + (isStatic ? 0 : 1) + typeSize(type));
@@ -546,9 +548,9 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
@@ -569,9 +571,9 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
@@ -622,9 +624,9 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, String.class).toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
@@ -639,9 +641,9 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(this.target, String.class).toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
@@ -656,9 +658,9 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, String.class, int.class).toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
@@ -672,9 +674,9 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(this.target, String.class, int.class).toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
@@ -688,9 +690,9 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "values", MethodType.methodType(Object[].class).toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
@@ -700,9 +702,9 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "values", "()[".concat(getDescriptor(target)))
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
@@ -712,17 +714,12 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "values", MethodType.methodType(void.class, Object[].class).toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
-			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
-			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
-			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
-			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
+			.addMethodInstruction(Opcodes.INVOKESPECIAL, this.generator.getName(), "clearEnumConstants", "()V", false)
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC_W, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
@@ -734,17 +731,12 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "values", "([".concat(getDescriptor(this.target)).concat(")V"))
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
-			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
-			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
-			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
-			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
+			.addMethodInstruction(Opcodes.INVOKESPECIAL, this.generator.getName(), "clearEnumConstants", "()V", false)
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC_W, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
@@ -756,17 +748,12 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "add", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
-			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
-			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
-			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
-			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
+			.addMethodInstruction(Opcodes.INVOKESPECIAL, this.generator.getName(), "clearEnumConstants", "()V", false)
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC_W, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
@@ -788,19 +775,14 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "add", MethodType.methodType(void.class, target).toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
-			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
-			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
-			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
-			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
+			.addMethodInstruction(Opcodes.INVOKESPECIAL, this.generator.getName(), "clearEnumConstants", "()V", false)
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
-			.addConstantInstruction(Opcodes.LDC_W, new Type(target))
+			.addConstantInstruction(new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(target), values, "[".concat(getDescriptor(target)))
 			.addInstruction(Opcodes.DUP)
@@ -820,17 +802,12 @@ public class ReflectionFactory
 			.addMethod(AccessFlag.ACC_PUBLIC, "remove", MethodType.methodType(void.class, int.class).toMethodDescriptorString())
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
-			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
-			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[1], getDescriptor(Object[].class))
-			.addConstantInstruction(Opcodes.LDC_W, new Type(this.target))
-			.addInstruction(Opcodes.ACONST_NULL)
-			.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), CONSTANT_POOL[2], getDescriptor(Map.class))
+			.addMethodInstruction(Opcodes.INVOKESPECIAL, this.generator.getName(), "clearEnumConstants", "()V", false)
 			.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
 			.addConstantInstruction(Opcodes.LDC_W, new Type(target))
 			.addConstantInstruction(Opcodes.LDC2_W, offset)
@@ -870,6 +847,30 @@ public class ReflectionFactory
 			.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true)
 			.addInstruction(Opcodes.RETURN)
 			.setMaxs(12, 2);
+
+		boolean openJ9VM = UNSAFE.getJavaVMVendor().equals("Eclipse OpenJ9");
+
+		if (openJ9VM)
+		{
+			this.generator.addMethod(AccessFlag.ACC_PRIVATE, "clearEnumConstants", "()V")
+				.addCode()
+				.addConstantInstruction(this.target)
+				.addInstruction(Opcodes.ACONST_NULL)
+				.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumVars", "Ljava/lang/Class$EnumVars;")
+				.addInstruction(Opcodes.RETURN)
+				.setMaxs(2, 1);
+		}
+		else
+		{
+			this.generator.addMethod(AccessFlag.ACC_PRIVATE, "clearEnumConstants", "()V")
+				.addCode()
+				.addConstantInstruction(this.target)
+				.addInstruction(Opcodes.ACONST_NULL)
+				.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstants", getDescriptor(Object[].class))
+				.addConstantInstruction(this.target)
+				.addInstruction(Opcodes.ACONST_NULL)
+				.addFieldInstruction(Opcodes.PUTFIELD, getType(Class.class), "enumConstantDirectory", getDescriptor(Map.class));
+		}
 		return this;
 	}
 
@@ -1065,17 +1066,17 @@ public class ReflectionFactory
 		gen.accept(cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode());
 		if (params.length == 0 && statics) gen.accept(cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "()Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode());
 		byte[] classcode = cw.toByteArray();
@@ -1100,9 +1101,9 @@ public class ReflectionFactory
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode();
 		Marker marker = new Marker();
@@ -1198,9 +1199,9 @@ public class ReflectionFactory
 			code = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "()Ljava/lang/Object;")
 				.addAttribute(
 					new RuntimeVisibleAnnotationsWriter()
+						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 				)
 				.addCode();
 			code.setMaxs((type == long.class || type == double.class) ? 2 : 1, 1);
@@ -1245,17 +1246,17 @@ public class ReflectionFactory
 		gen.accept(cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode());
 		if (target.getParameterTypes().length == 0) gen.accept(cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "()Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode());
 		byte[] classcode = cw.toByteArray();
@@ -1272,9 +1273,9 @@ public class ReflectionFactory
 		CodeWriter code = cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode();
 		code.addTypeInstruction(Opcodes.NEW, getType(target));
@@ -1283,9 +1284,9 @@ public class ReflectionFactory
 		cw.addMethod(AccessFlag.ACC_PUBLIC, "invoke", "()Ljava/lang/Object;")
 			.addAttribute(
 				new RuntimeVisibleAnnotationsWriter()
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
+					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[4]))
-					.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[5]))
 			)
 			.addCode()
 			.addTypeInstruction(Opcodes.NEW, getType(target))
@@ -1436,6 +1437,9 @@ public class ReflectionFactory
 	{
 		try
 		{
+			RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
+			String vm = bean.getVmVendor();
+			boolean openJ9VM = vm.equals("Eclipse OpenJ9");
 			URL url = ClassLoader.getSystemClassLoader().getResource("java/lang/Object.class");
 			if (url == null) throw new NullPointerException();
 			InputStream in = url.openStream();
@@ -1457,9 +1461,9 @@ public class ReflectionFactory
 			 * Hidden stack
 			 */
 			{
-				CONSTANT_POOL[3] = majorVersion < 57 ? "Ljava/lang/invoke/LambdaForm$Hidden;" : "Ljdk/internal/vm/annotation/Hidden;";
-				CONSTANT_POOL[4] = majorVersion == 0x34 ? "Ljava/lang/invoke/ForceInline;" : "Ljdk/internal/vm/annotation/ForceInline;";
-				CONSTANT_POOL[5] = "Ljava/lang/invoke/LambdaForm$Compiled;";
+				CONSTANT_POOL[1] = majorVersion < 57 ? "Ljava/lang/invoke/LambdaForm$Hidden;" : "Ljdk/internal/vm/annotation/Hidden;";
+				CONSTANT_POOL[2] = majorVersion == 0x34 ? "Ljava/lang/invoke/ForceInline;" : "Ljdk/internal/vm/annotation/ForceInline;";
+				CONSTANT_POOL[3] = "Ljava/lang/invoke/LambdaForm$Compiled;";
 			}
 
 			final MethodHandle DEFINE;
@@ -1482,6 +1486,11 @@ public class ReflectionFactory
 				Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
 				long off = usf.staticFieldOffset(field);
 				MethodHandles.Lookup lookup = TRUSTED_LOOKUP = (MethodHandles.Lookup) usf.getObjectVolatile(MethodHandles.Lookup.class, off);
+				if (openJ9VM)
+				{
+					Field accClass = MethodHandles.Lookup.class.getDeclaredField("accessClass");
+					usf.putObject(TRUSTED_LOOKUP, usf.objectFieldOffset(accClass), Class.forName(mai.replace('/', '.')));
+				}
 				DEFINE = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
 			}
 
@@ -1586,6 +1595,15 @@ public class ReflectionFactory
 								code.addInstruction(Opcodes.IRETURN);
 								code.setMaxs(1, 1);
 							}
+
+							{
+								cw1.addMethod(AccessFlag.ACC_PUBLIC, "getJavaVMVendor", "()Ljava/lang/String;")
+									.addCode()
+									.addConstantInstruction(vm)
+									.addInstruction(Opcodes.ARETURN)
+									.setMaxs(1, 1);
+							}
+
 							BiConsumer<String[], Class<?>[]> method = (name, arr) ->
 							{
 								String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
@@ -2374,9 +2392,9 @@ public class ReflectionFactory
 						mw.addSignature("(Ljava/lang/Class<*>;Ljava/lang/String;)Ljava/lang/reflect/Field;");
 						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
+						code.addInstruction(Opcodes.ALOAD_0);
 						code.addInstruction(Opcodes.ALOAD_1);
-						code.addInstruction(Opcodes.ICONST_0);
-						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredFields0", MethodType.methodType(Field[].class, boolean.class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString(), false);
 						code.addInstruction(Opcodes.ALOAD_2);
 						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Class.class), "searchFields", MethodType.methodType(Field.class, Field[].class, String.class).toMethodDescriptorString(), false);
 						code.addInstruction(Opcodes.DUP);
@@ -2401,9 +2419,9 @@ public class ReflectionFactory
 						Marker m3 = new Marker();
 						cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "getMethod", MethodType.methodType(Method.class, Class.class, String.class, Class.class, Class[].class).toMethodDescriptorString())
 							.addCode()
+							.addInstruction(Opcodes.ALOAD_0)
 							.addInstruction(Opcodes.ALOAD_1)
-							.addInstruction(Opcodes.ICONST_0)
-							.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredMethods0", "(Z)[Ljava/lang/reflect/Method;", false)
+							.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getMethods", "(Ljava/lang/Class;)[Ljava/lang/reflect/Method;", false)
 							.addLocalVariableInstruction(Opcodes.ASTORE, 5)
 							.addInstruction(Opcodes.ICONST_0)
 							.addLocalVariableInstruction(Opcodes.ISTORE, 6)
@@ -2471,9 +2489,9 @@ public class ReflectionFactory
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "getConstructor", MethodType.methodType(Constructor.class, Class.class, Class[].class).toMethodDescriptorString());
 						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;[Ljava/lang/Class<*>;)Ljava/lang/reflect/Constructor<TT;>;");
 						CodeWriter code = mw.addCode();
+						code.addInstruction(Opcodes.ALOAD_0);
 						code.addInstruction(Opcodes.ALOAD_1);
-						code.addInstruction(Opcodes.ICONST_0);
-						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredConstructors0", MethodType.methodType(Constructor[].class, boolean.class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getConstructors", MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString(), false);
 						code.addInstruction(Opcodes.DUP);
 						code.addInstruction(Opcodes.ASTORE_3);
 						code.addInstruction(Opcodes.ARRAYLENGTH);
@@ -2529,11 +2547,13 @@ public class ReflectionFactory
 					 */
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString());
-						mw.addSignature("(Ljava/lang/Class<*>;)[Ljava/lang/reflect/Field;");
 						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
-						code.addInstruction(Opcodes.ICONST_0);
-						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredFields0", MethodType.methodType(Field[].class, boolean.class).toMethodDescriptorString(), false);
+						if (!openJ9VM)
+						{
+							code.addInstruction(Opcodes.ICONST_0);
+						}
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), openJ9VM ? "getDeclaredFieldsImpl" : "getDeclaredFields0", MethodType.methodType(Field[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false);
 						code.addInstruction(Opcodes.ARETURN);
 						code.setMaxs(2, 2);
 					}
@@ -2543,11 +2563,13 @@ public class ReflectionFactory
 					 */
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getMethods", MethodType.methodType(Method[].class, Class.class).toMethodDescriptorString());
-						mw.addSignature("(Ljava/lang/Class<*>;)[Ljava/lang/reflect/Method;");
 						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
-						code.addInstruction(Opcodes.ICONST_0);
-						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredMethods0", MethodType.methodType(Method[].class, boolean.class).toMethodDescriptorString(), false);
+						if (!openJ9VM)
+						{
+							code.addInstruction(Opcodes.ICONST_0);
+						}
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), openJ9VM ? "getDeclaredMethodsImpl" :"getDeclaredMethods0", MethodType.methodType(Method[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false);
 						code.addInstruction(Opcodes.ARETURN);
 						code.setMaxs(2, 2);
 					}
@@ -2557,11 +2579,13 @@ public class ReflectionFactory
 					 */
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getConstructors", MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString());
-						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;)[Ljava/lang/reflect/Constructor<TT;>;");
 						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
-						code.addInstruction(Opcodes.ICONST_0);
-						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), "getDeclaredConstructors0", MethodType.methodType(Constructor[].class, boolean.class).toMethodDescriptorString(), false);
+						if (!openJ9VM)
+						{
+							code.addInstruction(Opcodes.ICONST_0);
+						}
+						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(Class.class), openJ9VM ? "getDeclaredConstructorsImpl" :"getDeclaredConstructors0", MethodType.methodType(Constructor[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false);
 						code.addInstruction(Opcodes.ARETURN);
 						code.setMaxs(2, 2);
 					}
@@ -2593,29 +2617,6 @@ public class ReflectionFactory
 					c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 				}
 				ACCESSOR = (MagicAccessor) UNSAFE.allocateInstance(c);
-			}
-
-			/*
-			 * Find enum cache
-			 */
-			{
-				Field[] fields = ACCESSOR.getFields(Class.class);
-				for (Field f : fields)
-				{
-					if (f.getType() == Object[].class && !Modifier.isStatic(f.getModifiers()) && !Modifier.isFinal(f.getModifiers()))
-					{
-						CONSTANT_POOL[1] = f.getName();
-						break;
-					}
-				}
-				for (Field f : fields)
-				{
-					if (f.getType() == Map.class)
-					{
-						CONSTANT_POOL[2] = f.getName();
-						break;
-					}
-				}
 			}
 		}
 		catch (Throwable t)
