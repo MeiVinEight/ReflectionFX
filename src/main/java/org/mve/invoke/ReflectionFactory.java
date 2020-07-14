@@ -29,6 +29,7 @@ import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -388,6 +389,11 @@ public class ReflectionFactory
 		KIND_PUT				= 5;
 
 	private static final String[] CONSTANT_POOL = new String[4];
+	private static final Map<Field, FieldAccessor<?>> GENERATED_FIELD_ACCESSOR = new ConcurrentHashMap<>();
+	private static final Map<Method, MethodAccessor<?>> GENERATED_METHOD_ACCESSOR = new ConcurrentHashMap<>();
+	private static final Map<Constructor<?>, ConstructorAccessor<?>> GENERATED_CONSTRUCTOR_ACCESSOR = new ConcurrentHashMap<>();
+	private static final Map<Class<?>, ReflectionAccessor<?>> GENERATED_ALLOCATOR = new ConcurrentHashMap<>();
+	private static final Map<Class<?>, EnumHelper<?>> GENERATED_ENUM_HELPER = new ConcurrentHashMap<>();
 
 	private final ClassWriter generator = new ClassWriter();
 	private final Class<?> target;
@@ -984,7 +990,7 @@ public class ReflectionFactory
 
 	public static <T> EnumHelper<T> getEnumHelper(Class<?> target)
 	{
-		return new ReflectionFactory(EnumHelper.class, target).enumHelper().allocate();
+		return (EnumHelper<T>) GENERATED_ENUM_HELPER.computeIfAbsent(target, (k) -> new ReflectionFactory(EnumHelper.class, k).enumHelper().allocate());
 	}
 
 	private static void pregeneric(ClassWriter cw, AccessibleObject acc)
@@ -1052,6 +1058,11 @@ public class ReflectionFactory
 
 	private static <T> MethodAccessor<T> generic(Method target, int kind)
 	{
+		MethodAccessor<T> generated = (MethodAccessor<T>) GENERATED_METHOD_ACCESSOR.get(target);
+		if (generated != null)
+		{
+			return generated;
+		}
 		Class<?> clazz = target.getDeclaringClass();
 		boolean access = checkAccessible(clazz.getClassLoader());
 		String className = UUID.randomUUID().toString().toUpperCase();
@@ -1099,11 +1110,18 @@ public class ReflectionFactory
 			)
 			.addCode());
 		byte[] classcode = cw.toByteArray();
-		return (MethodAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null));
+		generated = (MethodAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null));
+		GENERATED_METHOD_ACCESSOR.put(target, generated);
+		return generated;
 	}
 
 	private static <T> FieldAccessor<T> generic(Field target)
 	{
+		FieldAccessor<T> generated = (FieldAccessor<T>) GENERATED_FIELD_ACCESSOR.get(target);
+		if (generated != null)
+		{
+			return generated;
+		}
 		Class<?> clazz = target.getDeclaringClass();
 		Class<?> type = target.getType();
 		boolean acc = checkAccessible(clazz.getClassLoader());
@@ -1230,11 +1248,18 @@ public class ReflectionFactory
 		}
 
 		byte[] classcode = cw.toByteArray();
-		return (FieldAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(acc ? clazz : ReflectionFactory.class, classcode, null));
+		generated = (FieldAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(acc ? clazz : ReflectionFactory.class, classcode, null));
+		GENERATED_FIELD_ACCESSOR.put(target, generated);
+		return generated;
 	}
 
 	private static <T> ConstructorAccessor<T> generic(Constructor<?> target)
 	{
+		ConstructorAccessor<T> generated = (ConstructorAccessor<T>) GENERATED_CONSTRUCTOR_ACCESSOR.get(target);
+		if (target != null)
+		{
+			return generated;
+		}
 		Class<?> clazz = target.getDeclaringClass();
 		if (clazz == void.class || clazz.isPrimitive() || clazz.isArray()) throw new IllegalArgumentException("illegal type: "+clazz);
 		boolean access = checkAccessible(clazz.getClassLoader());
@@ -1279,11 +1304,18 @@ public class ReflectionFactory
 			)
 			.addCode());
 		byte[] classcode = cw.toByteArray();
-		return (ConstructorAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null));
+		generated = (ConstructorAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null));
+		GENERATED_CONSTRUCTOR_ACCESSOR.put(target, generated);
+		return generated;
 	}
 
 	private static <T> ReflectionAccessor<T> generic(Class<?> target)
 	{
+		ReflectionAccessor<T> generated = (ReflectionAccessor<T>) GENERATED_ALLOCATOR.get(target);
+		if (generated != null)
+		{
+			return generated;
+		}
 		if (typeWarp(target) == Void.class || target.isPrimitive() || target.isArray()) throw new IllegalArgumentException("illegal type: "+target);
 		boolean access = checkAccessible(target.getClassLoader());
 		String className = UUID.randomUUID().toString().toUpperCase();
@@ -1312,7 +1344,9 @@ public class ReflectionFactory
 			.addInstruction(Opcodes.ARETURN)
 			.setMaxs(1, 1);
 		byte[] classcode = cw.toByteArray();
-		return (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? target : ReflectionFactory.class, classcode, null));
+		generated = (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? target : ReflectionFactory.class, classcode, null));
+		GENERATED_ALLOCATOR.put(target, generated);
+		return generated;
 	}
 
 	private static boolean checkAccessible(ClassLoader loader)
