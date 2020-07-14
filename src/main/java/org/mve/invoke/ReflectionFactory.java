@@ -2303,18 +2303,19 @@ public class ReflectionFactory
 
 					// Class<?> defineClass(ClassLoader loader, byte[] code);
 					{
-						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "defineClass", MethodType.methodType(Class.class, ClassLoader.class, byte[].class).toMethodDescriptorString());
-						mw.addSignature("(Ljava/lang/ClassLoader;[B)Ljava/lang/Class<*>;");
-						CodeWriter code = mw.addCode();
-						code.addInstruction(Opcodes.ALOAD_1);
-						code.addInstruction(Opcodes.ACONST_NULL);
-						code.addInstruction(Opcodes.ALOAD_2);
-						code.addInstruction(Opcodes.ICONST_0);
-						code.addInstruction(Opcodes.ALOAD_2);
-						code.addInstruction(Opcodes.ARRAYLENGTH);
-						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(ClassLoader.class), "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class).toMethodDescriptorString(), false);
-						code.addInstruction(Opcodes.ARETURN);
-						code.setMaxs(5, 3);
+						cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "defineClass", MethodType.methodType(Class.class, ClassLoader.class, byte[].class).toMethodDescriptorString())
+							.addCode()
+							.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "UNSAFE", getDescriptor(Unsafe.class))
+							.addInstruction(Opcodes.ACONST_NULL)
+							.addInstruction(Opcodes.ALOAD_2)
+							.addInstruction(Opcodes.ICONST_0)
+							.addInstruction(Opcodes.ALOAD_2)
+							.addInstruction(Opcodes.ARRAYLENGTH)
+							.addInstruction(Opcodes.ALOAD_1)
+							.addInstruction(Opcodes.ACONST_NULL)
+							.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class).toMethodDescriptorString(), true)
+							.addInstruction(Opcodes.ARETURN)
+							.setMaxs(7, 3);
 					}
 
 					/*
@@ -2322,7 +2323,6 @@ public class ReflectionFactory
 					 */
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString());
-						mw.addSignature("()Ljava/lang/Class<*>;");
 						CodeWriter code = mw.addCode();
 						code.addFieldInstruction(Opcodes.GETSTATIC, className, "0", getDescriptor(SecurityManager.class));
 						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
@@ -2377,7 +2377,6 @@ public class ReflectionFactory
 					 */
 					{
 						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "construct", MethodType.methodType(Object.class, Class.class, Class[].class, Object[].class).toMethodDescriptorString());
-						mw.addSignature("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;Ljava/lang/Class<*>;[Ljava/lang/Object;)TT;");
 						CodeWriter code = mw.addCode();
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ALOAD_2);
@@ -2407,28 +2406,57 @@ public class ReflectionFactory
 					 *Field getField(Class<?> target, String name);
 					 */
 					{
-						MethodWriter mw = cw.addMethod(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class, Class.class, String.class).toMethodDescriptorString());
-						mw.addSignature("(Ljava/lang/Class<*>;Ljava/lang/String;)Ljava/lang/reflect/Field;");
-						CodeWriter code = mw.addCode();
-						code.addInstruction(Opcodes.ALOAD_1);
-						code.addInstruction(Opcodes.ALOAD_0);
-						code.addInstruction(Opcodes.ALOAD_1);
-						code.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString(), false);
-						code.addInstruction(Opcodes.ALOAD_2);
-						code.addMethodInstruction(Opcodes.INVOKESTATIC, getType(Class.class), "searchFields", MethodType.methodType(Field.class, Field[].class, String.class).toMethodDescriptorString(), false);
-						code.addInstruction(Opcodes.DUP);
-						Marker marker = new Marker();
-						code.addJumpInstruction(Opcodes.IFNONNULL, marker);
-						code.addInstruction(Opcodes.POP);
-						code.addTypeInstruction(Opcodes.NEW, getType(NoSuchFieldException.class));
-						code.addInstruction(Opcodes.DUP);
-						code.addInstruction(Opcodes.ALOAD_2);
-						code.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(NoSuchFieldException.class), "<init>", MethodType.methodType(void.class, String.class).toMethodDescriptorString(), false);
-						code.addInstruction(Opcodes.ATHROW);
-						code.mark(marker);
-						code.addInstruction(Opcodes.ARETURN);
-						code.setMaxs(3, 3);
+						Marker m1 = new Marker();
+						Marker m2 = new Marker();
+						Marker m3 = new Marker();
+						cw.addMethod(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class, Class.class, String.class).toMethodDescriptorString())
+							.addCode()
+							.addInstruction(Opcodes.ALOAD_0)
+							.addInstruction(Opcodes.ALOAD_1)
+							.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString(), false)
+							.addInstruction(Opcodes.ASTORE_3)
+							.addInstruction(Opcodes.ALOAD_3)
+							.addInstruction(Opcodes.ARRAYLENGTH)
+							.addLocalVariableInstruction(Opcodes.ISTORE, 4)
+							.addInstruction(Opcodes.ICONST_0)
+							.addLocalVariableInstruction(Opcodes.ISTORE, 5)
+							.mark(m1)
+							.addLocalVariableInstruction(Opcodes.ILOAD, 5)
+							.addLocalVariableInstruction(Opcodes.ILOAD, 4)
+							.addJumpInstruction(Opcodes.IF_ICMPGE, m3)
+							.addInstruction(Opcodes.ALOAD_3)
+							.addLocalVariableInstruction(Opcodes.ILOAD, 5)
+							.addInstruction(Opcodes.AALOAD)
+							.addLocalVariableInstruction(Opcodes.ASTORE, 6)
+							.addLocalVariableInstruction(Opcodes.ALOAD, 6)
+							.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(Field.class), "getName", "()Ljava/lang/String;", false)
+							.addInstruction(Opcodes.ALOAD_2)
+							.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(String.class), "equals", "(Ljava/lang/Object;)Z", false)
+							.addJumpInstruction(Opcodes.IFEQ, m2)
+							.addLocalVariableInstruction(Opcodes.ALOAD, 6)
+							.addInstruction(Opcodes.ARETURN)
+							.mark(m2)
+							.addIincInstruction(5, 1)
+							.addJumpInstruction(Opcodes.GOTO, m1)
+							.mark(m3)
+							.addTypeInstruction(Opcodes.NEW, getType(NoSuchFieldException.class))
+							.addInstruction(Opcodes.DUP)
+							.addTypeInstruction(Opcodes.NEW, getType(StringBuilder.class))
+							.addInstruction(Opcodes.DUP)
+							.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(StringBuilder.class), "<init>", "()V", false)
+							.addInstruction(Opcodes.ALOAD_1)
+							.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(Class.class), "getTypeName", "()Ljava/lang/String;", false)
+							.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false)
+							.addConstantInstruction(".")
+							.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false)
+							.addInstruction(Opcodes.ALOAD_2)
+							.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false)
+							.addMethodInstruction(Opcodes.INVOKEVIRTUAL, getType(StringBuilder.class), "toString", "()Ljava/lang/String;", false)
+							.addMethodInstruction(Opcodes.INVOKESPECIAL, getType(NoSuchFieldException.class), "<init>", "(Ljava/lang/String;)V", false)
+							.addInstruction(Opcodes.ATHROW)
+							.setMaxs(4, 7);
 					}
+
 					/*
 					 * Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes);
 					 */
