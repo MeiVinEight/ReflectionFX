@@ -995,93 +995,39 @@ public class ReflectionFactory
 
 	private static void pregeneric(ClassWriter cw, AccessibleObject acc)
 	{
-		CodeWriter code;
+		cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "0", "Ljava/lang/Class;");
 		if (acc instanceof Method)
 		{
-			cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "0", "Ljava/lang/reflect/Method;");
+			cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", "Ljava/lang/reflect/Method;");
 			cw.addMethod(AccessFlag.ACC_PUBLIC, "getMethod", MethodType.methodType(Method.class).toMethodDescriptorString())
 				.addCode()
-				.addFieldInstruction(Opcodes.GETSTATIC, cw.getName(), "0",  "Ljava/lang/reflect/Method;")
+				.addFieldInstruction(Opcodes.GETSTATIC, cw.getName(), "1",  "Ljava/lang/reflect/Method;")
 				.addInstruction(Opcodes.ARETURN)
 				.setMaxs(1, 1);
-			Method method = (Method) acc;
-			Class<?>[] parameters = method.getParameterTypes();
-			code = cw.addMethod(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "<clinit>", "()V")
-				.addCode()
-				.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "ACCESSOR", getDescriptor(MagicAccessor.class))
-				.addConstantInstruction(new Type(method.getDeclaringClass()))
-				.addConstantInstruction(method.getName());
-			if (method.getReturnType().isPrimitive())
-			{
-				loadPrimitiveType(code, method.getReturnType());
-			}
-			else
-			{
-				code.addConstantInstruction(new Type(method.getReturnType()));
-			}
-			code.addNumberInstruction(Opcodes.BIPUSH, parameters.length)
-				.addTypeInstruction(Opcodes.ANEWARRAY, getType(Class.class));
-			int i = 0;
-			for (Class<?> c : parameters)
-			{
-				code.addInstruction(Opcodes.DUP)
-					.addNumberInstruction(Opcodes.BIPUSH, i++)
-					.addConstantInstruction(Opcodes.LDC_W, new Type(c))
-					.addInstruction(Opcodes.AASTORE);
-			}
-			code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(MagicAccessor.class), "getMethod", MethodType.methodType(Method.class, Class.class, String.class, Class.class, Class[].class).toMethodDescriptorString(), true)
-				.addFieldInstruction(Opcodes.PUTSTATIC, cw.getName(), "0", "Ljava/lang/reflect/Method;")
-				.addInstruction(Opcodes.RETURN)
-				.setMaxs(7, 0);
 		}
 		else if (acc instanceof Constructor)
 		{
-			cw.addField(AccessFlag.ACC_STATIC | AccessFlag.ACC_PRIVATE, "0", "Ljava/lang/reflect/Constructor;");
+			cw.addField(AccessFlag.ACC_STATIC | AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL, "1", "Ljava/lang/reflect/Constructor;");
 			cw.addMethod(AccessFlag.ACC_PUBLIC, "getConstructor", "()Ljava/lang/reflect/Constructor;")
 				.addCode()
-				.addFieldInstruction(Opcodes.GETSTATIC, cw.getName(), "0", "Ljava/lang/reflect/Constructor;")
+				.addFieldInstruction(Opcodes.GETSTATIC, cw.getName(), "1", "Ljava/lang/reflect/Constructor;")
 				.addInstruction(Opcodes.ARETURN)
 				.setMaxs(1, 1);
-			Constructor<?> ctr  = (Constructor<?>) acc;
-			Class<?>[] parameters = ctr.getParameterTypes();
-			code = cw.addMethod(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "<clinit>", "()V")
-				.addCode()
-				.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "ACCESSOR", getDescriptor(MagicAccessor.class))
-				.addConstantInstruction(Opcodes.LDC_W, new Type(ctr.getDeclaringClass()))
-				.addNumberInstruction(Opcodes.BIPUSH, parameters.length)
-				.addTypeInstruction(Opcodes.ANEWARRAY, getType(Class.class));
-			int i = 0;
-			for (Class<?> c : parameters)
-			{
-				code.addInstruction(Opcodes.DUP)
-					.addNumberInstruction(Opcodes.BIPUSH, i++)
-					.addConstantInstruction(Opcodes.LDC_W, new Type(c))
-					.addInstruction(Opcodes.AASTORE);
-			}
-			code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(MagicAccessor.class), "getConstructor", MethodType.methodType(Constructor.class, Class.class, Class[].class).toMethodDescriptorString(), true)
-				.addFieldInstruction(Opcodes.PUTSTATIC, cw.getName(), "0", "Ljava/lang/reflect/Constructor;")
-				.addInstruction(Opcodes.RETURN)
-				.setMaxs(6, 0);
 		}
 		else if (acc instanceof Field)
 		{
-			cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "0", "Ljava/lang/reflect/Field;");
+			cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", "Ljava/lang/reflect/Field;");
 			cw.addMethod(AccessFlag.ACC_PUBLIC, "getField", "()Ljava/lang/reflect/Field;")
 				.addCode()
-				.addFieldInstruction(Opcodes.GETSTATIC, cw.getName(), "0", "Ljava/lang/reflect/Field;")
+				.addFieldInstruction(Opcodes.GETSTATIC, cw.getName(), "1", "Ljava/lang/reflect/Field;")
 				.addInstruction(Opcodes.ARETURN)
 				.setMaxs(1, 1);
-			Field field = (Field) acc;
-			cw.addMethod(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "<clinit>", "()V")
-				.addCode()
-				.addFieldInstruction(Opcodes.GETSTATIC, getType(ReflectionFactory.class), "ACCESSOR", getDescriptor(MagicAccessor.class))
-				.addConstantInstruction(Opcodes.LDC_W, new Type(field.getDeclaringClass()))
-				.addConstantInstruction(Opcodes.LDC_W, field.getName())
-				.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(MagicAccessor.class), "getField", MethodType.methodType(Field.class, Class.class, String.class).toMethodDescriptorString(), true)
-				.addFieldInstruction(Opcodes.PUTSTATIC, cw.getName(), "0", "Ljava/lang/reflect/Field;")
-				.addInstruction(Opcodes.RETURN)
-				.setMaxs(3, 0);
 		}
+	}
+
+	private static void postgeneric(Class<?> generated, Class<?> clazz)
+	{
+		UNSAFE.putObjectVolatile(generated, UNSAFE.staticFieldOffset(ACCESSOR.getField(generated, "0")), clazz);
 	}
 
 	private static <T> MethodAccessor<T> generic(Method target, int kind)
@@ -1138,7 +1084,10 @@ public class ReflectionFactory
 			)
 			.addCode());
 		byte[] classcode = cw.toByteArray();
-		generated = (MethodAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null));
+		Class<?> c = UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null);
+		postgeneric(c, target.getDeclaringClass());
+		UNSAFE.putObjectVolatile(c, UNSAFE.staticFieldOffset(ACCESSOR.getField(c, "1")), target);
+		generated = (MethodAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_METHOD_ACCESSOR.put(target, generated);
 		return generated;
 	}
@@ -1276,7 +1225,10 @@ public class ReflectionFactory
 		}
 
 		byte[] classcode = cw.toByteArray();
-		generated = (FieldAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(acc ? clazz : ReflectionFactory.class, classcode, null));
+		Class<?> c = UNSAFE.defineAnonymousClass(acc ? clazz : ReflectionFactory.class, classcode, null);
+		postgeneric(c, target.getDeclaringClass());
+		UNSAFE.putObjectVolatile(c, UNSAFE.staticFieldOffset(ACCESSOR.getField(c, "1")), target);
+		generated = (FieldAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_FIELD_ACCESSOR.put(target, generated);
 		return generated;
 	}
@@ -1332,7 +1284,10 @@ public class ReflectionFactory
 			)
 			.addCode());
 		byte[] classcode = cw.toByteArray();
-		generated = (ConstructorAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null));
+		Class<?> c = UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null);
+		postgeneric(c, target.getDeclaringClass());
+		UNSAFE.putObjectVolatile(c, UNSAFE.staticFieldOffset(ACCESSOR.getField(c, "1")), target);
+		generated = (ConstructorAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_CONSTRUCTOR_ACCESSOR.put(target, generated);
 		return generated;
 	}
@@ -1372,7 +1327,9 @@ public class ReflectionFactory
 			.addInstruction(Opcodes.ARETURN)
 			.setMaxs(1, 1);
 		byte[] classcode = cw.toByteArray();
-		generated = (ReflectionAccessor<T>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(access ? target : ReflectionFactory.class, classcode, null));
+		Class<?> c = UNSAFE.defineAnonymousClass(access ? target : ReflectionFactory.class, classcode, null);
+		postgeneric(c, target);
+		generated = (ReflectionAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_ALLOCATOR.put(target, generated);
 		return generated;
 	}
