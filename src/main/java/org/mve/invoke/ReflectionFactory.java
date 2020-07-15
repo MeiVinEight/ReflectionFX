@@ -1334,12 +1334,6 @@ public class ReflectionFactory
 		return generated;
 	}
 
-	private static void loadPrimitiveType(CodeWriter code, Class<?> clazz)
-	{
-		clazz = MethodType.methodType(clazz).wrap().returnType();
-		code.addFieldInstruction(Opcodes.GETSTATIC, getType(clazz), "TYPE", "Ljava/lang/Class;");
-	}
-
 	private static boolean checkAccessible(ClassLoader loader)
 	{
 		return checkAccessible(loader, ReflectionFactory.class.getClassLoader());
