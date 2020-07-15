@@ -21,7 +21,7 @@ public class ConstantPoolFinder
 {
 	public static int findUTF8(ConstantPool pool, String str)
 	{
-		int size = pool.getConstantPoolSize() & 0XFFFF;
+		int size = pool.size() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
 			ConstantPoolElement element = pool.getConstantPoolElement(i);
@@ -29,12 +29,12 @@ public class ConstantPoolFinder
 		}
 		ConstantUTF8 constantUTF8 = new ConstantUTF8(str);
 		pool.addConstantPoolElement(constantUTF8);
-		return (pool.getConstantPoolSize() & 0XFFFF) - 1;
+		return (pool.size() & 0XFFFF) - 1;
 	}
 
 	public static int findInteger(ConstantPool pool, int num)
 	{
-		int size = pool.getConstantPoolSize() & 0XFFFF;
+		int size = pool.size() & 0XFFFF;
 		for (int i=0; i< size; i++)
 		{
 			ConstantPoolElement element = pool.getConstantPoolElement(i);
@@ -47,7 +47,7 @@ public class ConstantPoolFinder
 
 	public static int findFloat(ConstantPool pool, float num)
 	{
-		int size = pool.getConstantPoolSize() & 0XFFFF;
+		int size = pool.size() & 0XFFFF;
 		for (int i=0; i< size; i++)
 		{
 			ConstantPoolElement element = pool.getConstantPoolElement(i);
@@ -60,7 +60,7 @@ public class ConstantPoolFinder
 
 	public static int findLong(ConstantPool pool, long num)
 	{
-		int size = pool.getConstantPoolSize() & 0XFFFF;
+		int size = pool.size() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
 			ConstantPoolElement element = pool.getConstantPoolElement(i);
@@ -68,14 +68,14 @@ public class ConstantPoolFinder
 		}
 		ConstantLong constant = new ConstantLong(num);
 		pool.addConstantPoolElement(constant);
-		int ret = pool.getConstantPoolSize() & 0XFFFF;
+		int ret = pool.size() & 0XFFFF;
 		pool.addConstantPoolElement(new ConstantNull());
 		return ret - 1;
 	}
 
 	public static int findDouble(ConstantPool pool, double num)
 	{
-		int size = pool.getConstantPoolSize() & 0XFFFF;
+		int size = pool.size() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
 			ConstantPoolElement element = pool.getConstantPoolElement(i);
@@ -83,14 +83,14 @@ public class ConstantPoolFinder
 		}
 		ConstantDouble constant = new ConstantDouble(num);
 		pool.addConstantPoolElement(constant);
-		int ret = pool.getConstantPoolSize() & 0XFFFF;
+		int ret = pool.size() & 0XFFFF;
 		pool.addConstantPoolElement(new ConstantNull());
 		return ret - 1;
 	}
 
 	public static int findString(ConstantPool pool, String string)
 	{
-		int size = pool.getConstantPoolSize() & 0XFFFF;
+		int size = pool.size() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
 			ConstantPoolElement element = pool.getConstantPoolElement(i);
@@ -99,12 +99,12 @@ public class ConstantPoolFinder
 		int utfIndex = findUTF8(pool, string);
 		ConstantString constantString = new ConstantString((short) utfIndex);
 		pool.addConstantPoolElement(constantString);
-		return (pool.getConstantPoolSize() & 0XFFFF) - 1;
+		return (pool.size() & 0XFFFF) - 1;
 	}
 
 	public static int findClass(ConstantPool pool, String type)
 	{
-		int size = pool.getConstantPoolSize() & 0XFFFF;
+		int size = pool.size() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
 			ConstantPoolElement element = pool.getConstantPoolElement(i);
@@ -118,14 +118,14 @@ public class ConstantPoolFinder
 		int nameIndex = findUTF8(pool, type);
 		ConstantClass constantClass = new ConstantClass((short) nameIndex);
 		pool.addConstantPoolElement(constantClass);
-		return (pool.getConstantPoolSize() & 0XFFFF) - 1;
+		return (pool.size() & 0XFFFF) - 1;
 	}
 
 	public static int findNameAndType(ConstantPool pool, String name, String type)
 	{
 		Objects.requireNonNull(name);
 		Objects.requireNonNull(type);
-		int size = pool.getConstantPoolSize() & 0XFFFF;
+		int size = pool.size() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
 			ConstantPoolElement element = pool.getConstantPoolElement(i);
@@ -141,12 +141,12 @@ public class ConstantPoolFinder
 		int typeIndex = findUTF8(pool, type);
 		ConstantNameAndType constantNameAndType = new ConstantNameAndType((short) nameIndex, (short) typeIndex);
 		pool.addConstantPoolElement(constantNameAndType);
-		return (pool.getConstantPoolSize() & 0XFFFF) - 1;
+		return (pool.size() & 0XFFFF) - 1;
 	}
 
 	public static int findField(ConstantPool pool, String type, String name, String desc)
 	{
-		int size = pool.getConstantPoolSize() & 0XFFFF;
+		int size = pool.size() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
 			ConstantPoolElement element = pool.getConstantPoolElement(i);
@@ -170,12 +170,12 @@ public class ConstantPoolFinder
 		int nameAndTypeIndex = findNameAndType(pool, name, desc);
 		ConstantFieldReference fieldReference = new ConstantFieldReference((short) classIndex, (short) nameAndTypeIndex);
 		pool.addConstantPoolElement(fieldReference);
-		return (pool.getConstantPoolSize() & 0XFFFF) - 1;
+		return (pool.size() & 0XFFFF) - 1;
 	}
 
 	public static int findMethod(ConstantPool pool, String type, String name, String desc, boolean isAbstract)
 	{
-		int size = pool.getConstantPoolSize() & 0XFFFF;
+		int size = pool.size() & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
 			ConstantPoolElement element = pool.getConstantPoolElement(i);
@@ -220,6 +220,6 @@ public class ConstantPoolFinder
 		int nameAndTypeIndex = findNameAndType(pool, name, desc);
 		ConstantPoolElement element = isAbstract ? new ConstantInterfaceMethodReference((short) classIndex, (short) nameAndTypeIndex) : new ConstantMethodReference((short) classIndex, (short) nameAndTypeIndex);
 		pool.addConstantPoolElement(element);
-		return (pool.getConstantPoolSize() & 0XFFFF) - 1;
+		return (pool.size() & 0XFFFF) - 1;
 	}
 }
