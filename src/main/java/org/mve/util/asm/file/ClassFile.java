@@ -138,7 +138,7 @@ public class ClassFile implements Binary
 	 * byte, that is, the content of the info array varies with the value of tag.
 	 *
 	 *
-	 * 				Table 4.4-A. Constant pool tags (by section)
+	 * 												Table 4.4-A. Constant pool tags (by section)
 	 * 			Constant Kind				Tag 			Section
 	 * 			CONSTANT_Class 				7				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.1">§4.4.1<a/>
 	 * 			CONSTANT_Fieldref 			9				<a href="https://docs.oracle.com/javase/specs/jvms/se14/html/jvms-4.html#jvms-4.4.2">§4.4.2<a/>
@@ -597,8 +597,8 @@ public class ClassFile implements Binary
 			out.writeInt(this.header);
 			out.writeShort(this.minorVersion);
 			out.writeShort(this.majorVersion);
-			out.writeShort(this.constantPool.getConstantPoolSize());
-			for (int i = 1; i < this.constantPool.getConstantPoolSize(); i++)
+			out.writeShort(this.constantPool.size());
+			for (int i = 1; i < this.constantPool.size(); i++)
 			{
 				ConstantPoolElement element = this.constantPool.getConstantPoolElement(i);
 				if (element.getType() == ConstantPoolElementType.CONSTANT_NULL) continue;

@@ -5,17 +5,6 @@ import java.util.Objects;
 public class ConstantPool
 {
 	/**
-	 * The value of the constantPoolSize item
-	 * is equal to the number of entries in the
-	 * elements table plus one. An elements
-	 * index is considered valid if it is greater than
-	 * zero and less than constantPoolSize, with the
-	 * exception for constants of type long and double
-	 * noted in <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.4.5">§4.4.5.<a/>
-	 */
-	private short constantPoolSize = 1;
-
-	/**
 	 * The elements is a table of structures <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.4">(§4.4)<a/>
 	 * representing various string constants, class and
 	 * interface names, field names, and other constants
@@ -37,16 +26,16 @@ public class ConstantPool
 
 	public void addConstantPoolElement(ConstantPoolElement element)
 	{
-		if ((this.constantPoolSize & 0XFFFF) == 65535) throw new ConstantPoolOverflowException();
-		ConstantPoolElement[] arr = new ConstantPoolElement[this.constantPoolSize+1];
-		System.arraycopy(this.elements, 0, arr, 0, this.constantPoolSize);
-		arr[this.constantPoolSize] = Objects.requireNonNull(element);
+		int size = this.elements.length;
+		if ((size & 0XFFFF) == 65535) throw new ConstantPoolOverflowException();
+		ConstantPoolElement[] arr = new ConstantPoolElement[size+1];
+		System.arraycopy(this.elements, 0, arr, 0, size);
+		arr[size] = Objects.requireNonNull(element);
 		this.elements = arr;
-		this.constantPoolSize++;
 	}
 
-	public short getConstantPoolSize()
+	public int size()
 	{
-		return constantPoolSize;
+		return this.elements.length;
 	}
 }
