@@ -1,6 +1,8 @@
 package org.mve.invoke;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.security.ProtectionDomain;
 
@@ -8,6 +10,8 @@ public interface Unsafe
 {
 	String getJavaVMVendor();
 	int getJavaVMVersion();
+	Object invoke(Method method, Object obj, Object[] args);
+	Object construct(Constructor<?> c, Object[] args);
 	byte getByte(long offset);
 	byte getByte(Object obj, long offset);
 	byte getByteVolatile(Object obj, long offset);

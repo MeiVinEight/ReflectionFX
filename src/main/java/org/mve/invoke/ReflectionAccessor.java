@@ -5,4 +5,6 @@ public interface ReflectionAccessor<T>
 	T invoke(Object... args);
 
 	T invoke();
+
+	Class<?> getReflectionClass();
 }
