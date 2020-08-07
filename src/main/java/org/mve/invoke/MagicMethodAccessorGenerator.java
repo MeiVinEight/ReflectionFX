@@ -39,7 +39,7 @@ public class MagicMethodAccessorGenerator extends MethodAccessorGenerator
 				.addNumberInstruction(Opcodes.BIPUSH, i)
 				.addInstruction(Opcodes.AALOAD);
 			Class<?> parameterType;
-			if ((parameterType = parameters[statics ? i : (i-1)]).isPrimitive())
+			if ((statics || i > 0) && (parameterType = parameters[statics ? i : (i-1)]).isPrimitive())
 			{
 				unwarp(parameterType, code);
 			}

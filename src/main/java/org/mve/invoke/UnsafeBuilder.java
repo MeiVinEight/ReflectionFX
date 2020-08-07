@@ -8,7 +8,6 @@ import org.mve.util.asm.attribute.CodeWriter;
 import org.mve.util.asm.file.AccessFlag;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -23,10 +22,11 @@ public class UnsafeBuilder
 	public static ClassWriter build(int majorVersion, String[] constantPool, String vm) throws Throwable
 	{
 		Class<?> usfClass = Class.forName(majorVersion > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
+		String unsafeSignature = "L".concat(usfClass.getTypeName().replace('.', '/')).concat(";");
 		String className = "org/mve/invoke/UnsafeWrapper";
 		ClassWriter cw = new ClassWriter();
-		cw.set(0x34, 0x21, className, constantPool[0], new String[]{Generator.getType(Unsafe.class)});
-		cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "final", Generator.getSignature(usfClass));
+		cw.set(0x34, 0x21, className, constantPool[0], new String[]{"org/mve/invoke/Unsafe"});
+		cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "final", unsafeSignature);
 
 		// implement methods
 		{
@@ -53,7 +53,7 @@ public class UnsafeBuilder
 						.addInstruction(Opcodes.ALOAD_1)
 						.addInstruction(Opcodes.ALOAD_2)
 						.addInstruction(Opcodes.ALOAD_3)
-						.addMethodInstruction(Opcodes.INVOKESTATIC, majorVersion == 0x34 ? "sun/reflect/NativeMethodAaccessorImpl" : "jdk/internal/reflect/NativeMethodAccessorImpl", "invoke0", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString(), false)
+						.addMethodInstruction(Opcodes.INVOKESTATIC, majorVersion == 0x34 ? "sun/reflect/NativeMethodAccessorImpl" : "jdk/internal/reflect/NativeMethodAccessorImpl", "invoke0", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString(), false)
 						.addInstruction(Opcodes.ARETURN)
 						.setMaxs(3, 4);
 				}
@@ -74,7 +74,7 @@ public class UnsafeBuilder
 					MethodWriter mw = cw1.addMethod(AccessFlag.ACC_PUBLIC, name[0], desc);
 					if (name.length == 3) mw.addSignature(name[2]);
 					CodeWriter code = mw.addCode();
-					code.addFieldInstruction(Opcodes.GETSTATIC, className, "final", Generator.getSignature(usfClass));
+					code.addFieldInstruction(Opcodes.GETSTATIC, className, "final", unsafeSignature);
 					int size = 0;
 					for (int i = 1; i < arr.length; i++)
 					{
@@ -87,7 +87,7 @@ public class UnsafeBuilder
 						else code.addLocalVariableInstruction(Opcodes.ALOAD, size);
 						if (type == double.class || type == long.class) size++;
 					}
-					code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(usfClass), name[1], desc, false);
+					code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, unsafeSignature, name[1], desc, false);
 					Class<?> c = arr[0];
 					if (c == void.class) code.addInstruction(Opcodes.RETURN);
 					else if (c == byte.class || c == short.class || c == int.class || c == char.class || c == boolean.class) code.addInstruction(Opcodes.IRETURN);
@@ -105,10 +105,10 @@ public class UnsafeBuilder
 					CodeWriter code = mw.addCode();
 					int size = arr.length;
 					for (Class<?> c : arr) if (c == long.class || c == double.class) size++;
-					code.addTypeInstruction(Opcodes.NEW, Generator.getType(UnsupportedOperationException.class));
+					code.addTypeInstruction(Opcodes.NEW, "java/lang/UnsupportedOperationException");
 					code.addInstruction(Opcodes.DUP);
 					code.addConstantInstruction(Opcodes.LDC_W, "Method "+name[0]+desc+" is unsupported at JVM version "+majorVersion);
-					code.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(UnsupportedOperationException.class), "<init>", MethodType.methodType(void.class, String.class).toMethodDescriptorString(), false);
+					code.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", MethodType.methodType(void.class, String.class).toMethodDescriptorString(), false);
 					code.addInstruction(Opcodes.ATHROW);
 					code.setMaxs(3, size);
 				};
@@ -652,16 +652,16 @@ public class UnsafeBuilder
 		{
 			MethodWriter mw = cw.addMethod(AccessFlag.ACC_STATIC, "<clinit>", "()V");
 			CodeWriter code = mw.addCode();
-			code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "TRUSTED_LOOKUP", Generator.getSignature(MethodHandles.Lookup.class));
+			code.addFieldInstruction(Opcodes.GETSTATIC, "org/mve/invoke/ReflectionFactory", "TRUSTED_LOOKUP", "Ljava/lang/invoke/MethodHandles$Lookup;");
 			code.addConstantInstruction(Opcodes.LDC, new Type(usfClass));
 			code.addConstantInstruction(Opcodes.LDC_W, "theUnsafe");
 			code.addConstantInstruction(Opcodes.LDC, new Type(usfClass));
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodHandles.Lookup.class), "findStaticGetter", MethodType.methodType(MethodHandle.class, Class.class, String.class, Class.class).toMethodDescriptorString(), false);
+			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MethodHandles$Lookup", "findStaticGetter", MethodType.methodType(MethodHandle.class, Class.class, String.class, Class.class).toMethodDescriptorString(), false);
 			code.addInstruction(Opcodes.ICONST_0);
-			code.addTypeInstruction(Opcodes.ANEWARRAY, Generator.getType(Object.class));
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
-			code.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(usfClass));
-			code.addFieldInstruction(Opcodes.PUTSTATIC, className, "final", Generator.getSignature(usfClass));
+			code.addTypeInstruction(Opcodes.ANEWARRAY, "java/lang/Object");
+			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+			code.addTypeInstruction(Opcodes.CHECKCAST, usfClass.getTypeName().replace('.', '/'));
+			code.addFieldInstruction(Opcodes.PUTSTATIC, className, "final", unsafeSignature);
 			code.addInstruction(Opcodes.RETURN);
 			code.setMaxs(4, 0);
 		}

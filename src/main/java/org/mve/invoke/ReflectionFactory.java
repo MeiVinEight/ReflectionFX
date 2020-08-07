@@ -18,7 +18,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.ProtectionDomain;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -586,7 +585,7 @@ public class ReflectionFactory
 		Class<?> clazz = target.getDeclaringClass();
 		boolean access = Generator.checkAccessible(clazz.getClassLoader());
 		Class<?> c = UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null);
-		generator.postgenerate(clazz);
+		generator.postgenerate(c);
 
 		generated = (MethodAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_METHOD_ACCESSOR.put(target, generated);
@@ -772,7 +771,7 @@ public class ReflectionFactory
 				catch (Throwable t)
 				{
 					ClassWriter cw = new ClassWriter();
-					cw.set(52, AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC, "org/mve/invoke/MethodHandleInvoker", "java/lang/Object", new String[]{Generator.getType(ReflectionAccessor.class)});
+					cw.set(52, AccessFlag.ACC_SUPER | AccessFlag.ACC_PUBLIC, "org/mve/invoke/MethodHandleInvoker", "java/lang/Object", new String[]{"org/mve/invoke/ReflectionAccessor"});
 					/*
 					 * MethodHandleInvoker();
 					 */
@@ -791,13 +790,13 @@ public class ReflectionFactory
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_0);
 						code.addInstruction(Opcodes.AALOAD);
-						code.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(MethodHandle.class));
+						code.addTypeInstruction(Opcodes.CHECKCAST, "java/lang/invoke/MethodHandle");
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ICONST_1);
 						code.addInstruction(Opcodes.ALOAD_1);
 						code.addInstruction(Opcodes.ARRAYLENGTH);
-						code.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false);
-						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/util/Arrays", "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false);
+						code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
 						code.addInstruction(Opcodes.ARETURN);
 						code.setMaxs(4, 2);
 					}
@@ -811,7 +810,6 @@ public class ReflectionFactory
 			 * Unsafe wrapper
 			 */
 			{
-				Class<?> usfClass = Class.forName(majorVersion > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
 				String className = "org/mve/invoke/UnsafeWrapper";
 				Class<?> clazz;
 				try

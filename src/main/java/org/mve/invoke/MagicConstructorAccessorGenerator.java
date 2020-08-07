@@ -50,7 +50,8 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 				.addTypeInstruction(Opcodes.NEW, Generator.getType(this.constructor.getDeclaringClass()))
 				.addInstruction(Opcodes.DUP)
 				.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(this.constructor.getDeclaringClass()), "<init>", "()V", false)
-				.addInstruction(Opcodes.ARETURN);
+				.addInstruction(Opcodes.ARETURN)
+				.setMaxs(2, 1);
 		}
 	}
 }

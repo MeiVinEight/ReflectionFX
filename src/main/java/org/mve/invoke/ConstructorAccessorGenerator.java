@@ -20,11 +20,11 @@ public abstract class ConstructorAccessorGenerator extends AccessibleObjectAcces
 		this.bytecode.setInterfaces(new String[]{Generator.getType(ConstructorAccessor.class)});
 	}
 
-	public void pregenerate()
+	public void pregenerate(ClassWriter bytecode)
 	{
-		super.pregenerate();
-		this.bytecode.addMethod(AccessFlag.ACC_PUBLIC, "getConstructor", MethodType.methodType(Constructor.class).toMethodDescriptorString()).addCode()
-			.addFieldInstruction(Opcodes.GETSTATIC, this.bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
+		super.pregenerate(bytecode);
+		bytecode.addMethod(AccessFlag.ACC_PUBLIC, "getConstructor", MethodType.methodType(Constructor.class).toMethodDescriptorString()).addCode()
+			.addFieldInstruction(Opcodes.GETSTATIC, bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
 			.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(Constructor.class))
 			.addInstruction(Opcodes.ARETURN)
 			.setMaxs(1, 1);

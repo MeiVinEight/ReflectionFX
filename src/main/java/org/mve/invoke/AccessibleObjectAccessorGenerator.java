@@ -9,7 +9,6 @@ public abstract class AccessibleObjectAccessorGenerator extends AccessorGenerato
 {
 	private static final Unsafe UNSAFE = ReflectionFactory.UNSAFE;
 	private static final MagicAccessor ACCESSOR = ReflectionFactory.ACCESSOR;
-	private final ClassWriter bytecode = this.bytecode();
 	private final AccessibleObject accessibleObject;
 
 	public AccessibleObjectAccessorGenerator(AccessibleObject accessibleObject, Class<?> target)
@@ -18,10 +17,10 @@ public abstract class AccessibleObjectAccessorGenerator extends AccessorGenerato
 		this.accessibleObject = accessibleObject;
 	}
 
-	public void pregenerate()
+	public void pregenerate(ClassWriter bytecode)
 	{
-		super.pregenerate();
-		this.bytecode.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", Generator.getSignature(AccessibleObject.class));
+		super.pregenerate(bytecode);
+		bytecode.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", Generator.getSignature(AccessibleObject.class));
 	}
 
 	public void postgenerate(Class<?> generated)

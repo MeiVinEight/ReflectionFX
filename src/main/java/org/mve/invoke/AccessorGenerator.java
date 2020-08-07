@@ -18,13 +18,13 @@ public abstract class AccessorGenerator extends Generator
 	{
 		this.target = target;
 		this.bytecode.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, UUID.randomUUID().toString().toUpperCase(), CONSTANT_POOL[0], new String[]{});
-		this.pregenerate();
+		this.pregenerate(this.bytecode);
 	}
 
-	public void pregenerate()
+	public void pregenerate(ClassWriter bytecode)
 	{
-		this.bytecode.addField(AccessFlag.ACC_FINAL | AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "0", Generator.getSignature(Class.class));
-		this.bytecode.addMethod(AccessFlag.ACC_PUBLIC, "getReflectionClass", MethodType.methodType(Class.class).toMethodDescriptorString()).addCode()
+		bytecode.addField(AccessFlag.ACC_FINAL | AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "0", Generator.getSignature(Class.class));
+		bytecode.addMethod(AccessFlag.ACC_PUBLIC, "getReflectionClass", MethodType.methodType(Class.class).toMethodDescriptorString()).addCode()
 			.addFieldInstruction(Opcodes.GETSTATIC, this.bytecode.getName(), "0", Generator.getSignature(Class.class))
 			.addInstruction(Opcodes.ARETURN)
 			.setMaxs(1, 1);

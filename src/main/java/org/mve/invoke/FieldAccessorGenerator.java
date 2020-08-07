@@ -24,11 +24,11 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 		this.bytecode.setInterfaces(new String[]{Generator.getType(FieldAccessor.class)});
 	}
 
-	public void pregenerate()
+	public void pregenerate(ClassWriter bytecode)
 	{
-		super.pregenerate();
-		this.bytecode.addMethod(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class).toMethodDescriptorString()).addCode()
-			.addFieldInstruction(Opcodes.GETSTATIC, this.bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
+		super.pregenerate(bytecode);
+		bytecode.addMethod(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class).toMethodDescriptorString()).addCode()
+			.addFieldInstruction(Opcodes.GETSTATIC, bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
 			.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(Field.class))
 			.addInstruction(Opcodes.ARETURN)
 			.setMaxs(1, 1);
@@ -40,9 +40,9 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 		Class<?> type = this.field.getType();
 		int modifiers = this.field.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
-		MethodWriter getter = this.bytecode.addMethod(AccessFlag.ACC_PRIVATE, "0", MethodType.methodType(field.getType(), statics ? new Class[]{field.getType()} : new Class[]{field.getDeclaringClass()}).toMethodDescriptorString());
+		MethodWriter getter = this.bytecode.addMethod(AccessFlag.ACC_PRIVATE, "0", MethodType.methodType(field.getType(), statics ? new Class[]{} : new Class[]{field.getDeclaringClass()}).toMethodDescriptorString());
 		Generator.inline(getter);
-		MethodWriter setter = this.bytecode.addMethod(AccessFlag.ACC_PRIVATE, "1", MethodType.methodType(void.class, statics ? new Class[]{field.getDeclaringClass(), field.getType()} : new Class[]{field.getDeclaringClass()}).toMethodDescriptorString());
+		MethodWriter setter = this.bytecode.addMethod(AccessFlag.ACC_PRIVATE, "1", MethodType.methodType(void.class, statics ? new Class[]{field.getDeclaringClass()} : new Class[]{field.getDeclaringClass(), field.getType()}).toMethodDescriptorString());
 		Generator.inline(setter);
 		FieldGetterGenerator getterGenerator;
 		FieldSetterGenerator setterGenerator;
@@ -100,7 +100,8 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 		}
 		Generator.unwarp(type, code);
 		code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, this.bytecode.getName(), setter.getName(), setter.getType(), false)
-			.mark(marker);
+			.mark(marker)
+			.addInstruction(Opcodes.ALOAD_0);
 		if (!statics)
 		{
 			code.addInstruction(Opcodes.ALOAD_1)
