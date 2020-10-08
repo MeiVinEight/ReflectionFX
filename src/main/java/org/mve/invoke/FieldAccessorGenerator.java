@@ -42,7 +42,7 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 		boolean statics = Modifier.isStatic(modifiers);
 		MethodWriter getter = this.bytecode.addMethod(AccessFlag.ACC_PRIVATE, "0", MethodType.methodType(field.getType(), statics ? new Class[]{} : new Class[]{field.getDeclaringClass()}).toMethodDescriptorString());
 		Generator.inline(getter);
-		MethodWriter setter = this.bytecode.addMethod(AccessFlag.ACC_PRIVATE, "1", MethodType.methodType(void.class, statics ? new Class[]{field.getDeclaringClass()} : new Class[]{field.getDeclaringClass(), field.getType()}).toMethodDescriptorString());
+		MethodWriter setter = this.bytecode.addMethod(AccessFlag.ACC_PRIVATE, "1", MethodType.methodType(void.class, statics ? new Class[]{field.getType()} : new Class[]{field.getDeclaringClass(), field.getType()}).toMethodDescriptorString());
 		Generator.inline(setter);
 		FieldGetterGenerator getterGenerator;
 		FieldSetterGenerator setterGenerator;
@@ -122,6 +122,47 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 			Generator.warp(type, code);
 			code.addInstruction(Opcodes.ARETURN)
 				.setMaxs(Generator.typeSize(type), 1);
+		}
+
+		if (statics)
+		{
+			code = this.bytecode.addMethod(AccessFlag.ACC_PUBLIC, "get", MethodType.methodType(Object.class).toMethodDescriptorString())
+				.addCode()
+				.addInstruction(Opcodes.ALOAD_0)
+				.addMethodInstruction(Opcodes.INVOKEVIRTUAL, this.bytecode.getName(), getter.getName(), getter.getType(), false);
+			Generator.warp(type, code);
+			code.addInstruction(Opcodes.ARETURN)
+				.setMaxs(Generator.typeSize(type), 1);
+
+			code = this.bytecode.addMethod(AccessFlag.ACC_PUBLIC, "set", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
+				.addCode()
+				.addInstruction(Opcodes.ALOAD_0)
+				.addInstruction(Opcodes.ALOAD_1);
+			Generator.unwarp(type, code);
+			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, this.bytecode.getName(), setter.getName(), setter.getType(), false)
+				.addInstruction(Opcodes.RETURN)
+				.setMaxs(1 + Generator.typeSize(type), 2);
+		}
+		else
+		{
+			code = this.bytecode.addMethod(AccessFlag.ACC_PUBLIC, "get", MethodType.methodType(Object.class, Object.class).toMethodDescriptorString())
+				.addCode()
+				.addInstruction(Opcodes.ALOAD_0)
+				.addInstruction(Opcodes.ALOAD_1)
+				.addMethodInstruction(Opcodes.INVOKEVIRTUAL, this.bytecode.getName(), getter.getName(), getter.getType(), false);
+			Generator.warp(type, code);
+			code.addInstruction(Opcodes.ARETURN)
+				.setMaxs(2, 2);
+
+			code = this.bytecode.addMethod(AccessFlag.ACC_PUBLIC, "set", MethodType.methodType(void.class, Object.class, Object.class).toMethodDescriptorString())
+				.addCode()
+				.addInstruction(Opcodes.ALOAD_0)
+				.addInstruction(Opcodes.ALOAD_1)
+				.addInstruction(Opcodes.ALOAD_2);
+			Generator.unwarp(type, code);
+			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, this.bytecode.getName(), setter.getName(), setter.getType(), false)
+				.addInstruction(Opcodes.RETURN)
+				.setMaxs(3, 3);
 		}
 	}
 }

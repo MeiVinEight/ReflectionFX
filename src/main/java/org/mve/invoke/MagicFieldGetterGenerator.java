@@ -23,13 +23,13 @@ public class MagicFieldGetterGenerator extends FieldGetterGenerator
 		CodeWriter code = method.addCode();
 		if (statics)
 		{
-			code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(field.getDeclaringClass()), field.getName(), Generator.getSignature(field.getType()))
+			code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.getSignature(field.getType()))
 				.setMaxs(Generator.typeSize(field.getType()), 1);
 		}
 		else
 		{
 			code.addInstruction(Opcodes.ALOAD_1)
-				.addFieldInstruction(Opcodes.GETFIELD, Generator.getType(field.getDeclaringClass()), field.getName(), Generator.getSignature(field.getType()))
+				.addFieldInstruction(Opcodes.GETFIELD, Generator.getType(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.getSignature(field.getType()))
 				.setMaxs(Generator.typeSize(field.getType()), 2);
 		}
 		Generator.returner(field.getType(), code);

@@ -149,7 +149,7 @@ public class Opcodes
 	public static final int I2B				= 0x91;
 	public static final int I2C				= 0x92;
 	public static final int I2S				= 0x93;
-	public static final int ICMP			= 0x94;
+	public static final int LCMP			= 0x94;
 	public static final int FCMPL			= 0x95;
 	public static final int FCMPG			= 0x96;
 	public static final int DCMPL			= 0x97;

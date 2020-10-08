@@ -2,6 +2,7 @@ package org.mve.util.asm.file;
 
 import org.mve.util.Binary;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 public class StructTypeAnnotationPath implements Binary
@@ -16,10 +17,8 @@ public class StructTypeAnnotationPath implements Binary
 
 	public void addPath(StructPath path)
 	{
-		StructPath[] arr = new StructPath[this.pathLength];
-		System.arraycopy(this.paths, 0, arr, 0, this.pathLength);
-		arr[this.pathLength] = Objects.requireNonNull(path);
-		this.paths = arr;
+		this.paths = Arrays.copyOf(this.paths, this.pathLength+1);
+		this.paths[this.pathLength] = Objects.requireNonNull(path);
 		this.pathLength++;
 	}
 

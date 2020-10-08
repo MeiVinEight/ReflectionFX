@@ -12,6 +12,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
@@ -462,6 +463,21 @@ public class MagicAccessorBuilder
 				.addInstruction(Opcodes.ALOAD_1)
 				.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(Object.class), "<init>", "()V", false)
 				.addInstruction(Opcodes.RETURN)
+				.setMaxs(1, 2);
+		}
+
+		/*
+		 * String getName(Member member);
+		 */
+		{
+			Marker field = new Marker();
+			Marker method = new Marker();
+			Marker ret = new Marker();
+			cw.addMethod(AccessFlag.ACC_PUBLIC, "getName", MethodType.methodType(String.class, Member.class).toMethodDescriptorString())
+				.addCode()
+				.addInstruction(Opcodes.ALOAD_1)
+				.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Member.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), true)
+				.addInstruction(Opcodes.ARETURN)
 				.setMaxs(1, 2);
 		}
 

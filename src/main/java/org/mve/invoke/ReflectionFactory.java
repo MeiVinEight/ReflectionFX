@@ -5,8 +5,11 @@ import org.mve.util.asm.Opcodes;
 import org.mve.util.asm.attribute.CodeWriter;
 import org.mve.util.asm.attribute.SourceWriter;
 import org.mve.util.asm.file.AccessFlag;
+import org.mve.util.asm.file.ClassFile;
 
 import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -376,6 +379,8 @@ public class ReflectionFactory
 		KIND_GET				= 4,
 		KIND_PUT				= 5;
 
+	public static boolean save = false;
+
 	private static final String[] CONSTANT_POOL = new String[4];
 	private static final Map<Field, FieldAccessor<?>> GENERATED_FIELD_ACCESSOR = new ConcurrentHashMap<>();
 	private static final Map<Method, MethodAccessor<?>> GENERATED_METHOD_ACCESSOR = new ConcurrentHashMap<>();
@@ -393,6 +398,7 @@ public class ReflectionFactory
 	 */
 	public ReflectionFactory(Class<?> handle, Class<?> target)
 	{
+		UNSAFE.ensureClassInitialized(target);
 		if (Generator.isVMAnonymousClass(target))
 		{
 			this.bind = new NativeDynamicBind(handle, target);
@@ -475,8 +481,8 @@ public class ReflectionFactory
 	 */
 	public <T> T allocate()
 	{
-		byte[] classcode = this.bind.bytecode().toByteArray();
-		Class<?> c = UNSAFE.defineAnonymousClass(this.bind.define(), classcode, null);
+		ClassWriter bytecode = this.bind.bytecode();
+		Class<?> c = defineAnonymous(this.bind.define(), bytecode);
 		this.bind.postgenerate(c);
 		T value = (T) UNSAFE.allocateInstance(c);
 		ACCESSOR.initialize(value);
@@ -530,8 +536,7 @@ public class ReflectionFactory
 		code.addTypeInstruction(Opcodes.CHECKCAST, "java/lang/Throwable");
 		code.addInstruction(Opcodes.ATHROW);
 		code.setMaxs(2, 2);
-		byte[] classcode = cw.toByteArray();
-		return (ReflectionAccessor<Void>) UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(ReflectionFactory.class, classcode, null));
+		return (ReflectionAccessor<Void>) UNSAFE.allocateInstance(defineAnonymous(ReflectionFactory.class, cw));
 	}
 
 	public static <T> ReflectionAccessor<T> constant(T value)
@@ -553,13 +558,35 @@ public class ReflectionFactory
 		code.addFieldInstruction(Opcodes.GETFIELD, className, "0", "Ljava/lang/Object;");
 		code.addInstruction(Opcodes.ARETURN);
 		code.setMaxs(1, 2);
-		byte[] classcode = cw.toByteArray();
-		return ACCESSOR.construct(UNSAFE.defineAnonymousClass(ReflectionFactory.class, classcode, null), new Class[]{Object.class}, new Object[]{value});
+		return ACCESSOR.construct(defineAnonymous(ReflectionFactory.class, cw), new Class[]{Object.class}, new Object[]{value});
 	}
 
 	public static <T> EnumHelper<T> getEnumHelper(Class<?> target)
 	{
 		return (EnumHelper<T>) GENERATED_ENUM_HELPER.computeIfAbsent(target, (k) -> new ReflectionFactory(EnumHelper.class, k).enumHelper().allocate());
+	}
+
+	private static Class<?> defineAnonymous(Class<?> host, ClassWriter bytecode)
+	{
+		byte[] code = bytecode.toByteArray();
+
+		if (save)
+		{
+			try
+			{
+				File file = new File(bytecode.getName().concat(".class"));
+				FileOutputStream out = new FileOutputStream(file);
+				out.write(code);
+				out.flush();
+				out.close();
+			}
+			catch (Throwable t)
+			{
+				t.printStackTrace();
+			}
+		}
+
+		return UNSAFE.defineAnonymousClass(host, code, null);
 	}
 
 	private static <T> MethodAccessor<T> generic(Method target, int kind)
@@ -581,10 +608,10 @@ public class ReflectionFactory
 		}
 		generator.generate();
 
-		byte[] classcode = generator.bytecode().toByteArray();
+		ClassWriter bytecode = generator.bytecode();
 		Class<?> clazz = target.getDeclaringClass();
 		boolean access = Generator.checkAccessible(clazz.getClassLoader());
-		Class<?> c = UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null);
+		Class<?> c = defineAnonymous(access ? clazz : ReflectionFactory.class, bytecode);
 		generator.postgenerate(c);
 
 		generated = (MethodAccessor<T>) UNSAFE.allocateInstance(c);
@@ -595,6 +622,7 @@ public class ReflectionFactory
 
 	private static <T> FieldAccessor<T> generic(Field target)
 	{
+		UNSAFE.ensureClassInitialized(target.getDeclaringClass());
 		FieldAccessor<T> generated = (FieldAccessor<T>) GENERATED_FIELD_ACCESSOR.get(target);
 		if (generated != null)
 		{
@@ -606,8 +634,8 @@ public class ReflectionFactory
 		FieldAccessorGenerator generator = new FieldAccessorGenerator(target);
 		generator.generate();
 
-		byte[] classcode = generator.bytecode().toByteArray();
-		Class<?> c = UNSAFE.defineAnonymousClass(acc ? clazz : ReflectionFactory.class, classcode, null);
+		ClassWriter bytecode = generator.bytecode();
+		Class<?> c = defineAnonymous(acc ? clazz : ReflectionFactory.class, bytecode);
 		generator.postgenerate(c);
 		generated = (FieldAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_FIELD_ACCESSOR.put(target, generated);
@@ -635,8 +663,8 @@ public class ReflectionFactory
 		}
 		generator.generate();
 		
-		byte[] classcode = generator.bytecode().toByteArray();
-		Class<?> c = UNSAFE.defineAnonymousClass(access ? clazz : ReflectionFactory.class, classcode, null);
+		ClassWriter bytecode = generator.bytecode();
+		Class<?> c = defineAnonymous(access ? clazz : ReflectionFactory.class, bytecode);
 		generator.postgenerate(c);
 		generated = (ConstructorAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_CONSTRUCTOR_ACCESSOR.put(target, generated);
@@ -664,8 +692,8 @@ public class ReflectionFactory
 		}
 		generator.generate();
 		
-		byte[] classcode = generator.bytecode().toByteArray();
-		Class<?> c = UNSAFE.defineAnonymousClass(access ? target : ReflectionFactory.class, classcode, null);
+		ClassWriter bytecode = generator.bytecode();
+		Class<?> c = defineAnonymous(access ? target : ReflectionFactory.class, bytecode);
 		generator.postgenerate(c);
 		generated = (ReflectionAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_ALLOCATOR.put(target, generated);

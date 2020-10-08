@@ -363,6 +363,12 @@ public class AttributeReader
 			}
 			return attr;
 		}
+		else if (type == AttributeType.UNKNOWN)
+		{
+			AttributeUnknown attr = new AttributeUnknown(nameIndex);
+			attr.code = data.clone();
+			return attr;
+		}
 		else throw new ClassFormatError();
 	}
 }

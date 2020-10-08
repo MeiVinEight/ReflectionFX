@@ -44,7 +44,7 @@ public class MagicMethodAccessorGenerator extends MethodAccessorGenerator
 				unwarp(parameterType, code);
 			}
 		}
-		code.addMethodInstruction(this.kind + 0xB6, Generator.getType(this.method.getDeclaringClass()), this.method.getName(), MethodType.methodType(this.method.getReturnType(), this.method.getParameterTypes()).toMethodDescriptorString(), interfaces);
+		code.addMethodInstruction(this.kind + 0xB6, Generator.getType(this.method.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(this.method), MethodType.methodType(this.method.getReturnType(), this.method.getParameterTypes()).toMethodDescriptorString(), interfaces);
 		if (method.getReturnType() == void.class)
 		{
 			code.addInstruction(Opcodes.ACONST_NULL);
@@ -60,7 +60,7 @@ public class MagicMethodAccessorGenerator extends MethodAccessorGenerator
 			mw = this.bytecode.addMethod(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString());
 			Generator.inline(mw);
 			(code = mw.addCode())
-				.addMethodInstruction(this.kind + 0xB6, Generator.getType(this.method.getDeclaringClass()), this.method.getName(), MethodType.methodType(this.method.getReturnType()).toMethodDescriptorString(), interfaces);
+				.addMethodInstruction(this.kind + 0xB6, Generator.getType(this.method.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(this.method), MethodType.methodType(this.method.getReturnType()).toMethodDescriptorString(), interfaces);
 			if (method.getReturnType() == void.class)
 			{
 				code.addInstruction(Opcodes.ACONST_NULL);

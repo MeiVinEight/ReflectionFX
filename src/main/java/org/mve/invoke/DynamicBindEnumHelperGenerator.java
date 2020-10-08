@@ -37,7 +37,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				int modifier = field.getModifiers();
 				if (Modifier.isPrivate(modifier) && Modifier.isStatic(modifier) && Modifier.isFinal(modifier) && field.getType().isArray() && field.getType().getComponentType() == this.target)
 				{
-					values = field.getName();
+					values = ReflectionFactory.ACCESSOR.getName(field);
 					break FIND;
 				}
 			}

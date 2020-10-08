@@ -4,6 +4,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
 /**
@@ -60,4 +61,6 @@ public interface MagicAccessor
 	void throwException(Throwable t);
 
 	void initialize(Object obj);
+
+	String getName(Member member);
 }

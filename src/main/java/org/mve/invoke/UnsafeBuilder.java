@@ -22,7 +22,8 @@ public class UnsafeBuilder
 	public static ClassWriter build(int majorVersion, String[] constantPool, String vm) throws Throwable
 	{
 		Class<?> usfClass = Class.forName(majorVersion > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
-		String unsafeSignature = "L".concat(usfClass.getTypeName().replace('.', '/')).concat(";");
+		String unsafeType = usfClass.getTypeName().replace('.', '/');
+		String unsafeSignature = "L".concat(unsafeType).concat(";");
 		String className = "org/mve/invoke/UnsafeWrapper";
 		ClassWriter cw = new ClassWriter();
 		cw.set(0x34, 0x21, className, constantPool[0], new String[]{"org/mve/invoke/Unsafe"});
@@ -87,7 +88,7 @@ public class UnsafeBuilder
 						else code.addLocalVariableInstruction(Opcodes.ALOAD, size);
 						if (type == double.class || type == long.class) size++;
 					}
-					code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, unsafeSignature, name[1], desc, false);
+					code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, unsafeType, name[1], desc, false);
 					Class<?> c = arr[0];
 					if (c == void.class) code.addInstruction(Opcodes.RETURN);
 					else if (c == byte.class || c == short.class || c == int.class || c == char.class || c == boolean.class) code.addInstruction(Opcodes.IRETURN);

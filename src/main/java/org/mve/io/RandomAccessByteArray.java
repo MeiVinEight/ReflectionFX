@@ -32,7 +32,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	public RandomAccessByteArray(byte[] b, int expansionSize)
 	{
 		this.expansionSize = expansionSize;
-		this.arr = b;
+		this.arr = b.clone();
 		this.length = arr.length;
 		this.pointer = 0;
 	}

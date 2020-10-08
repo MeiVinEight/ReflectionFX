@@ -27,7 +27,14 @@ public abstract class Generator
 
 	public static String getType(Class<?> clazz)
 	{
-		return clazz.getTypeName().replace('.', '/');
+		if (clazz.isArray())
+		{
+			return getSignature(clazz);
+		}
+		else
+		{
+			return clazz.getTypeName().replace('.', '/');
+		}
 	}
 
 	public static String getSignature(Class<?> clazz)

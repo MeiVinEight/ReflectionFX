@@ -53,7 +53,7 @@ public class MagicFieldSetterGenerator extends FieldSetterGenerator
 		}
 
 		code.addInstruction(load)
-			.addFieldInstruction(statics ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD, Generator.getType(field.getDeclaringClass()), field.getName(), Generator.getSignature(field.getType()))
+			.addFieldInstruction(statics ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD, Generator.getType(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.getSignature(field.getType()))
 			.addInstruction(Opcodes.RETURN)
 			.setMaxs((statics ? 0 : 1) + Generator.typeSize(field.getType()), (statics ? 1 : 2) + Generator.typeSize(field.getType()));
 	}

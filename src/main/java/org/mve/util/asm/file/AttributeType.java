@@ -29,7 +29,8 @@ public enum AttributeType
 	SOURCE_DEBUG_EXTENSION("SourceDebugExtension"),
 	SOURCE_FILE("SourceFile"),
 	STACK_MAP_TABLE("StackMapTable"),
-	SYNTHETIC("Synthetic");
+	SYNTHETIC("Synthetic"),
+	UNKNOWN("Unknown");
 
 	private final String name;
 
@@ -74,6 +75,6 @@ public enum AttributeType
 		else if (name.equals("SourceFile")) return SOURCE_FILE;
 		else if (name.equals("StackMapTable")) return STACK_MAP_TABLE;
 		else if (name.equals("Synthetic")) return SYNTHETIC;
-		else return null;
+		else return UNKNOWN;
 	}
 }
