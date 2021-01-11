@@ -363,6 +363,16 @@ public class AttributeReader
 			}
 			return attr;
 		}
+		else if (type == AttributeType.PERMITTED_SUBCLASSES)
+		{
+			AttributePermittedSubclasses attr = new AttributePermittedSubclasses(nameIndex);
+			int a = datain.readUnsignedShort();
+			for (int i=0; i<a; i++)
+			{
+				attr.addPermittedSubclass(datain.readShort());
+			}
+			return attr;
+		}
 		else if (type == AttributeType.UNKNOWN)
 		{
 			AttributeUnknown attr = new AttributeUnknown(nameIndex);
