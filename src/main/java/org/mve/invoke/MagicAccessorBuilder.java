@@ -9,6 +9,8 @@ import org.mve.util.asm.file.AccessFlag;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -26,6 +28,7 @@ public class MagicAccessorBuilder
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER | AccessFlag.ACC_FINAL, className, constantPool[0], new String[]{Generator.getType(MagicAccessor.class)});
 		cw.addSource("MagicAccessor.java");
 		cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "0", Generator.getSignature(SecurityManager.class));
+		cw.addField(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", "Lsun/management/VMManagementImpl;");
 
 		/*
 		 * <clinit>
@@ -36,6 +39,10 @@ public class MagicAccessorBuilder
 			code.addInstruction(Opcodes.DUP);
 			code.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(SecurityManager.class), "<init>", "()V", false);
 			code.addFieldInstruction(Opcodes.PUTSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
+			code.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(ManagementFactory.class), "getRuntimeMXBean", MethodType.methodType(RuntimeMXBean.class).toMethodDescriptorString(), false)
+				.addFieldInstruction(Opcodes.GETFIELD, "sun/management/RuntimeImpl", "jvm", "Lsun/management/VMManagement;")
+				.addTypeInstruction(Opcodes.CHECKCAST, "sun/management/VMManagementImpl")
+				.addFieldInstruction(Opcodes.PUTSTATIC, className, "1", "Lsun/management/VMManagementImpl;");
 			code.addInstruction(Opcodes.RETURN);
 			code.setMaxs(2, 0);
 		}
@@ -470,15 +477,27 @@ public class MagicAccessorBuilder
 		 * String getName(Member member);
 		 */
 		{
-			Marker field = new Marker();
-			Marker method = new Marker();
-			Marker ret = new Marker();
+//			Marker field = new Marker();
+//			Marker method = new Marker();
+//			Marker ret = new Marker();
 			cw.addMethod(AccessFlag.ACC_PUBLIC, "getName", MethodType.methodType(String.class, Member.class).toMethodDescriptorString())
 				.addCode()
 				.addInstruction(Opcodes.ALOAD_1)
 				.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Member.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), true)
 				.addInstruction(Opcodes.ARETURN)
 				.setMaxs(1, 2);
+		}
+
+		/*
+		 * int getPID();
+		 */
+		{
+			cw.addMethod(AccessFlag.ACC_PUBLIC, "getPID", MethodType.methodType(int.class).toMethodDescriptorString())
+				.addCode()
+				.addFieldInstruction(Opcodes.GETSTATIC, className, "1", "Lsun/management/VMManagementImpl;")
+				.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "sun/management/VMManagementImpl", "getProcessId", MethodType.methodType(int.class).toMethodDescriptorString(), false)
+				.addInstruction(Opcodes.IRETURN)
+				.setMaxs(1, 1);
 		}
 
 		return cw;
