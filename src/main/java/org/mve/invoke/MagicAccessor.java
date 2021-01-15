@@ -63,4 +63,6 @@ public interface MagicAccessor
 	void initialize(Object obj);
 
 	String getName(Member member);
+
+	int getPID();
 }
