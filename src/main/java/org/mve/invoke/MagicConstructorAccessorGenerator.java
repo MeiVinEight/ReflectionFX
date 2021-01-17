@@ -23,9 +23,11 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 	@Override
 	public void generate()
 	{
-		MethodWriter mw = this.bytecode.addMethod(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
+		this.bytecode.addMethod(mw);
 		Generator.inline(mw);
-		CodeWriter code = mw.addCode();
+		CodeWriter code = new CodeWriter();
+		mw.addAttribute(code);
 		code.addTypeInstruction(Opcodes.NEW, Generator.getType(constructor.getDeclaringClass()))
 			.addInstruction(Opcodes.DUP);
 		Class<?>[] parameters = this.constructor.getParameterTypes();
@@ -44,14 +46,16 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 			.setMaxs(2 + (parameters.length == 0 ? 0 : parameters.length + 1), 2);
 		if (parameters.length == 0)
 		{
-			mw = this.bytecode.addMethod(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString());
+			mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString())
+				.addAttribute(new CodeWriter()
+					.addTypeInstruction(Opcodes.NEW, Generator.getType(this.constructor.getDeclaringClass()))
+					.addInstruction(Opcodes.DUP)
+					.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(this.constructor.getDeclaringClass()), "<init>", "()V", false)
+					.addInstruction(Opcodes.ARETURN)
+					.setMaxs(2, 1)
+				);
 			Generator.inline(mw);
-			mw.addCode()
-				.addTypeInstruction(Opcodes.NEW, Generator.getType(this.constructor.getDeclaringClass()))
-				.addInstruction(Opcodes.DUP)
-				.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(this.constructor.getDeclaringClass()), "<init>", "()V", false)
-				.addInstruction(Opcodes.ARETURN)
-				.setMaxs(2, 1);
+			this.bytecode.addMethod(mw);
 		}
 	}
 }

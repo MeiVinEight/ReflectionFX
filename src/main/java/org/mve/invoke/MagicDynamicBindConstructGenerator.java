@@ -19,10 +19,12 @@ public class MagicDynamicBindConstructGenerator extends DynamicBindConstructGene
 		Class<?> target = getTarget();
 		MethodKind implementation = this.implementation();
 		MethodKind invocation = this.invocation();
-		MethodWriter mw = bytecode.addMethod(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
+		bytecode.addMethod(mw);
 		Generator.inline(mw);
-		CodeWriter code = mw.addCode()
-			.addTypeInstruction(Opcodes.NEW, Generator.getType(target))
+		CodeWriter code = new CodeWriter();
+		mw.addAttribute(code);
+		code.addTypeInstruction(Opcodes.NEW, Generator.getType(target))
 			.addInstruction(Opcodes.DUP)
 			.setMaxs(2 + Generator.parameterSize(implementation.type().parameterArray()), 1 + Generator.parameterSize(implementation.type().parameterArray()));
 		int local = 1;
@@ -38,6 +40,6 @@ public class MagicDynamicBindConstructGenerator extends DynamicBindConstructGene
 		}
 		code
 			.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(target), "<init>", invocation.type().toMethodDescriptorString(), false)
-			.addInstruction(Opcodes.ARETURN);;
+			.addInstruction(Opcodes.ARETURN);
 	}
 }

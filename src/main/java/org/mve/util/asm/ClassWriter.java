@@ -1,7 +1,5 @@
 package org.mve.util.asm;
 
-import org.mve.util.asm.attribute.SignatureWriter;
-import org.mve.util.asm.attribute.SourceWriter;
 import org.mve.util.asm.attribute.AttributeWriter;
 import org.mve.util.asm.file.ClassField;
 import org.mve.util.asm.file.ClassFile;
@@ -89,14 +87,6 @@ public class ClassWriter
 		return this;
 	}
 
-	public FieldWriter addField(int accessFlag, String name, String desc)
-	{
-		FieldWriter fw = new FieldWriter();
-		fw.set(accessFlag, name, desc);
-		this.addField(fw);
-		return fw;
-	}
-
 	public ClassWriter addMethod(MethodWriter writer)
 	{
 		int i = this.methods.length;
@@ -105,34 +95,12 @@ public class ClassWriter
 		return this;
 	}
 
-	public MethodWriter addMethod(int accessFlag, String name, String type)
-	{
-		MethodWriter writer = new MethodWriter(this);
-		writer.set(accessFlag, name, type);
-		this.addMethod(writer);
-		return writer;
-	}
-
 	public ClassWriter addAttribute(AttributeWriter writer)
 	{
 		int i = this.attributes.length;
 		this.attributes = Arrays.copyOf(this.attributes, i+1);
 		this.attributes[i] = writer;
 		return this;
-	}
-
-	public ClassWriter addSignature(String signature)
-	{
-		this.addAttribute(new SignatureWriter(signature));
-		return this;
-	}
-
-	public SourceWriter addSource(String name)
-	{
-		if (name == null) return null;
-		SourceWriter writer = new SourceWriter(name);
-		this.addAttribute(writer);
-		return writer;
 	}
 
 	public void reset()

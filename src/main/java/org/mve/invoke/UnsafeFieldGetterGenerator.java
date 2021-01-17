@@ -1,5 +1,6 @@
 package org.mve.invoke;
 
+import org.mve.util.asm.ClassWriter;
 import org.mve.util.asm.MethodWriter;
 import org.mve.util.asm.Opcodes;
 import org.mve.util.asm.attribute.CodeWriter;
@@ -15,17 +16,18 @@ public class UnsafeFieldGetterGenerator extends FieldGetterGenerator
 	}
 
 	@Override
-	public void generate(MethodWriter method)
+	public void generate(MethodWriter method, ClassWriter classWriter)
 	{
 		Field field = this.getField();
 		int modifiers = field.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
 		long off = statics ? ReflectionFactory.UNSAFE.staticFieldOffset(field) : ReflectionFactory.UNSAFE.objectFieldOffset(field);
-		CodeWriter code = method.addCode();
+		CodeWriter code = new CodeWriter();
+		method.addAttribute(code);
 		code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class));
 		if (statics)
 		{
-			code.addFieldInstruction(Opcodes.GETSTATIC, method.getClassWriter().getName(), "0", Generator.getSignature(Class.class));
+			code.addFieldInstruction(Opcodes.GETSTATIC, classWriter.getName(), "0", Generator.getSignature(Class.class));
 		}
 		else
 		{

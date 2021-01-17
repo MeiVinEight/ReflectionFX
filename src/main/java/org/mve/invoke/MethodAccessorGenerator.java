@@ -1,7 +1,9 @@
 package org.mve.invoke;
 
 import org.mve.util.asm.ClassWriter;
+import org.mve.util.asm.MethodWriter;
 import org.mve.util.asm.Opcodes;
+import org.mve.util.asm.attribute.CodeWriter;
 import org.mve.util.asm.file.AccessFlag;
 
 import java.lang.invoke.MethodType;
@@ -24,11 +26,15 @@ public abstract class MethodAccessorGenerator extends AccessibleObjectAccessorGe
 	public void pregenerate(ClassWriter bytecode)
 	{
 		super.pregenerate(bytecode);
-		bytecode.addMethod(AccessFlag.ACC_PUBLIC, "getMethod", MethodType.methodType(Method.class).toMethodDescriptorString()).addCode()
-			.addFieldInstruction(Opcodes.GETSTATIC, bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
-			.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(Method.class))
-			.addInstruction(Opcodes.ARETURN)
-			.setMaxs(1, 1);
+		bytecode.addMethod(new MethodWriter()
+			.set(AccessFlag.ACC_PUBLIC, "getMethod", MethodType.methodType(Method.class).toMethodDescriptorString())
+			.addAttribute(new CodeWriter()
+				.addFieldInstruction(Opcodes.GETSTATIC, bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
+				.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(Method.class))
+				.addInstruction(Opcodes.ARETURN)
+				.setMaxs(1, 1)
+			)
+		);
 	}
 
 	public Method getMethod()

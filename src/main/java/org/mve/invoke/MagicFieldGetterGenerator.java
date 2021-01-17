@@ -1,5 +1,6 @@
 package org.mve.invoke;
 
+import org.mve.util.asm.ClassWriter;
 import org.mve.util.asm.MethodWriter;
 import org.mve.util.asm.Opcodes;
 import org.mve.util.asm.attribute.CodeWriter;
@@ -15,12 +16,13 @@ public class MagicFieldGetterGenerator extends FieldGetterGenerator
 	}
 
 	@Override
-	public void generate(MethodWriter method)
+	public void generate(MethodWriter method, ClassWriter classWriter)
 	{
 		Field field = this.getField();
 		int modifiers = field.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
-		CodeWriter code = method.addCode();
+		CodeWriter code = new CodeWriter();
+		method.addAttribute(code);
 		if (statics)
 		{
 			code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.getSignature(field.getType()))

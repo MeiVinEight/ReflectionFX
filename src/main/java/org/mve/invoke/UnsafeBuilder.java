@@ -1,10 +1,12 @@
 package org.mve.invoke;
 
 import org.mve.util.asm.ClassWriter;
+import org.mve.util.asm.FieldWriter;
 import org.mve.util.asm.MethodWriter;
 import org.mve.util.asm.Opcodes;
 import org.mve.util.asm.Type;
 import org.mve.util.asm.attribute.CodeWriter;
+import org.mve.util.asm.attribute.SignatureWriter;
 import org.mve.util.asm.file.AccessFlag;
 
 import java.lang.invoke.MethodHandle;
@@ -27,54 +29,68 @@ public class UnsafeBuilder
 		String className = "org/mve/invoke/UnsafeWrapper";
 		ClassWriter cw = new ClassWriter();
 		cw.set(0x34, 0x21, className, constantPool[0], new String[]{"org/mve/invoke/Unsafe"});
-		cw.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "final", unsafeSignature);
+		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "final", unsafeSignature));
 
 		// implement methods
 		{
 			Consumer<ClassWriter> implement = (cw1) ->
 			{
 				{
-					CodeWriter code = cw1.addMethod(AccessFlag.ACC_PUBLIC, "getJavaVMVersion", "()I").addCode();
+					MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "getJavaVMVersion", "()I");
+					cw1.addMethod(mw);
+					CodeWriter code = new CodeWriter();
+					mw.addAttribute(code);
 					code.addNumberInstruction(Opcodes.BIPUSH, majorVersion);
 					code.addInstruction(Opcodes.IRETURN);
 					code.setMaxs(1, 1);
 				}
 
 				{
-					cw1.addMethod(AccessFlag.ACC_PUBLIC, "getJavaVMVendor", "()Ljava/lang/String;")
-						.addCode()
-						.addConstantInstruction(vm)
-						.addInstruction(Opcodes.ARETURN)
-						.setMaxs(1, 1);
+					cw1.addMethod(new MethodWriter()
+						.set(AccessFlag.ACC_PUBLIC, "getJavaVMVendor", "()Ljava/lang/String;")
+						.addAttribute(new CodeWriter()
+							.addConstantInstruction(vm)
+							.addInstruction(Opcodes.ARETURN)
+							.setMaxs(1, 1)
+						)
+					);
 				}
 
 				{
-					cw1.addMethod(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString())
-						.addCode()
-						.addInstruction(Opcodes.ALOAD_1)
-						.addInstruction(Opcodes.ALOAD_2)
-						.addInstruction(Opcodes.ALOAD_3)
-						.addMethodInstruction(Opcodes.INVOKESTATIC, majorVersion == 0x34 ? "sun/reflect/NativeMethodAccessorImpl" : "jdk/internal/reflect/NativeMethodAccessorImpl", "invoke0", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString(), false)
-						.addInstruction(Opcodes.ARETURN)
-						.setMaxs(3, 4);
+					cw1.addMethod(new MethodWriter()
+						.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString())
+						.addAttribute(new CodeWriter()
+							.addInstruction(Opcodes.ALOAD_1)
+							.addInstruction(Opcodes.ALOAD_2)
+							.addInstruction(Opcodes.ALOAD_3)
+							.addMethodInstruction(Opcodes.INVOKESTATIC, majorVersion == 0x34 ? "sun/reflect/NativeMethodAccessorImpl" : "jdk/internal/reflect/NativeMethodAccessorImpl", "invoke0", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString(), false)
+							.addInstruction(Opcodes.ARETURN)
+							.setMaxs(3, 4)
+						)
+					);
 				}
 
 				{
-					cw1.addMethod(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString())
-						.addCode()
-						.addInstruction(Opcodes.ALOAD_1)
-						.addInstruction(Opcodes.ALOAD_2)
-						.addMethodInstruction(Opcodes.INVOKESTATIC, majorVersion <= 0x34 ? "sun/reflect/NativeConstructorAccessorImpl" : "jdk/internal/reflect/NativeConstructorAccessorImpl", "newInstance0", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), false)
-						.addInstruction(Opcodes.ARETURN)
-						.setMaxs(2, 3);
+					cw1.addMethod(new MethodWriter()
+						.set(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString())
+						.addAttribute(new CodeWriter()
+							.addInstruction(Opcodes.ALOAD_1)
+							.addInstruction(Opcodes.ALOAD_2)
+							.addMethodInstruction(Opcodes.INVOKESTATIC, majorVersion <= 0x34 ? "sun/reflect/NativeConstructorAccessorImpl" : "jdk/internal/reflect/NativeConstructorAccessorImpl", "newInstance0", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), false)
+							.addInstruction(Opcodes.ARETURN)
+							.setMaxs(2, 3)
+						)
+					);
 				}
 
 				BiConsumer<String[], Class<?>[]> method = (name, arr) ->
 				{
 					String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
-					MethodWriter mw = cw1.addMethod(AccessFlag.ACC_PUBLIC, name[0], desc);
-					if (name.length == 3) mw.addSignature(name[2]);
-					CodeWriter code = mw.addCode();
+					MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, name[0], desc);
+					cw1.addMethod(mw);
+					if (name.length == 3) mw.addAttribute(new SignatureWriter(name[2]));
+					CodeWriter code = new CodeWriter();
+					mw.addAttribute(code);
 					code.addFieldInstruction(Opcodes.GETSTATIC, className, "final", unsafeSignature);
 					int size = 0;
 					for (int i = 1; i < arr.length; i++)
@@ -101,9 +117,14 @@ public class UnsafeBuilder
 				BiConsumer<String[], Class<?>[]> unsupported = (name, arr) ->
 				{
 					String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
-					MethodWriter mw = cw1.addMethod(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, name[0], desc);
-					if (name.length == 2) mw.addSignature(name[1]);
-					CodeWriter code = mw.addCode();
+					MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, name[0], desc);
+					cw1.addMethod(mw);
+					if (name.length == 2 && name[1] != null)
+					{
+						mw.addAttribute(new SignatureWriter(name[1]));
+					}
+					CodeWriter code = new CodeWriter();
+					mw.addAttribute(code);
 					int size = arr.length;
 					for (Class<?> c : arr) if (c == long.class || c == double.class) size++;
 					code.addTypeInstruction(Opcodes.NEW, "java/lang/UnsupportedOperationException");
@@ -651,8 +672,10 @@ public class UnsafeBuilder
 
 		// static constructor
 		{
-			MethodWriter mw = cw.addMethod(AccessFlag.ACC_STATIC, "<clinit>", "()V");
-			CodeWriter code = mw.addCode();
+			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_STATIC, "<clinit>", "()V");
+			cw.addMethod(mw);
+			CodeWriter code = new CodeWriter();
+			mw.addAttribute(code);
 			code.addFieldInstruction(Opcodes.GETSTATIC, "org/mve/invoke/ReflectionFactory", "TRUSTED_LOOKUP", "Ljava/lang/invoke/MethodHandles$Lookup;");
 			code.addConstantInstruction(Opcodes.LDC, new Type(usfClass));
 			code.addConstantInstruction(Opcodes.LDC_W, "theUnsafe");

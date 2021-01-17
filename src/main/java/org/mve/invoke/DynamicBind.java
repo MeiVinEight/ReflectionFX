@@ -1,6 +1,7 @@
 package org.mve.invoke;
 
 import org.mve.util.asm.ClassWriter;
+import org.mve.util.asm.FieldWriter;
 import org.mve.util.asm.file.AccessFlag;
 
 import java.util.UUID;
@@ -17,7 +18,7 @@ public abstract class DynamicBind extends Generator
 		this.define = Generator.checkAccessible(c.getClassLoader()) ? c : ReflectionFactory.class;
 		this.target = target;
 		this.bytecode.set(0x34, 0x21, UUID.randomUUID().toString().toUpperCase(), CONSTANT_POOL[0], new String[]{Generator.getType(handle)});
-		this.bytecode.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "0", Generator.getSignature(Class.class));
+		this.bytecode.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "0", Generator.getSignature(Class.class)));
 	}
 
 	public void postgenerate(Class<?> generated)

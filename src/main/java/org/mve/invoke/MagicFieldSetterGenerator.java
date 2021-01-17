@@ -1,5 +1,6 @@
 package org.mve.invoke;
 
+import org.mve.util.asm.ClassWriter;
 import org.mve.util.asm.MethodWriter;
 import org.mve.util.asm.Opcodes;
 import org.mve.util.asm.attribute.CodeWriter;
@@ -15,16 +16,17 @@ public class MagicFieldSetterGenerator extends FieldSetterGenerator
 	}
 
 	@Override
-	public void generate(MethodWriter method)
+	public void generate(MethodWriter method, ClassWriter classWriter)
 	{
 		Field field = this.getField();
 		int modifiers = field.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
 
-		CodeWriter code = method.addCode();
+		CodeWriter code = new CodeWriter();
+		method.addAttribute(code);
 
 		Class<?> type = field.getType();
-		int load = 0;
+		int load;
 		if (type == byte.class || type == short.class || type == int.class || type == boolean.class || type == char.class)
 		{
 			load = Opcodes.ILOAD_1;

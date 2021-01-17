@@ -17,15 +17,16 @@ public class NativeDynamicBindFieldGenerator extends DynamicBindFieldGenerator
 	public void generate(ClassWriter bytecode)
 	{
 		Field field = ReflectionFactory.ACCESSOR.getField(this.getTarget(), this.operation());
-		MethodWriter mw = bytecode.addMethod(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
+		bytecode.addMethod(mw);
 		Generator.inline(mw);
 		if (this.kind() == ReflectionFactory.KIND_PUT)
 		{
-			new UnsafeFieldSetterGenerator(field).generate(mw);
+			new UnsafeFieldSetterGenerator(field).generate(mw, bytecode);
 		}
 		else
 		{
-			new UnsafeFieldGetterGenerator(field).generate(mw);
+			new UnsafeFieldGetterGenerator(field).generate(mw, bytecode);
 		}
 	}
 }

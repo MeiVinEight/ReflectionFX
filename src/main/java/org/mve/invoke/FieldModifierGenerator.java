@@ -1,5 +1,6 @@
 package org.mve.invoke;
 
+import org.mve.util.asm.ClassWriter;
 import org.mve.util.asm.MethodWriter;
 
 import java.lang.reflect.Field;
@@ -13,7 +14,7 @@ public abstract class FieldModifierGenerator extends Generator
 		this.field = field;
 	}
 
-	public abstract void generate(MethodWriter method);
+	public abstract void generate(MethodWriter method, ClassWriter classWriter);
 
 	public Field getField()
 	{

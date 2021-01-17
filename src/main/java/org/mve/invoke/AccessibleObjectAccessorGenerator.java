@@ -1,6 +1,7 @@
 package org.mve.invoke;
 
 import org.mve.util.asm.ClassWriter;
+import org.mve.util.asm.FieldWriter;
 import org.mve.util.asm.file.AccessFlag;
 
 import java.lang.reflect.AccessibleObject;
@@ -20,7 +21,9 @@ public abstract class AccessibleObjectAccessorGenerator extends AccessorGenerato
 	public void pregenerate(ClassWriter bytecode)
 	{
 		super.pregenerate(bytecode);
-		bytecode.addField(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", Generator.getSignature(AccessibleObject.class));
+		bytecode.addField(new FieldWriter()
+			.set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", Generator.getSignature(AccessibleObject.class))
+		);
 	}
 
 	public void postgenerate(Class<?> generated)

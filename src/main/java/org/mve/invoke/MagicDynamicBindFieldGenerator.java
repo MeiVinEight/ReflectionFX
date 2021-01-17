@@ -18,22 +18,23 @@ public class MagicDynamicBindFieldGenerator extends DynamicBindFieldGenerator
 	public void generate(ClassWriter bytecode)
 	{
 		Field field = ReflectionFactory.ACCESSOR.getField(getTarget(), operation());
-		MethodWriter mw = bytecode.addMethod(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
+		bytecode.addMethod(mw);
 		Generator.inline(mw);
 		if (kind() == ReflectionFactory.KIND_PUT)
 		{
 			if (Modifier.isFinal(field.getModifiers()))
 			{
-				new UnsafeFieldSetterGenerator(field).generate(mw);
+				new UnsafeFieldSetterGenerator(field).generate(mw, bytecode);
 			}
 			else
 			{
-				new MagicFieldSetterGenerator(field).generate(mw);
+				new MagicFieldSetterGenerator(field).generate(mw, bytecode);
 			}
 		}
 		else
 		{
-			new MagicFieldGetterGenerator(field).generate(mw);
+			new MagicFieldGetterGenerator(field).generate(mw, bytecode);
 		}
 	}
 }
