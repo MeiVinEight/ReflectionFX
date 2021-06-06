@@ -147,6 +147,54 @@ public abstract class Generator
 		}
 	}
 
+	public static void load(Class<?> type, CodeWriter code, int slot)
+	{
+		if (integer(type))
+		{
+			code.addLocalVariableInstruction(Opcodes.ILOAD, slot);
+		}
+		else if (long.class == type)
+		{
+			code.addLocalVariableInstruction(Opcodes.LLOAD, slot);
+		}
+		else if (float.class == type)
+		{
+			code.addLocalVariableInstruction(Opcodes.FLOAD, slot);
+		}
+		else if (double.class == type)
+		{
+			code.addLocalVariableInstruction(Opcodes.DLOAD, slot);
+		}
+		else
+		{
+			code.addLocalVariableInstruction(Opcodes.ALOAD, slot);
+		}
+	}
+
+	public static void store(Class<?> type, CodeWriter code, int slot)
+	{
+		if (integer(type))
+		{
+			code.addLocalVariableInstruction(Opcodes.ISTORE, slot);
+		}
+		else if (long.class == type)
+		{
+			code.addLocalVariableInstruction(Opcodes.LSTORE, slot);
+		}
+		else if (float.class == type)
+		{
+			code.addLocalVariableInstruction(Opcodes.FSTORE, slot);
+		}
+		else if (double.class == type)
+		{
+			code.addLocalVariableInstruction(Opcodes.DSTORE, slot);
+		}
+		else
+		{
+			code.addLocalVariableInstruction(Opcodes.ASTORE, slot);
+		}
+	}
+
 	public static int typeSize(Class<?> c)
 	{
 		if (c == void.class) return 0;
