@@ -800,6 +800,7 @@ public class ReflectionFactory
 								.addInstruction(Opcodes.ALOAD_0)
 								.addMethodInstruction(Opcodes.INVOKESPECIAL, mai, "<init>", "()V", false)
 								.addInstruction(Opcodes.RETURN)
+								.setMaxs(1, 1)
 							)
 						)
 						.toByteArray();
