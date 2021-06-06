@@ -80,107 +80,6 @@ public class ReflectionFactory
 	private static final Map<Class<?>, ReflectionAccessor<?>> GENERATED_ALLOCATOR = new ConcurrentHashMap<>();
 	private static final Map<Class<?>, EnumHelper<?>> GENERATED_ENUM_HELPER = new ConcurrentHashMap<>();
 
-	private final DynamicBind bind;
-
-	/**
-	 * Construct a ReflectionFactory instance
-	 * It can be used to complete dynamic binding
-	 * @param handle Dynamically bound interface and must be an interface, generally a custom interface
-	 * @param target Dynamically bound target class
-	 */
-	public ReflectionFactory(Class<?> handle, Class<?> target)
-	{
-		UNSAFE.ensureClassInitialized(target);
-		if (Generator.isVMAnonymousClass(target))
-		{
-			this.bind = new NativeDynamicBind(handle, target);
-		}
-		else
-		{
-			this.bind = new MagicDynamicBind(handle, target);
-		}
-	}
-
-	/**
-	 * Bind a method to the interface
-	 * @param implementation Method declared in the interface
-	 * @param invocation Bound method
-	 * @param kind Method call kind, it can be
-	 *             {@link ReflectionFactory#KIND_INVOKE_VIRTUAL}
-	 *             {@link ReflectionFactory#KIND_INVOKE_SPECIAL}
-	 *             {@link ReflectionFactory#KIND_INVOKE_STATIC}
-	 *             {@link ReflectionFactory#KIND_INVOKE_INTERFACE}
-	 * @return Chained call return
-	 */
-	public ReflectionFactory method(MethodKind implementation, MethodKind invocation, int kind)
-	{
-		this.bind.method(implementation, invocation, kind);
-		return this;
-	}
-
-	/**
-	 * Bind a field to the interface method
-	 * @param implementation Dynamically bound interface and must be an interface, generally a custom interface
-	 * @param operation The name of the bound field
-	 * @param kind Field operation type, it can be
-	 *             {@link ReflectionFactory#KIND_GET}
-	 *             {@link ReflectionFactory#KIND_PUT}
-	 * @return Chained call return
-	 */
-	public ReflectionFactory field(MethodKind implementation, String operation, int kind)
-	{
-		this.bind.field(implementation, operation, kind);
-		return this;
-	}
-
-	/**
-	 * Only allocate an object, do not call the constructor
-	 * @param implementation Dynamically bound interface and must be an interface, generally a custom interface
-	 * @return Chained call return
-	 */
-	public ReflectionFactory instantiation(MethodKind implementation)
-	{
-		this.bind.instantiation(implementation);
-		return this;
-	}
-
-	/**
-	 * Allocate an object and call constructor
-	 * @param implementation Dynamically bound interface and must be an interface, generally a custom interface
-	 * @param invocation The bound constructor
-	 * @return Chained call return
-	 */
-	public ReflectionFactory construct(MethodKind implementation, MethodKind invocation)
-	{
-		this.bind.construct(implementation, invocation);
-		return this;
-	}
-
-	/**
-	 * Add EnumHelper binding
-	 * @return Chained call return
-	 */
-	public ReflectionFactory enumHelper()
-	{
-		this.bind.enumHelper();
-		return this;
-	}
-
-	/**
-	 * Complete the binding and return an instance of the interface implementation class
-	 * @param <T> Same type as "handle" when the constructor {@link ReflectionFactory#ReflectionFactory(Class, Class)} is called
-	 * @return The instance of "handle"
-	 */
-	public <T> T allocate()
-	{
-		ClassWriter bytecode = this.bind.bytecode();
-		Class<?> c = defineAnonymous(this.bind.define(), bytecode);
-		this.bind.postgenerate(c);
-		T value = (T) UNSAFE.allocateInstance(c);
-		ACCESSOR.initialize(value);
-		return value;
-	}
-
 	public static <T> MethodAccessor<T> access(Class<?> target, String name, MethodType type, int kind)
 	{
 		return generic(ACCESSOR.getMethod(target, name, type.returnType(), type.parameterArray()), kind);
@@ -269,9 +168,9 @@ public class ReflectionFactory
 		return ACCESSOR.construct(defineAnonymous(ReflectionFactory.class, cw), new Class[]{Object.class}, new Object[]{value});
 	}
 
-	public static <T> EnumHelper<T> getEnumHelper(Class<?> target)
+	public static <T> EnumHelper<T> enumHelper(Class<?> target)
 	{
-		return (EnumHelper<T>) GENERATED_ENUM_HELPER.computeIfAbsent(target, (k) -> new ReflectionFactory(EnumHelper.class, k).enumHelper().allocate());
+		return (EnumHelper<T>) GENERATED_ENUM_HELPER.computeIfAbsent(target, (k) -> new PolymorphismFactory<>(EnumHelper.class).enumHelper(k).allocate());
 	}
 
 	private static Class<?> defineAnonymous(Class<?> host, ClassWriter bytecode)
