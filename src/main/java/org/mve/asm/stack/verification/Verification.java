@@ -7,47 +7,47 @@ public interface Verification
 {
 	org.mve.asm.file.Verification transform(ConstantPool pool);
 
-	public static Verification topVariable()
+	static Verification topVariable()
 	{
 		return new TopVariable();
 	}
 
-	public static Verification integerVariable()
+	static Verification integerVariable()
 	{
 		return new IntegerVariable();
 	}
 
-	public static Verification floatVariable()
+	static Verification floatVariable()
 	{
 		return new FloatVariable();
 	}
 
-	public static Verification nullVariable()
+	static Verification nullVariable()
 	{
 		return new NullVariable();
 	}
 
-	public static Verification uninitializedThisVariable()
+	static Verification uninitializedThisVariable()
 	{
 		return new UninitializedThisVariable();
 	}
 
-	public static Verification objectVariable(String type)
+	static Verification objectVariable(String type)
 	{
 		return new ObjectVariable(type);
 	}
 
-	public static Verification uninitializedVariable(Marker marker)
+	static Verification uninitializedVariable(Marker marker)
 	{
 		return new UninitializedVariable(marker);
 	}
 
-	public static Verification longVariable()
+	static Verification longVariable()
 	{
 		return new LongVariable();
 	}
 
-	public static Verification doubleVariable()
+	static Verification doubleVariable()
 	{
 		return new DoubleVariable();
 	}

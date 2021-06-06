@@ -68,8 +68,7 @@ public class CodeWriter implements AttributeWriter
 
 	private CodeWriter addInstruction(Instruction insn)
 	{
-		boolean wide = false;
-		if (this.instructions.length > 0 && this.instructions[this.instructions.length-1].opcode == Opcodes.WIDE) wide = true;
+		boolean wide = this.instructions.length > 0 && this.instructions[this.instructions.length - 1].opcode == Opcodes.WIDE;
 
 		int i = this.instructions.length;
 		this.instructions = Arrays.copyOf(this.instructions, i+1);
@@ -160,8 +159,7 @@ public class CodeWriter implements AttributeWriter
 		RandomAccessByteArray arr = new RandomAccessByteArray();
 		for (int i = 0; i < this.instructions.length; i++)
 		{
-			boolean wide = false;
-			if (i > 0 && this.instructions[i-1].opcode == Opcodes.WIDE) wide = true;
+			boolean wide = i > 0 && this.instructions[i - 1].opcode == Opcodes.WIDE;
 			Instruction instruction = this.instructions[i];
 			arr.write(instruction.opcode);
 
