@@ -142,11 +142,12 @@ public class CodeWriter implements AttributeWriter
 		return this.addInstruction(new IincInstruction(indexbyte, constbyte));
 	}
 
-	public void addAttribute(AttributeWriter writer)
+	public CodeWriter addAttribute(AttributeWriter writer)
 	{
 		int i = this.attributes.length;
 		this.attributes = Arrays.copyOf(this.attributes, i+1);
 		this.attributes[i] = writer;
+		return this;
 	}
 
 	@Override
