@@ -121,7 +121,11 @@ public abstract class Generator
 
 	public static void returner(Class<?> type, CodeWriter code)
 	{
-		if (type == byte.class || type == short.class || type == int.class || type == boolean.class || type == char.class)
+		if (type == void.class)
+		{
+			code.addInstruction(Opcodes.RETURN);
+		}
+		else if (integer(type))
 		{
 			code.addInstruction(Opcodes.IRETURN);
 		}
