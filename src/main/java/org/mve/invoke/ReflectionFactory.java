@@ -738,7 +738,7 @@ public class ReflectionFactory
 			{
 				if (majorVersion <= 0X34) mai = "sun/reflect/MagicAccessorImpl";
 				else mai = "jdk/internal/reflect/MagicAccessorImpl";
-				CONSTANT_POOL[0] = "java/lang/MagicAccessFactory";
+				CONSTANT_POOL[0] = "java/lang/MagicAccessorFactory";
 			}
 
 			/*

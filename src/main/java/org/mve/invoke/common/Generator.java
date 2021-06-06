@@ -207,7 +207,7 @@ public abstract class Generator
 	static
 	{
 		Unsafe unsafe = ReflectionFactory.UNSAFE;
-		CONSTANT_POOL[0] = "java/lang/MagicAccessFactory";
+		CONSTANT_POOL[0] = "java/lang/MagicAccessorFactory";
 		CONSTANT_POOL[1] = unsafe.getJavaVMVersion() < 57 ? "Ljava/lang/invoke/LambdaForm$Hidden;" : "Ljdk/internal/vm/annotation/Hidden;";
 		CONSTANT_POOL[2] = unsafe.getJavaVMVersion() == 0x34 ? "Ljava/lang/invoke/ForceInline;" : "Ljdk/internal/vm/annotation/ForceInline;";
 		CONSTANT_POOL[3] = "Ljava/lang/invoke/LambdaForm$Compiled;";
