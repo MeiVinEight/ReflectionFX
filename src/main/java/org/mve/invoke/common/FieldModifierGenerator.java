@@ -1,7 +1,7 @@
 package org.mve.invoke;
 
-import org.mve.util.asm.ClassWriter;
-import org.mve.util.asm.MethodWriter;
+import org.mve.asm.ClassWriter;
+import org.mve.asm.MethodWriter;
 
 import java.lang.reflect.Field;
 

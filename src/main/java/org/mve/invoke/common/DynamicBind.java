@@ -1,8 +1,8 @@
 package org.mve.invoke;
 
-import org.mve.util.asm.ClassWriter;
-import org.mve.util.asm.FieldWriter;
-import org.mve.util.asm.file.AccessFlag;
+import org.mve.asm.ClassWriter;
+import org.mve.asm.FieldWriter;
+import org.mve.asm.file.AccessFlag;
 
 import java.util.UUID;
 

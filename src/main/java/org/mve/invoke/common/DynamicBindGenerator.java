@@ -1,6 +1,6 @@
 package org.mve.invoke;
 
-import org.mve.util.asm.ClassWriter;
+import org.mve.asm.ClassWriter;
 
 public abstract class DynamicBindGenerator extends Generator
 {

@@ -1,8 +1,8 @@
 package org.mve.invoke;
 
-import org.mve.util.asm.ClassWriter;
-import org.mve.util.asm.MethodWriter;
-import org.mve.util.asm.file.AccessFlag;
+import org.mve.asm.ClassWriter;
+import org.mve.asm.MethodWriter;
+import org.mve.asm.file.AccessFlag;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

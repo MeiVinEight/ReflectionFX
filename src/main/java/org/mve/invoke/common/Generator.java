@@ -1,10 +1,10 @@
 package org.mve.invoke;
 
-import org.mve.util.asm.AnnotationWriter;
-import org.mve.util.asm.MethodWriter;
-import org.mve.util.asm.Opcodes;
-import org.mve.util.asm.attribute.CodeWriter;
-import org.mve.util.asm.attribute.RuntimeVisibleAnnotationsWriter;
+import org.mve.asm.AnnotationWriter;
+import org.mve.asm.MethodWriter;
+import org.mve.asm.Opcodes;
+import org.mve.asm.attribute.CodeWriter;
+import org.mve.asm.attribute.RuntimeVisibleAnnotationsWriter;
 
 public abstract class Generator
 {
