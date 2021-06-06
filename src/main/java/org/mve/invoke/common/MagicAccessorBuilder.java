@@ -64,6 +64,20 @@ public class MagicAccessorBuilder
 		}
 
 		/*
+		 * int version()
+		 */
+		{
+			cw.addMethod(new MethodWriter()
+				.set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "version", "()I")
+				.addAttribute(new CodeWriter()
+					.addNumberInstruction(Opcodes.BIPUSH, vmVersion - 44)
+					.addInstruction(Opcodes.IRETURN)
+					.setMaxs(1, 1)
+				)
+			);
+		}
+
+		/*
 		 * void setAccessible(AccessibleObject acc, boolean flag);
 		 */
 		{

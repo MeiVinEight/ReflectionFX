@@ -28,6 +28,8 @@ import java.lang.reflect.Method;
  */
 public interface MagicAccessor
 {
+	int version();
+
 	void setAccessible(AccessibleObject acc, boolean flag);
 
 	Class<?> forName(String name);
