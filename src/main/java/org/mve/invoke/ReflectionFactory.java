@@ -893,7 +893,7 @@ public class ReflectionFactory
 				}
 				catch (Throwable t)
 				{
-					byte[] code = MagicAccessorBuilder.build(CONSTANT_POOL, openJ9VM).toByteArray();
+					byte[] code = MagicAccessorBuilder.build(CONSTANT_POOL, majorVersion, openJ9VM).toByteArray();
 					c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 				}
 				ACCESSOR = (MagicAccessor) UNSAFE.allocateInstance(c);

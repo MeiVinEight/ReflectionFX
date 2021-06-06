@@ -24,14 +24,14 @@ import java.util.Arrays;
 
 public class MagicAccessorBuilder
 {
-	public static ClassWriter build(String[] constantPool, boolean openJ9VM)
+	public static ClassWriter build(String[] constantPool, int vmVersion, boolean openJ9VM)
 	{
 		String className = "org/mve/invoke/ReflectionMagicAccessor";
 		ClassWriter cw = new ClassWriter();
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER | AccessFlag.ACC_FINAL, className, constantPool[0], new String[]{Generator.getType(MagicAccessor.class)});
 		cw.addAttribute(new SourceWriter("MagicAccessor.java"));
 		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "0", Generator.getSignature(SecurityManager.class)));
-		cw.addField(new FieldWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", "Lsun/management/VMManagementImpl;"));
+		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", "I"));
 
 		/*
 		 * <clinit>
@@ -45,10 +45,20 @@ public class MagicAccessorBuilder
 			code.addInstruction(Opcodes.DUP);
 			code.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(SecurityManager.class), "<init>", "()V", false);
 			code.addFieldInstruction(Opcodes.PUTSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
-			code.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(ManagementFactory.class), "getRuntimeMXBean", MethodType.methodType(RuntimeMXBean.class).toMethodDescriptorString(), false)
-				.addFieldInstruction(Opcodes.GETFIELD, "sun/management/RuntimeImpl", "jvm", "Lsun/management/VMManagement;")
-				.addTypeInstruction(Opcodes.CHECKCAST, "sun/management/VMManagementImpl")
-				.addFieldInstruction(Opcodes.PUTSTATIC, className, "1", "Lsun/management/VMManagementImpl;");
+			if (openJ9VM)
+			{
+				// com.ibm.lang.management.internal.ExtendedRuntimeMXBeanImpl
+				code.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(ManagementFactory.class), "getRuntimeMXBean", MethodType.methodType(RuntimeMXBean.class).toMethodDescriptorString(), false)
+					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "com/ibm/lang/management/internal/ExtendedRuntimeMXBeanImpl", "getProcessIDImpl", "()J", false)
+					.addInstruction(Opcodes.L2I);
+			}
+			else
+			{
+				code.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(ManagementFactory.class), "getRuntimeMXBean", MethodType.methodType(RuntimeMXBean.class).toMethodDescriptorString(), false)
+					.addFieldInstruction(Opcodes.GETFIELD, "sun/management/RuntimeImpl", "jvm", "Lsun/management/VMManagement;")
+					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "sun/management/VMManagementImpl", "getProcessId", MethodType.methodType(int.class).toMethodDescriptorString(), false);
+			}
+			code.addFieldInstruction(Opcodes.PUTSTATIC, className, "1", "I");
 			code.addInstruction(Opcodes.RETURN);
 			code.setMaxs(2, 0);
 		}
@@ -547,8 +557,7 @@ public class MagicAccessorBuilder
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "getPID", MethodType.methodType(int.class).toMethodDescriptorString())
 				.addAttribute(new CodeWriter()
-					.addFieldInstruction(Opcodes.GETSTATIC, className, "1", "Lsun/management/VMManagementImpl;")
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "sun/management/VMManagementImpl", "getProcessId", MethodType.methodType(int.class).toMethodDescriptorString(), false)
+					.addFieldInstruction(Opcodes.GETSTATIC, className, "1", "I")
 					.addInstruction(Opcodes.IRETURN)
 					.setMaxs(1, 1)
 				);
