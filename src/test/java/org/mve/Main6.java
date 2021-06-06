@@ -1,6 +1,7 @@
 package org.mve;
 
 import org.mve.invoke.MethodKind;
+import org.mve.invoke.PolymorphismFactory;
 import org.mve.invoke.ReflectionFactory;
 
 import java.util.Arrays;
@@ -10,29 +11,32 @@ public class Main6
 	public static void main(String[] args)
 	{
 		BindSite site =
-			new ReflectionFactory(BindSite.class, Test.class)
+			new PolymorphismFactory<>(BindSite.class)
 				.construct(
+					Test.class,
 					new MethodKind("newTest", Test.class, String.class),
 					new MethodKind(null, void.class, String.class)
 				)
-				.instantiation(new MethodKind("allocateTest", Test.class))
+				.instantiate(Test.class, new MethodKind("allocateTest", Test.class))
 				.method(
+					Test.class,
 					new MethodKind("staticPrint", void.class, String.class),
 					new MethodKind("staticPrint", void.class, String.class),
 					ReflectionFactory.KIND_INVOKE_STATIC
 				)
 				.method(
+					Test.class,
 					new MethodKind("print", void.class, Test.class, String.class),
 					new MethodKind("print", void.class, String.class),
 					ReflectionFactory.KIND_INVOKE_VIRTUAL
 				)
-				.field(new MethodKind("setInstance", void.class, Test.class), "INSTANCE", ReflectionFactory.KIND_PUT)
-				.field(new MethodKind("setStaticPrefix", void.class, String.class), "staticPrefix", ReflectionFactory.KIND_PUT)
-				.field(new MethodKind("setDefaultPrefix", void.class, Test.class, String.class), "defaultPrefix", ReflectionFactory.KIND_PUT)
-				.field(new MethodKind("setPrefix", void.class, Test.class, String.class), "prefix", ReflectionFactory.KIND_PUT)
-				.field(new MethodKind("getStaticPrefix", String.class), "staticPrefix", ReflectionFactory.KIND_GET)
-				.field(new MethodKind("getDefaultPrefix", String.class, Test.class), "defaultPrefix", ReflectionFactory.KIND_GET)
-				.field(new MethodKind("getPrefix", String.class, Test.class), "prefix", ReflectionFactory.KIND_GET)
+				.field(Test.class, new MethodKind("setInstance", void.class, Test.class), "INSTANCE", ReflectionFactory.KIND_PUT)
+				.field(Test.class, new MethodKind("setStaticPrefix", void.class, String.class), "staticPrefix", ReflectionFactory.KIND_PUT)
+				.field(Test.class, new MethodKind("setDefaultPrefix", void.class, Test.class, String.class), "defaultPrefix", ReflectionFactory.KIND_PUT)
+				.field(Test.class, new MethodKind("setPrefix", void.class, Test.class, String.class), "prefix", ReflectionFactory.KIND_PUT)
+				.field(Test.class, new MethodKind("getStaticPrefix", String.class), "staticPrefix", ReflectionFactory.KIND_GET)
+				.field(Test.class, new MethodKind("getDefaultPrefix", String.class, Test.class), "defaultPrefix", ReflectionFactory.KIND_GET)
+				.field(Test.class, new MethodKind("getPrefix", String.class, Test.class), "prefix", ReflectionFactory.KIND_GET)
 				.allocate();
 		System.out.println(site.newTest("A"));
 		System.out.println(site.allocateTest());
@@ -40,7 +44,7 @@ public class Main6
 
 		System.out.println();
 
-		EnumSite enumSite = new ReflectionFactory(EnumSite.class, Test.TestEnum.class).enumHelper().allocate();
+		EnumSite enumSite = new PolymorphismFactory<>(EnumSite.class).enumHelper(Test.TestEnum.class).allocate();
 		System.out.println(Arrays.toString(enumSite.values()));
 		enumSite.values(new Test.TestEnum[3]);
 		System.out.println(Arrays.toString(Test.TestEnum.values()));
