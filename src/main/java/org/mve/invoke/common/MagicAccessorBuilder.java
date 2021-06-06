@@ -536,9 +536,6 @@ public class MagicAccessorBuilder
 		 * String getName(Member member);
 		 */
 		{
-//			Marker field = new Marker();
-//			Marker method = new Marker();
-//			Marker ret = new Marker();
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "getName", MethodType.methodType(String.class, Member.class).toMethodDescriptorString())
 				.addAttribute(new CodeWriter()
