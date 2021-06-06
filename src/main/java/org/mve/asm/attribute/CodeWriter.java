@@ -1,26 +1,26 @@
-package org.mve.util.asm.attribute;
+package org.mve.asm.attribute;
 
 import org.mve.io.RandomAccessByteArray;
-import org.mve.util.asm.ConstantPoolFinder;
-import org.mve.util.asm.Marker;
-import org.mve.util.asm.Opcodes;
-import org.mve.util.asm.Type;
-import org.mve.util.asm.file.Attribute;
-import org.mve.util.asm.file.AttributeCode;
-import org.mve.util.asm.file.AttributeType;
-import org.mve.util.asm.file.ConstantPool;
-import org.mve.util.asm.file.StructExceptionTable;
-import org.mve.util.asm.instruction.ConstantInstruction;
-import org.mve.util.asm.instruction.FieldInstruction;
-import org.mve.util.asm.instruction.IincInstruction;
-import org.mve.util.asm.instruction.Instruction;
-import org.mve.util.asm.instruction.InterfaceMethodInstruction;
-import org.mve.util.asm.instruction.JumpInstruction;
-import org.mve.util.asm.instruction.LocalVariableInstruction;
-import org.mve.util.asm.instruction.MethodInstruction;
-import org.mve.util.asm.instruction.NumberInstruction;
-import org.mve.util.asm.instruction.SimpleInstruction;
-import org.mve.util.asm.instruction.TypeInstruction;
+import org.mve.asm.ConstantPoolFinder;
+import org.mve.asm.Marker;
+import org.mve.asm.Opcodes;
+import org.mve.asm.Type;
+import org.mve.asm.file.Attribute;
+import org.mve.asm.file.AttributeCode;
+import org.mve.asm.file.AttributeType;
+import org.mve.asm.file.ConstantPool;
+import org.mve.asm.file.StructExceptionTable;
+import org.mve.asm.instruction.ConstantInstruction;
+import org.mve.asm.instruction.FieldInstruction;
+import org.mve.asm.instruction.IincInstruction;
+import org.mve.asm.instruction.Instruction;
+import org.mve.asm.instruction.InterfaceMethodInstruction;
+import org.mve.asm.instruction.JumpInstruction;
+import org.mve.asm.instruction.LocalVariableInstruction;
+import org.mve.asm.instruction.MethodInstruction;
+import org.mve.asm.instruction.NumberInstruction;
+import org.mve.asm.instruction.SimpleInstruction;
+import org.mve.asm.instruction.TypeInstruction;
 
 import java.util.Arrays;
 
