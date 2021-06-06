@@ -1,4 +1,4 @@
-package org.mve.invoke;
+package org.mve.invoke.common;
 
 import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;

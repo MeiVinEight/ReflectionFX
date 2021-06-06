@@ -1,4 +1,6 @@
-package org.mve.invoke;
+package org.mve.invoke.common;
+
+import org.mve.invoke.MethodKind;
 
 public abstract class DynamicBindFieldGenerator extends DynamicBindGenerator
 {

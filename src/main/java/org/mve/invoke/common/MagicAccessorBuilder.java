@@ -1,4 +1,4 @@
-package org.mve.invoke;
+package org.mve.invoke.common;
 
 import org.mve.asm.ClassWriter;
 import org.mve.asm.FieldWriter;
@@ -9,6 +9,9 @@ import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.SignatureWriter;
 import org.mve.asm.attribute.SourceWriter;
 import org.mve.asm.file.AccessFlag;
+import org.mve.invoke.MagicAccessor;
+import org.mve.invoke.ReflectionFactory;
+import org.mve.invoke.Unsafe;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;

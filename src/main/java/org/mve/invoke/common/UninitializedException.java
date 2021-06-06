@@ -1,4 +1,4 @@
-package org.mve.invoke;
+package org.mve.invoke.common;
 
 public class UninitializedException extends RuntimeException
 {

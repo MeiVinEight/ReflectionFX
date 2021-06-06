@@ -1,4 +1,4 @@
-package org.mve.invoke;
+package org.mve.invoke.common;
 
 import org.mve.asm.ClassWriter;
 import org.mve.asm.Marker;
@@ -6,6 +6,7 @@ import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.file.AccessFlag;
+import org.mve.invoke.FieldAccessor;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
