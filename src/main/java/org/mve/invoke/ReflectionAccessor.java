@@ -6,5 +6,5 @@ public interface ReflectionAccessor<T>
 
 	T invoke();
 
-	Class<?> getReflectionClass();
+	Class<?> access();
 }

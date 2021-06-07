@@ -33,7 +33,7 @@ public abstract class AccessorGenerator extends Generator
 			.set(AccessFlag.ACC_FINAL | AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "0", Generator.getSignature(Class.class))
 		);
 		bytecode.addMethod(new MethodWriter()
-			.set(AccessFlag.ACC_PUBLIC, "getReflectionClass", MethodType.methodType(Class.class).toMethodDescriptorString())
+			.set(AccessFlag.ACC_PUBLIC, "access", MethodType.methodType(Class.class).toMethodDescriptorString())
 			.addAttribute(new CodeWriter()
 				.addFieldInstruction(Opcodes.GETSTATIC, this.bytecode.getName(), "0", Generator.getSignature(Class.class))
 				.addInstruction(Opcodes.ARETURN)
