@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh">
+	<head>
+		<meta charset="UTF-8" />
+		<title>ReflectionFX</title>
+		<style type="text/css">
+			h1, h2
+			{
+				margin-left: 0;
+				margin-right: 0;
+				margin-top: 15px;
+				margin-bottom: 15px;
+			}
+			a
+			{
+				text-decoration: none;
+				color: #009ccb;
+			}
+			hr
+			{
+				content: "";
+				height: 1px;
+				background-color: #EBEDEF;
+				border: 0;
+			}
+			td
+			{
+				width: 20%;
+				border: 1px solid #DFE2E5;
+			}
+			table
+			{
+				width: 100%;
+				line-height: 30px;
+				text-align: center;
+				border-collapse: collapse;
+			}   
+			.word
+			{
+				padding-left: 4px;
+				padding-right: 4px;
+				padding-top: 3px;
+				padding-bottom: 3px;
+				margin: 0;
+				background-color: rgba(27, 31, 35, 0.05);
+				font-family: "Consolas";
+				border-radius: 6px;
+			}
+			.passage
+			{
+				padding: 16px;
+				overflow: auto;
+				line-height: 20px;
+				margin: 0;
+				word-wrap: normal;
+				background-color: rgba(246, 248, 250, 1);
+				font-family: "Consolas";
+				border-radius: 6px;
+			}
+			.link
+			{
+				display: inline-block;
+			}
+			.link:hover
+			{
+				animation: link-jump 0.4s;
+			}
+			@keyframes link-jump
+			{
+				50%
+				{
+					transform: translateY(-2px);
+				}
+				100%
+				{
+					transform: translateY(0px);
+				}
+			}
+		</style>
+	</head>
+	<body style="line-height: 30px; padding: 0;">
+		<h1 align="center" style="font-weight: bold;">ReflectionFX</h1>
+		<hr width="75%" style="content: ''; height: 4px; background-color: #E1E4E8; border: 0;" />
+		<div align="center" style="font-size: 20px;">
+			ReflectionFX是一个全平台支持的，高效易用的反射库<br/>
+			ReflectionFX的设计初衷在于高效率，在此基础上以易用为目的开发<br/>
+		</div>
+		<div style="padding-left: 100px; padding-right: 100px;">
+			<h2>声明</h2>
+			<hr/>
+			<ul>
+				<li>
+					<code class="word">ReflectionFX</code> 是完全开源的库，任何人都可以直接或间接使用 <code class="word">ReflectionFX</code> 或其中的源代码
+				</li>
+				<li>
+					任何人都可以为 <code class="word">ReflectionFX</code> 提供代码或提交BUG
+				</li>
+			</ul>
+			<h3>许可证</h3>
+			<pre class="passage">
+Copyright (C) 2020-2021  MeiVinEight
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.
+			</pre>
+			<br/>
+			<code class="word">ReflectionFX</code> 使用 <code class="word">GPL</code> 开源，我们希望您可以做到以下要求
+			<ul style="margin: 0;">
+				<li>以任何形式直接或间接使用到 <code class="word">ReflectionFX</code> 源代码的项目使用 <code class="word">GPL</code> 开源</li>
+				<li>
+					修改 
+					<code class="word">ReflectionFX</code>
+					 的代码后发布的项目，需
+					<strong>明确声明</strong>
+					项目与 
+					<code class="word">ReflectionFX</code>
+					 有关代码部分来源于本仓库(
+					<span class="link">
+						<a href="https://github.com/MeiVinEight/ReflectionFX">
+							<code class="word">ReflectionFX</code>
+						</a>
+					</span>
+					)
+				</li>
+				<li>不支持任何人或组织以任何形式通过 <code class="word">ReflectionFX</code> 或其衍生项目收取费用或提出物质要求</li>
+			</ul>
+			<h2>介绍</h2>
+			<hr />
+			<ul>
+				<li><code class="word">ReflectionFX</code> 是一个以<strong>效率</strong>为主的高效反射库</li>
+				<li><code class="word">ReflectionFX</code> 可以访问到<strong>任何</strong>存在于运行时的元素</li>
+				<li><code class="word">ReflectionFX</code> 没有强制的异常捕获要求</li>
+				<li><code class="word">ReflectionFX</code> 支持了泛型返回值，省去了开发时接收返回值的强制转换</li>
+			</ul>
+			经测试<br/>
+			<code class="word">ReflectionFX</code> 的调用效率远超
+			<span class="link">
+				<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/reflect/Method.html#invoke-java.lang.Object-java.lang.Object...-">
+					java.lang.reflect.Method#invoke(Object, Object...)
+				</a>
+			</span><br/>
+			与
+			<span class="link">
+				<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/MethodHandle.html#invoke-java.lang.Object...-">
+					java.lang.invoke.MethodHandle#invoke(Object...)
+				</a>
+			</span>
+			持平，接近直接调用
+			<br/>
+			<br/>
+			测试结果参考:
+			<table>
+				<tr style="background-color: #F7F7F7;">
+					<td>类型</td>
+					<td>测试次数</td>
+					<td>平均用时</td>
+					<td>误差</td>
+					<td>单位</td>
+				</tr style="background-color: #FFFFFF;">
+				<tr>
+					<td>Method</td>
+					<td>10<sup>4</sup></td>
+					<td>6094.443</td>
+					<td>62.931</td>
+					<td>ns/op</td>
+				</tr>
+				<tr style="background-color: #F7F7F7;">
+					<td>MethodHandle</td>
+					<td>10<sup>4</sup></td>
+					<td>249.151</td>
+					<td>3.348</td>
+					<td>ns/op</td>
+				</tr>
+				<tr style="background-color: #FFFFFF;">
+					<td>ReflectionFactory</td>
+					<td>10<sup>4</sup></td>
+					<td>249.778</td>
+					<td>3.381</td>
+					<td>ns/op</td>
+				</tr>
+				<tr style="background-color: #F7F7F7;">
+					<td>PolymorphismFactory</td>
+					<td>10<sup>4</sup></td>
+					<td>250.766</td>
+					<td>2.271</td>
+					<td>ns/op</td>
+				</tr>
+				<tr style="background-color: #FFFFFF;">
+					<td>MagicAccessFactory</td>
+					<td>10<sup>4</sup></td>
+					<td>248.562</td>
+					<td>1.162</td>
+					<td>ns/op</td>
+				</tr>
+				<tr style="background-color: #F7F7F7;">
+					<td>直接调用</td>
+					<td>10<sup>4</sup></td>
+					<td>248.705</td>
+					<td>1.591</td>
+					<td>ns/op</td>
+				</tr>
+			</table>
+			<ul style="margin: 0;">
+				<li><code class="word">ReflectionFactory</code> <code class="word">PolymorphismFactory</code> <code class="word">MagicAccessFactory</code> 为 <code class="word">ReflectionFX</code> 支持的反射类型</li>
+			</ul>
+			<br />
+			该项目的JMH测试项目:
+			<span class="link">
+				<a href="https://github.com/MeiVinEight/ReflectionFX-JMH">ReflectionFX-JMH</a>
+			</span><br/>
+			<h2>开始</h2>
+			<hr/>
+			<h3><code class="word">ReflectionFX</code> 支持三种类型的调用方式</h3>
+			<ul>
+				<li>
+					<strong>ReflectionFactory</strong>
+					<br>
+					<span class="link">
+						<a href="https://github.com/MeiVinEight/ReflectionFX/blob/master/src/main/java/org/mve/invoke/ReflectionFactory.java">
+							<code class="word">ReflectionFactory</code>
+						</a>
+					</span>
+					和
+					<span class="link">
+						<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/MethodHandle.html">
+							<code class="word">MethodHandle</code>
+						</a>
+					</span>
+					类似，其中提供了对方法，字段，构造方法的调用获取
+				</li>
+				<li>
+					<strong>PolymorphismFactory</strong>
+				</li>
+				<li>
+					<strong>MagicAccessFactory</strong>
+				</li>
+			</ul>
+		</div>
+	</body>
+</html>
