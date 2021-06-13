@@ -26,7 +26,7 @@ public class NativeDynamicBindFieldGenerator extends DynamicBindFieldGenerator
 		{
 			new UnsafeFieldSetterGenerator(field).generate(mw, bytecode);
 		}
-		else
+		else if (this.kind() == ReflectionFactory.KIND_GET)
 		{
 			new UnsafeFieldGetterGenerator(field).generate(mw, bytecode);
 		}

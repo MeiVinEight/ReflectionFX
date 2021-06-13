@@ -34,7 +34,7 @@ public class MagicDynamicBindFieldGenerator extends DynamicBindFieldGenerator
 				new MagicFieldSetterGenerator(field).generate(mw, bytecode);
 			}
 		}
-		else
+		else if (this.kind() == ReflectionFactory.KIND_GET)
 		{
 			new MagicFieldGetterGenerator(field).generate(mw, bytecode);
 		}
