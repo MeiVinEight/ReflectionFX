@@ -1,0 +1,4 @@
+apply plugin: 'java'
+
+group 'org.mve'
+version '1.9.0'
