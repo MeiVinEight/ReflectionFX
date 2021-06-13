@@ -2,10 +2,21 @@ package org.mve.invoke;
 
 import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
-import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.file.AccessFlag;
+import org.mve.invoke.common.DynamicBindConstructGenerator;
+import org.mve.invoke.common.DynamicBindFieldGenerator;
+import org.mve.invoke.common.DynamicBindInstantiationGenerator;
+import org.mve.invoke.common.DynamicBindMethodGenerator;
 import org.mve.invoke.common.Generator;
+import org.mve.invoke.common.MagicDynamicBindConstructGenerator;
+import org.mve.invoke.common.MagicDynamicBindFieldGenerator;
+import org.mve.invoke.common.MagicDynamicBindInstantiationGenerator;
+import org.mve.invoke.common.MagicDynamicBindMethodGenerator;
+import org.mve.invoke.common.NativeDynamicBindConstructGenerator;
+import org.mve.invoke.common.NativeDynamicBindFieldGenerator;
+import org.mve.invoke.common.NativeDynamicBindInstantiationGenerator;
+import org.mve.invoke.common.NativeDynamicBindMethodGenerator;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
@@ -43,33 +54,18 @@ public class MagicAccessFactory
 						Class<?>[] type = access.type();
 						Class<?> value = access.value();
 						int kind = access.kind();
-						int invoke = access.kind() + 0xB6;
 
-						if (name.isEmpty())
+						DynamicBindMethodGenerator generator;
+						if (Generator.isVMAnonymousClass(c))
 						{
-							throw new IllegalArgumentException("Argument 'name' is required and can not be empty");
+							generator = new NativeDynamicBindMethodGenerator(c, new MethodKind(method.getName(), returnType, parameters), new MethodKind(name, value, type), kind);
+						}
+						else
+						{
+							generator = new MagicDynamicBindMethodGenerator(c, new MethodKind(method.getName(), returnType, parameters), new MethodKind(name, value, type), kind);
 						}
 
-						int stack = 1;
-						for (Class<?> clazz : parameters)
-						{
-							Generator.load(clazz, cw, stack);
-							stack += Generator.typeSize(clazz);
-						}
-						cw.addMethodInstruction(invoke, Generator.getType(c), name, MethodType.methodType(value, type).toMethodDescriptorString(), kind == ReflectionFactory.KIND_INVOKE_INTERFACE);
-						if (value != void.class)
-						{
-							if (returnType != void.class)
-							{
-								Generator.returner(returnType, cw);
-							}
-							else
-							{
-								cw.addInstruction(Generator.typeSize(returnType) == 1 ? Opcodes.POP : Opcodes.POP2)
-									.addInstruction(Opcodes.RETURN);
-							}
-						}
-						cw.setMaxs(Math.max(stack-1, Generator.typeSize(value)), stack);
+						generator.generate(writer);
 
 						break;
 					}
@@ -77,84 +73,18 @@ public class MagicAccessFactory
 					{
 						Class<?> objective = access.objective();
 						String name = access.name();
-						Class<?> value = access.value();
 						int kind = access.kind();
 
-						if (name.isEmpty())
+						DynamicBindFieldGenerator generator;
+						if(Generator.isVMAnonymousClass(objective))
 						{
-							throw new IllegalArgumentException("Argument 'name' is required and can not be empty");
+							generator = new NativeDynamicBindFieldGenerator(objective, new MethodKind(method.getName(), method.getReturnType(), method.getParameterTypes()), name, kind);
 						}
-
-						if (value == void.class)
+						else
 						{
-							throw new IllegalArgumentException("Argument 'value' is required and can not be void");
+							generator = new MagicDynamicBindFieldGenerator(objective, new MethodKind(method.getName(), method.getReturnType(), method.getParameterTypes()), name, kind);
 						}
-
-						switch (kind)
-						{
-							case ReflectionFactory.KIND_GET:
-							{
-								switch (parameters.length)
-								{
-									case 0:
-									{
-										cw.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(objective), name, Generator.getSignature(value));
-										break;
-									}
-									case 1:
-									{
-										cw.addInstruction(Opcodes.ALOAD_1)
-											.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(objective))
-											.addFieldInstruction(Opcodes.GETFIELD, Generator.getType(objective), name, Generator.getSignature(value));
-										break;
-									}
-									default:
-									{
-										throw new IllegalArgumentException("Wrong argument list of method" + method);
-									}
-								}
-								if (!returnType.isPrimitive())
-								{
-									cw.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(returnType));
-								}
-								Generator.returner(method.getReturnType(), cw);
-								cw.setMaxs(Generator.typeSize(returnType), 1 + Generator.parameterSize(parameters));
-
-								break;
-							}
-							case ReflectionFactory.KIND_PUT:
-							{
-								switch (parameters.length)
-								{
-									case 1:
-									{
-										Generator.load(parameters[0], cw, 1);
-										cw.addFieldInstruction(Opcodes.PUTSTATIC, Generator.getType(objective), name, Generator.getSignature(value));
-										break;
-									}
-									case 2:
-									{
-										cw.addInstruction(Opcodes.ALOAD_1)
-											.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(objective));
-										Generator.load(parameters[1], cw, 2);
-										cw.addFieldInstruction(Opcodes.GETFIELD, Generator.getType(objective), name, Generator.getSignature(value));
-										break;
-									}
-									default:
-									{
-										throw new IllegalArgumentException("Wrong argument list of method" + method);
-									}
-								}
-								cw.addInstruction(Opcodes.RETURN)
-									.setMaxs(Generator.parameterSize(parameters), 1 + Generator.parameterSize(parameters));
-
-								break;
-							}
-							default:
-							{
-								throw new IllegalArgumentException("Argument 'kind' must be ReflectionFactory.KIND_GET or ReflectionFactory.KIND_PUT");
-							}
-						}
+						generator.generate(writer);
 
 						break;
 					}
@@ -163,31 +93,32 @@ public class MagicAccessFactory
 						Class<?> objective = access.objective();
 						Class<?>[] type = access.type();
 
-						cw.addTypeInstruction(Opcodes.NEW, Generator.getType(objective))
-							.addInstruction(Opcodes.DUP);
-
-						int local = 1;
-						for (Class<?> parameter : parameters)
+						DynamicBindConstructGenerator generator;
+						if (Generator.isVMAnonymousClass(objective))
 						{
-							Generator.load(parameter, cw, local);
-							local += Generator.typeSize(parameter);
+							generator = new NativeDynamicBindConstructGenerator(objective, new MethodKind(method.getName(), method.getReturnType(), method.getParameterTypes()), new MethodKind("<init>", void.class, type));
 						}
-						cw.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(objective), "<init>", MethodType.methodType(void.class, type).toMethodDescriptorString(), false)
-							.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(returnType))
-							.addInstruction(Opcodes.ARETURN)
-							.setMaxs(local + 1, local);
+						else
+						{
+							generator = new MagicDynamicBindConstructGenerator(objective, new MethodKind(method.getName(), method.getReturnType(), method.getParameterTypes()), new MethodKind("<init>", void.class, type));
+						}
+						generator.generate(writer);
 
 					}
 					case MagicAccess.INSTANTIATE:
 					{
 						Class<?> objective = access.objective();
 
-						cw.addTypeInstruction(Opcodes.NEW, Generator.getType(objective))
-							.addInstruction(Opcodes.ARETURN);
-					}
-					default:
-					{
-						throw new IllegalArgumentException("Argument 'access' must be MagicAccess.METHOD, MagicAccess.FIELD MagicAccess.CONSTRUCT or MagicAccess.INSTANTIATE");
+						DynamicBindInstantiationGenerator generator;
+						if (Generator.isVMAnonymousClass(objective))
+						{
+							generator = new NativeDynamicBindInstantiationGenerator(objective, new MethodKind(method.getName(), method.getReturnType(), method.getParameterTypes()));
+						}
+						else
+						{
+							generator = new MagicDynamicBindInstantiationGenerator(objective, new MethodKind(method.getName(), method.getReturnType(), method.getParameterTypes()));
+						}
+						generator.generate(writer);
 					}
 				}
 
