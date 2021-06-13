@@ -75,7 +75,7 @@ public class ReflectionFactory
 
 	private static final String[] CONSTANT_POOL = new String[4];
 	private static final Map<Field, FieldAccessor<?>> GENERATED_FIELD_ACCESSOR = new ConcurrentHashMap<>();
-	private static final Map<Method, MethodAccessor<?>> GENERATED_METHOD_ACCESSOR = new ConcurrentHashMap<>();
+	private static final Map<String, MethodAccessor<?>> GENERATED_METHOD_ACCESSOR = new ConcurrentHashMap<>();
 	private static final Map<Constructor<?>, ConstructorAccessor<?>> GENERATED_CONSTRUCTOR_ACCESSOR = new ConcurrentHashMap<>();
 	private static final Map<Class<?>, ReflectionAccessor<?>> GENERATED_ALLOCATOR = new ConcurrentHashMap<>();
 	private static final Map<Class<?>, EnumHelper<?>> GENERATED_ENUM_HELPER = new ConcurrentHashMap<>();
@@ -198,7 +198,15 @@ public class ReflectionFactory
 
 	private static <T> MethodAccessor<T> generic(Method target, int kind)
 	{
-		MethodAccessor<T> generated = (MethodAccessor<T>) GENERATED_METHOD_ACCESSOR.get(target);
+		String handle = Generator.getType(target.getDeclaringClass()) +
+			"." +
+			target.getName() +
+			":" +
+			MethodType.methodType(target.getReturnType(), target.getParameterTypes()).toMethodDescriptorString() +
+			"-" +
+			Generator.kind(kind);
+
+		MethodAccessor<T> generated = (MethodAccessor<T>) GENERATED_METHOD_ACCESSOR.get(handle);
 		if (generated != null)
 		{
 			return generated;
@@ -222,7 +230,7 @@ public class ReflectionFactory
 		generator.postgenerate(c);
 
 		generated = (MethodAccessor<T>) UNSAFE.allocateInstance(c);
-		GENERATED_METHOD_ACCESSOR.put(target, generated);
+		GENERATED_METHOD_ACCESSOR.put(handle, generated);
 
 		return generated;
 	}
