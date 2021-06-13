@@ -258,6 +258,41 @@ public abstract class Generator
 		return false;
 	}
 
+	public static String kind(int kind)
+	{
+		switch (kind)
+		{
+			case ReflectionFactory.KIND_INVOKE_VIRTUAL:
+			{
+				return "VIRTUAL";
+			}
+			case ReflectionFactory.KIND_INVOKE_SPECIAL:
+			{
+				return "SPECIAL";
+			}
+			case ReflectionFactory.KIND_INVOKE_STATIC:
+			{
+				return "STATIC";
+			}
+			case ReflectionFactory.KIND_INVOKE_INTERFACE:
+			{
+				return "INTERFACE";
+			}
+			case ReflectionFactory.KIND_GET:
+			{
+				return "GET";
+			}
+			case ReflectionFactory.KIND_PUT:
+			{
+				return "PUT";
+			}
+			default:
+			{
+				return null;
+			}
+		}
+	}
+
 	static
 	{
 		Unsafe unsafe = ReflectionFactory.UNSAFE;
