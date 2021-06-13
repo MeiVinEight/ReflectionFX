@@ -5,9 +5,11 @@ import org.mve.asm.FieldWriter;
 import org.mve.asm.Marker;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
+import org.mve.asm.Type;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.SignatureWriter;
 import org.mve.asm.attribute.SourceWriter;
+import org.mve.asm.attribute.StackMapTableWriter;
 import org.mve.asm.file.AccessFlag;
 import org.mve.invoke.MagicAccessor;
 import org.mve.invoke.ReflectionFactory;
@@ -35,6 +37,8 @@ public class MagicAccessorBuilder
 		cw.addAttribute(new SourceWriter("MagicAccessor.java"));
 		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "0", Generator.getSignature(SecurityManager.class)));
 		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", "I"));
+		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "2", Generator.getSignature(long.class)));
+		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "3", Generator.getSignature(long.class)));
 
 		/*
 		 * <clinit>
@@ -62,6 +66,21 @@ public class MagicAccessorBuilder
 					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "sun/management/VMManagementImpl", "getProcessId", MethodType.methodType(int.class).toMethodDescriptorString(), false);
 			}
 			code.addFieldInstruction(Opcodes.PUTSTATIC, className, "1", "I");
+
+			code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
+				.addConstantInstruction(new Type(Method.class))
+				.addConstantInstruction("name")
+				.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getDeclaredField", MethodType.methodType(Field.class, String.class).toMethodDescriptorString(), false)
+				.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "objectFieldOffset", MethodType.methodType(long.class, Field.class).toMethodDescriptorString(), true)
+				.addFieldInstruction(Opcodes.PUTSTATIC, className, "2", Generator.getSignature(long.class));
+
+			code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
+				.addConstantInstruction(new Type(Field.class))
+				.addConstantInstruction("name")
+				.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getDeclaredField", MethodType.methodType(Field.class, String.class).toMethodDescriptorString(), false)
+				.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "objectFieldOffset", MethodType.methodType(long.class, Field.class).toMethodDescriptorString(), true)
+				.addFieldInstruction(Opcodes.PUTSTATIC, className, "3", Generator.getSignature(long.class));
+
 			code.addInstruction(Opcodes.RETURN);
 			code.setMaxs(2, 0);
 		}
@@ -553,13 +572,44 @@ public class MagicAccessorBuilder
 		 * String getName(Member member);
 		 */
 		{
+			Marker m1 = new Marker();
+			Marker m2 = new Marker();
+			Marker m3 = new Marker();
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "getName", MethodType.methodType(String.class, Member.class).toMethodDescriptorString())
 				.addAttribute(new CodeWriter()
 					.addInstruction(Opcodes.ALOAD_1)
+					.addTypeInstruction(Opcodes.INSTANCEOF, Generator.getType(Method.class))
+					.addJumpInstruction(Opcodes.IFNE, m1)
+					.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
+					.addInstruction(Opcodes.ALOAD_1)
+					.addFieldInstruction(Opcodes.GETSTATIC, className, "2", Generator.getSignature(long.class))
+					.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "getObject", MethodType.methodType(Object.class, Object.class, long.class).toMethodDescriptorString(), false)
+					.addInstruction(Opcodes.ARETURN)
+					.mark(m1)
+					.addInstruction(Opcodes.ALOAD_1)
+					.addTypeInstruction(Opcodes.INSTANCEOF, Generator.getType(Field.class))
+					.addJumpInstruction(Opcodes.IFNE, m2)
+					.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
+					.addInstruction(Opcodes.ALOAD_1)
+					.addFieldInstruction(Opcodes.GETSTATIC, className, "3", Generator.getSignature(long.class))
+					.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "getObject", MethodType.methodType(Object.class, Object.class, long.class).toMethodDescriptorString(), false)
+					.addInstruction(Opcodes.ARETURN)
+					.mark(m2)
+					.addInstruction(Opcodes.ALOAD_1)
+					.addTypeInstruction(Opcodes.INSTANCEOF, Generator.getType(Constructor.class))
+					.addJumpInstruction(Opcodes.IFNE, m3)
+					.addConstantInstruction("<init>")
+					.addInstruction(Opcodes.ARETURN)
+					.mark(m3)
 					.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Member.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), true)
 					.addInstruction(Opcodes.ARETURN)
-					.setMaxs(1, 2)
+					.setMaxs(4, 2)
+				)
+				.addAttribute(new StackMapTableWriter()
+					.sameFrame(m1)
+					.sameFrame(m2)
+					.sameFrame(m3)
 				);
 			cw.addMethod(mw);
 		}
