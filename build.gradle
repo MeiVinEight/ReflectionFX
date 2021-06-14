@@ -1,4 +1,104 @@
+import java.util.function.Function
+import java.util.jar.JarOutputStream
+import java.util.zip.ZipEntry
+
 apply plugin: 'java'
 
 group 'org.mve'
 version '1.9.0'
+
+jar
+{
+	doLast
+	{
+		JarOutputStream jarout = new JarOutputStream(new FileOutputStream("build\\libs\\ReflectionFX-sources-"+project.version+".jar"));
+		TreeNode<File> tree = new TreeNode<>(null, "");
+		File f = new File("src\\main\\java");
+		create(jarout, f, tree);
+		jarout.close()
+	}
+}
+
+public static void create(JarOutputStream out, File file, TreeNode<File> node) throws IOException
+{
+	String entryName = file.getName() + (file.isDirectory() ? "/" : "");
+	boolean created = node.find(entryName) == null;
+	if (created)
+	{
+		TreeNode<File> now = node.create(entryName);
+		now.value = file.getAbsoluteFile();
+		StringBuilder builder = new StringBuilder();
+		TreeNode<File> n = now;
+		while (n != null)
+		{
+			builder.insert(0, n.name);
+			n = n.parent;
+		}
+		ZipEntry entry = new ZipEntry(builder.toString());
+		out.putNextEntry(entry);
+	}
+	if (file.isDirectory())
+	{
+		File[] fs = file.listFiles();
+		if (fs != null)
+		{
+			for (File f : fs)
+			{
+				create(out, f, node.find(entryName));
+			}
+		}
+	}
+	else
+	{
+		System.out.println(file.getAbsolutePath());
+		if (created)
+		{
+			FileInputStream fin = new FileInputStream(file);
+			byte[] b = new byte[1024];
+			int len = 0;
+			while ((len = fin.read(b)) > 0)
+			{
+				out.write(b, 0, len);
+			}
+			out.flush();
+			fin.close();
+		}
+	}
+	out.closeEntry();
+}
+
+public class TreeNode<T> implements Function<String, TreeNode<String>>
+{
+	private final Map<String, TreeNode<T>> nodes = new HashMap<>();
+	public final TreeNode<T> parent;
+	public final String name;
+	public T value;
+
+	public TreeNode(TreeNode<T> parent, String name)
+	{
+		this.parent = parent;
+		this.name = name;
+	}
+
+	public TreeNode<T> create(String name)
+	{
+		return this.nodes.computeIfAbsent(name, this);
+	}
+
+	public TreeNode<T> find(String name)
+	{
+		return this.nodes.get(name);
+	}
+
+	public TreeNode<String> build(String s)
+	{
+		return new TreeNode<String>(this, s);
+	}
+
+	@Override
+	public TreeNode<String> apply(String s)
+	{
+		return new TreeNode<String>(this, s);
+	}
+}
+
