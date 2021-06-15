@@ -628,12 +628,50 @@ public class MagicAccessorBuilder
 		 * int getPID();
 		 */
 		{
+			int pid;
+
+			{
+				MethodHandles.Lookup lookup = ReflectionFactory.TRUSTED_LOOKUP;
+				try
+				{
+					Class.forName("java.lang.J9VMInternals");
+					openJ9VM = true;
+				}
+				catch (Throwable t)
+				{
+					openJ9VM = false;
+				}
+
+				if (openJ9VM)
+				{
+					pid = (int) (long) lookup.findVirtual(
+						Class.forName("com.ibm.lang.management.internal.ExtendedRuntimeMXBeanImpl"),
+						"getProcessIDImpl",
+						MethodType.methodType(long.class)
+					).invoke(ManagementFactory.getRuntimeMXBean());
+				}
+				else
+				{
+					pid = (int) lookup.findVirtual(
+						Class.forName("sun.management.VMManagementImpl"),
+						"getProcessId",
+						MethodType.methodType(int.class)
+					).invoke(
+						lookup.findGetter(
+							Class.forName("sun.management.RuntimeImpl"),
+							"jvm",
+							Class.forName("sun.management.VMManagement")
+						).invoke(ManagementFactory.getRuntimeMXBean())
+					);
+				}
+			}
+
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "getPID", MethodType.methodType(int.class).toMethodDescriptorString())
 				.addAttribute(new CodeWriter()
-					.addFieldInstruction(Opcodes.GETSTATIC, className, "1", "I")
-					.addInstruction(Opcodes.IRETURN)
-					.setMaxs(1, 1)
+					.constant(pid)
+					.instruction(Opcodes.IRETURN)
+					.max(1, 1)
 				);
 			cw.addMethod(mw);
 		}
