@@ -237,7 +237,7 @@ public class PolymorphismFactory<T>
 			cw.addMethod(method = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
 				.addAttribute(code = new CodeWriter()
-					.addFieldInstruction(Opcodes.GETSTATIC, cw.getName(), name, Generator.getSignature(accessor))
+					.field(Opcodes.GETSTATIC, cw.getName(), name, Generator.getSignature(accessor))
 				)
 			);
 			Class<?>[] parameters = implementation.type().parameterArray();
@@ -247,9 +247,9 @@ public class PolymorphismFactory<T>
 				Generator.load(param, code, local);
 				local += Generator.typeSize(param);
 			}
-			code.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(accessor), invoke, implementation.type().toMethodDescriptorString(), true);
+			code.method(Opcodes.INVOKEINTERFACE, Generator.getType(accessor), invoke, implementation.type().toMethodDescriptorString(), true);
 			Generator.returner(implementation.type().returnType(), code);
-			code.setMaxs(local, local);
+			code.max(local, local);
 			Generator.inline(method);
 		}
 

@@ -10,7 +10,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	private static final int DEFAULT_EXPANSION_SIZE = 1 << 8;
 
 	private final int expansionSize;
-	private byte[] arr;
+	private byte[] array;
 	private int length;
 	private int pointer;
 
@@ -32,8 +32,8 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	public RandomAccessByteArray(byte[] b, int expansionSize)
 	{
 		this.expansionSize = expansionSize;
-		this.arr = b.clone();
-		this.length = arr.length;
+		this.array = b.clone();
+		this.length = array.length;
 		this.pointer = 0;
 	}
 
@@ -47,7 +47,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	public void readFully(byte[] b, int off, int len)
 	{
 		if (this.pointer + len > this.length || off + len > b.length || off < 0 || len < 0) throw new IndexOutOfBoundsException();
-		System.arraycopy(this.arr, this.pointer, b, off, len);
+		System.arraycopy(this.array, this.pointer, b, off, len);
 		this.pointer += len;
 	}
 
@@ -67,7 +67,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	public byte readByte()
 	{
 		this.ensureAvailable(1);
-		return this.arr[this.pointer++];
+		return this.array[this.pointer++];
 	}
 
 	@Override
@@ -257,7 +257,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	public void write(int b)
 	{
 		this.ensureCapacity(this.pointer + 1);
-		this.arr[pointer++] = (byte) (b & 0XFF);
+		this.array[pointer++] = (byte) (b & 0XFF);
 	}
 
 	@Override
@@ -271,14 +271,14 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	{
 		if (off + len > b.length || off < 0 || len < 0) throw new ArrayIndexOutOfBoundsException();
 		this.ensureCapacity(this.pointer + len);
-		System.arraycopy(b, off, this.arr, this.pointer, len);
+		System.arraycopy(b, off, this.array, this.pointer, len);
 		this.pointer += len;
 	}
 
 	@Override
 	public int read()
 	{
-		return this.length > this.pointer ? this.arr[this.pointer++] & 0XFF : -1;
+		return this.length > this.pointer ? this.array[this.pointer++] & 0XFF : -1;
 	}
 
 	@Override
@@ -292,7 +292,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	{
 		if (off + len > b.length || off < 0 || len < 0) throw new ArrayIndexOutOfBoundsException();
 		int readLength = Math.min(len, this.length - this.pointer);
-		System.arraycopy(this.arr, this.pointer, b, off, readLength);
+		System.arraycopy(this.array, this.pointer, b, off, readLength);
 		pointer+=readLength;
 		return readLength;
 	}
@@ -301,14 +301,14 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	public void writeBoolean(boolean v)
 	{
 		this.ensureCapacity(this.pointer + 1);
-		this.arr[this.pointer++] = (byte) (v ? 1 : 0);
+		this.array[this.pointer++] = (byte) (v ? 1 : 0);
 	}
 
 	@Override
 	public void writeByte(int v)
 	{
 		this.ensureCapacity(this.pointer + 1);
-		this.arr[this.pointer++] = (byte) v;
+		this.array[this.pointer++] = (byte) v;
 	}
 
 	@Override
@@ -424,7 +424,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	public void insert(int i)
 	{
 		this.shiftRight(this.pointer, 1);
-		this.arr[this.pointer++] = (byte) (i & 0XFF);
+		this.array[this.pointer++] = (byte) (i & 0XFF);
 	}
 
 	@Override
@@ -438,7 +438,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	{
 		if (off + len > b.length || off < 0 || len < 0) throw new ArrayIndexOutOfBoundsException();
 		this.shiftRight(this.pointer, len);
-		System.arraycopy(b, off, this.arr, this.pointer, len);
+		System.arraycopy(b, off, this.array, this.pointer, len);
 		this.pointer += len;
 	}
 
@@ -522,7 +522,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	@Override
 	public int delete()
 	{
-		int b = this.arr[this.pointer] & 0XFF;
+		int b = this.array[this.pointer] & 0XFF;
 		this.shiftLeft(this.pointer+1, 1);
 		return b;
 	}
@@ -538,7 +538,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	{
 		if (off + len > b.length || off < 0 || len < 0) throw new ArrayIndexOutOfBoundsException();
 		int deletedSize = Math.min(this.length - this.pointer, len);
-		System.arraycopy(this.arr, this.pointer, b, off, deletedSize);
+		System.arraycopy(this.array, this.pointer, b, off, deletedSize);
 		this.shiftLeft(this.pointer + len, len);
 		return deletedSize;
 	}
@@ -556,7 +556,7 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	}
 
 	@Override
-	public int offset()
+	public int position()
 	{
 		return this.pointer;
 	}
@@ -564,25 +564,33 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 	@Override
 	public byte[] toByteArray()
 	{
-		return Arrays.copyOf(this.arr, this.length);
+		return Arrays.copyOf(this.array, this.length);
 	}
 
-	private void shiftRight(int start, int off)
+	private void shiftRight(int start, int length)
 	{
 		int dataSize = this.length - start;
-		this.ensureCapacity(this.length + off);
-		for (int i = dataSize-1; i > -1; i--) this.arr[start + i + off] = this.arr[start + i];
+		this.ensureCapacity(this.length + length);
+		for (int i = dataSize-1; i > -1; i--) this.array[start + length + i] = this.array[start + i];
 	}
 
-	private void shiftLeft(int start, int off)
+	private void shiftLeft(int start, int length)
 	{
 		int dataSize = this.length - start;
-		for (int i=0; i<dataSize; i++) this.arr[start + i] = this.arr[start + i + off];
+		if (dataSize >= 0)
+		{
+			System.arraycopy(this.array, start, this.array, start - length, dataSize);
+			this.length -= length;
+		}
+		else
+		{
+			throw new ArrayIndexOutOfBoundsException(start);
+		}
 	}
 
 	private void ensureCapacity(int minCapacity)
 	{
-		if (minCapacity > this.arr.length)
+		if (minCapacity > this.array.length)
 		{
 			expand(minCapacity);
 		}
@@ -591,10 +599,10 @@ public class RandomAccessByteArray implements ByteArrayAccessor, DataInput, Data
 
 	private void expand(int minCapacity)
 	{
-		int oldSize = this.arr.length;
+		int oldSize = this.array.length;
 		int expSize = minCapacity - oldSize;
 		int newSize = Math.max(expSize, this.expansionSize);
-		this.arr = Arrays.copyOf(this.arr, newSize);
+		this.array = Arrays.copyOf(this.array, newSize);
 	}
 
 	private void ensureAvailable(int len)

@@ -1,20 +1,20 @@
 package org.mve.asm.attribute;
 
 import org.mve.asm.ConstantPoolFinder;
-import org.mve.asm.Marker;
+import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.file.Attribute;
 import org.mve.asm.file.AttributeStackMapTable;
 import org.mve.asm.file.AttributeType;
 import org.mve.asm.file.ConstantPool;
-import org.mve.asm.stack.AppendFrame;
-import org.mve.asm.stack.ChopFrame;
-import org.mve.asm.stack.FullFrame;
-import org.mve.asm.stack.SameFrame;
-import org.mve.asm.stack.SameFrameExtended;
-import org.mve.asm.stack.SameLocals1StackItemFrame;
-import org.mve.asm.stack.SameLocals1StackItemFrameExtended;
-import org.mve.asm.stack.StackMapFrame;
-import org.mve.asm.stack.verification.Verification;
+import org.mve.asm.attribute.code.stack.AppendFrame;
+import org.mve.asm.attribute.code.stack.ChopFrame;
+import org.mve.asm.attribute.code.stack.FullFrame;
+import org.mve.asm.attribute.code.stack.SameFrame;
+import org.mve.asm.attribute.code.stack.SameFrameExtended;
+import org.mve.asm.attribute.code.stack.SameLocals1StackItemFrame;
+import org.mve.asm.attribute.code.stack.SameLocals1StackItemFrameExtended;
+import org.mve.asm.attribute.code.stack.StackMapFrame;
+import org.mve.asm.attribute.code.stack.verification.Verification;
 
 import java.util.Arrays;
 

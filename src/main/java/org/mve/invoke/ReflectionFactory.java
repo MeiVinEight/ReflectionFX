@@ -50,7 +50,7 @@ public class ReflectionFactory
 
 	/**
 	 * The root lookup in jdk
-	 * It can find any element regardless of access rights
+	 * It can find any instruction regardless of access rights
 	 */
 	public static final MethodHandles.Lookup TRUSTED_LOOKUP;
 
@@ -124,12 +124,12 @@ public class ReflectionFactory
 			.addMethod(new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
 				.addAttribute(new CodeWriter()
-					.addInstruction(Opcodes.ALOAD_1)
-					.addInstruction(Opcodes.ICONST_0)
-					.addInstruction(Opcodes.AALOAD)
-					.addTypeInstruction(Opcodes.CHECKCAST, "java/lang/Throwable")
-					.addInstruction(Opcodes.ATHROW)
-					.setMaxs(2, 2)
+					.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ICONST_0)
+					.instruction(Opcodes.AALOAD)
+					.type(Opcodes.CHECKCAST, "java/lang/Throwable")
+					.instruction(Opcodes.ATHROW)
+					.max(2, 2)
 				)
 			);
 		return (ReflectionAccessor<Void>) UNSAFE.allocateInstance(defineAnonymous(ReflectionFactory.class, cw));
@@ -147,22 +147,22 @@ public class ReflectionFactory
 			.addMethod(new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "<init>", "(Ljava/lang/Object;)V")
 				.addAttribute(new CodeWriter()
-					.addInstruction(Opcodes.ALOAD_0)
-					.addInstruction(Opcodes.DUP)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
-					.addInstruction(Opcodes.ALOAD_1)
-					.addFieldInstruction(Opcodes.PUTFIELD, className, "0", "Ljava/lang/Object;")
-					.addInstruction(Opcodes.RETURN)
-					.setMaxs(2, 2)
+					.instruction(Opcodes.ALOAD_0)
+					.instruction(Opcodes.DUP)
+					.method(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
+					.instruction(Opcodes.ALOAD_1)
+					.field(Opcodes.PUTFIELD, className, "0", "Ljava/lang/Object;")
+					.instruction(Opcodes.RETURN)
+					.max(2, 2)
 				)
 			)
 			.addMethod(new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "invoke", "()Ljava/lang/Object;")
 				.addAttribute(new CodeWriter()
-					.addInstruction(Opcodes.ALOAD_0)
-					.addFieldInstruction(Opcodes.GETFIELD, className, "0", "Ljava/lang/Object;")
-					.addInstruction(Opcodes.ARETURN)
-					.setMaxs(1, 2)
+					.instruction(Opcodes.ALOAD_0)
+					.field(Opcodes.GETFIELD, className, "0", "Ljava/lang/Object;")
+					.instruction(Opcodes.ARETURN)
+					.max(1, 2)
 				)
 			);
 		return ACCESSOR.construct(defineAnonymous(ReflectionFactory.class, cw), new Class[]{Object.class}, new Object[]{value});
@@ -395,10 +395,10 @@ public class ReflectionFactory
 						.addMethod(new MethodWriter()
 							.set(AccessFlag.ACC_PUBLIC, "<init>", "()V")
 							.addAttribute(new CodeWriter()
-								.addInstruction(Opcodes.ALOAD_0)
-								.addMethodInstruction(Opcodes.INVOKESPECIAL, mai, "<init>", "()V", false)
-								.addInstruction(Opcodes.RETURN)
-								.setMaxs(1, 1)
+								.instruction(Opcodes.ALOAD_0)
+								.method(Opcodes.INVOKESPECIAL, mai, "<init>", "()V", false)
+								.instruction(Opcodes.RETURN)
+								.max(1, 1)
 							)
 						)
 						.toByteArray();
@@ -426,10 +426,10 @@ public class ReflectionFactory
 						cw.addMethod(new MethodWriter()
 							.set(AccessFlag.ACC_PUBLIC, "<init>", "()V")
 							.addAttribute(new CodeWriter()
-								.addInstruction(Opcodes.ALOAD_0)
-								.addMethodInstruction(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
-								.addInstruction(Opcodes.RETURN)
-								.setMaxs(1, 1)
+								.instruction(Opcodes.ALOAD_0)
+								.method(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
+								.instruction(Opcodes.RETURN)
+								.max(1, 1)
 							)
 						);
 					}
@@ -440,18 +440,18 @@ public class ReflectionFactory
 						cw.addMethod(new MethodWriter()
 							.set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
 							.addAttribute(new CodeWriter()
-								.addInstruction(Opcodes.ALOAD_1)
-								.addInstruction(Opcodes.ICONST_0)
-								.addInstruction(Opcodes.AALOAD)
-								.addTypeInstruction(Opcodes.CHECKCAST, "java/lang/invoke/MethodHandle")
-								.addInstruction(Opcodes.ALOAD_1)
-								.addInstruction(Opcodes.ICONST_1)
-								.addInstruction(Opcodes.ALOAD_1)
-								.addInstruction(Opcodes.ARRAYLENGTH)
-								.addMethodInstruction(Opcodes.INVOKESTATIC, "java/util/Arrays", "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false)
-								.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false)
-								.addInstruction(Opcodes.ARETURN)
-								.setMaxs(4, 2)
+								.instruction(Opcodes.ALOAD_1)
+								.instruction(Opcodes.ICONST_0)
+								.instruction(Opcodes.AALOAD)
+								.type(Opcodes.CHECKCAST, "java/lang/invoke/MethodHandle")
+								.instruction(Opcodes.ALOAD_1)
+								.instruction(Opcodes.ICONST_1)
+								.instruction(Opcodes.ALOAD_1)
+								.instruction(Opcodes.ARRAYLENGTH)
+								.method(Opcodes.INVOKESTATIC, "java/util/Arrays", "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false)
+								.method(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false)
+								.instruction(Opcodes.ARETURN)
+								.max(4, 2)
 							)
 						);
 					}
@@ -492,6 +492,10 @@ public class ReflectionFactory
 				catch (Throwable t)
 				{
 					byte[] code = MagicAccessorBuilder.build(CONSTANT_POOL, majorVersion, openJ9VM).toByteArray();
+					FileOutputStream out = new FileOutputStream("MagicAccessor.class");
+					out.write(code);
+					out.flush();
+					out.close();
 					c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 				}
 				ACCESSOR = (MagicAccessor) UNSAFE.allocateInstance(c);

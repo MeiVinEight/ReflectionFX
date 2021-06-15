@@ -31,29 +31,29 @@ public class MagicDynamicBindMethodGenerator extends DynamicBindMethodGenerator
 		Class<?>[] params = implementation.type().parameterArray();
 		for (Class<?> c : params)
 		{
-			if (Generator.integer(c)) code.addLocalVariableInstruction(Opcodes.ILOAD, local);
-			else if (c == long.class) code.addLocalVariableInstruction(Opcodes.LLOAD, local);
-			else if (c == float.class) code.addLocalVariableInstruction(Opcodes.FLOAD, local);
-			else if (c == double.class) code.addLocalVariableInstruction(Opcodes.DLOAD, local);
-			else code.addLocalVariableInstruction(Opcodes.ALOAD, local);
+			if (Generator.integer(c)) code.localVariable(Opcodes.ILOAD, local);
+			else if (c == long.class) code.localVariable(Opcodes.LLOAD, local);
+			else if (c == float.class) code.localVariable(Opcodes.FLOAD, local);
+			else if (c == double.class) code.localVariable(Opcodes.DLOAD, local);
+			else code.localVariable(Opcodes.ALOAD, local);
 			local += Generator.typeSize(c);
 		}
-		code.addMethodInstruction(0xB6 + kind, Generator.getType(target), invocation.name(), invocation.type().toMethodDescriptorString(), kind == ReflectionFactory.KIND_INVOKE_INTERFACE);
+		code.method(0xB6 + kind, Generator.getType(target), invocation.name(), invocation.type().toMethodDescriptorString(), kind == ReflectionFactory.KIND_INVOKE_INTERFACE);
 		Class<?> c = implementation.type().returnType();
 		if (c == void.class)
 		{
 			if (invocation.type().returnType() != void.class)
 			{
-				if (Generator.typeSize(invocation.type().returnType()) == 2) code.addInstruction(Opcodes.POP2);
-				else code.addInstruction(Opcodes.POP);
+				if (Generator.typeSize(invocation.type().returnType()) == 2) code.instruction(Opcodes.POP2);
+				else code.instruction(Opcodes.POP);
 			}
-			code.addInstruction(Opcodes.RETURN);
+			code.instruction(Opcodes.RETURN);
 		}
-		else if (Generator.integer(c)) code.addInstruction(Opcodes.IRETURN);
-		else if (c == long.class) code.addInstruction(Opcodes.LRETURN);
-		else if (c == float.class) code.addInstruction(Opcodes.FRETURN);
-		else if (c == double.class) code.addInstruction(Opcodes.DRETURN);
-		else code.addInstruction(Opcodes.ARETURN);
-		code.setMaxs(Math.max(Generator.typeSize(invocation.type().returnType()), local-1), local);
+		else if (Generator.integer(c)) code.instruction(Opcodes.IRETURN);
+		else if (c == long.class) code.instruction(Opcodes.LRETURN);
+		else if (c == float.class) code.instruction(Opcodes.FRETURN);
+		else if (c == double.class) code.instruction(Opcodes.DRETURN);
+		else code.instruction(Opcodes.ARETURN);
+		code.max(Math.max(Generator.typeSize(invocation.type().returnType()), local-1), local);
 	}
 }

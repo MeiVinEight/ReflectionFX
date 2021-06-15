@@ -52,7 +52,7 @@ public interface ByteArrayAccessor
 
 	int length();
 
-	int offset();
+	int position();
 
 	byte[] toByteArray();
 }

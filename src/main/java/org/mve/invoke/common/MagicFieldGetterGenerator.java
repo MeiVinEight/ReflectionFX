@@ -26,14 +26,14 @@ public class MagicFieldGetterGenerator extends FieldGetterGenerator
 		method.addAttribute(code);
 		if (statics)
 		{
-			code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.getSignature(field.getType()))
-				.setMaxs(Generator.typeSize(field.getType()), 1);
+			code.field(Opcodes.GETSTATIC, Generator.getType(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.getSignature(field.getType()))
+				.max(Generator.typeSize(field.getType()), 1);
 		}
 		else
 		{
-			code.addInstruction(Opcodes.ALOAD_1)
-				.addFieldInstruction(Opcodes.GETFIELD, Generator.getType(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.getSignature(field.getType()))
-				.setMaxs(Generator.typeSize(field.getType()), 2);
+			code.instruction(Opcodes.ALOAD_1)
+				.field(Opcodes.GETFIELD, Generator.getType(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.getSignature(field.getType()))
+				.max(Generator.typeSize(field.getType()), 2);
 		}
 		Generator.returner(field.getType(), code);
 	}

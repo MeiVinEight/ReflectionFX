@@ -30,10 +30,10 @@ public abstract class MethodAccessorGenerator extends AccessibleObjectAccessorGe
 		bytecode.addMethod(new MethodWriter()
 			.set(AccessFlag.ACC_PUBLIC, "getMethod", MethodType.methodType(Method.class).toMethodDescriptorString())
 			.addAttribute(new CodeWriter()
-				.addFieldInstruction(Opcodes.GETSTATIC, bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
-				.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(Method.class))
-				.addInstruction(Opcodes.ARETURN)
-				.setMaxs(1, 1)
+				.field(Opcodes.GETSTATIC, bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
+				.type(Opcodes.CHECKCAST, Generator.getType(Method.class))
+				.instruction(Opcodes.ARETURN)
+				.max(1, 1)
 			)
 		);
 	}

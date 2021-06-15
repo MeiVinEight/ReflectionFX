@@ -29,10 +29,10 @@ public abstract class ConstructorAccessorGenerator extends AccessibleObjectAcces
 		bytecode.addMethod(new MethodWriter()
 			.set(AccessFlag.ACC_PUBLIC, "getConstructor", MethodType.methodType(Constructor.class).toMethodDescriptorString())
 			.addAttribute(new CodeWriter()
-				.addFieldInstruction(Opcodes.GETSTATIC, bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
-				.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(Constructor.class))
-				.addInstruction(Opcodes.ARETURN)
-				.setMaxs(1, 1)
+				.field(Opcodes.GETSTATIC, bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
+				.type(Opcodes.CHECKCAST, Generator.getType(Constructor.class))
+				.instruction(Opcodes.ARETURN)
+				.max(1, 1)
 			)
 		);
 	}

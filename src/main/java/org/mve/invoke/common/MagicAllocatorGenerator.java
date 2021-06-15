@@ -25,9 +25,9 @@ public class MagicAllocatorGenerator extends AllocatorGenerator
 		MethodWriter mw = new MethodWriter()
 			.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString())
 			.addAttribute(new CodeWriter()
-				.addTypeInstruction(Opcodes.NEW, Generator.getType(this.target))
-				.addInstruction(Opcodes.ARETURN)
-				.setMaxs(1, 2)
+				.type(Opcodes.NEW, Generator.getType(this.target))
+				.instruction(Opcodes.ARETURN)
+				.max(1, 2)
 			);
 		Generator.inline(mw);
 		this.bytecode.addMethod(mw);
@@ -35,9 +35,9 @@ public class MagicAllocatorGenerator extends AllocatorGenerator
 		mw = new MethodWriter()
 		.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString())
 		.addAttribute(new CodeWriter()
-			.addTypeInstruction(Opcodes.NEW, Generator.getType(this.target))
-			.addInstruction(Opcodes.ARETURN)
-			.setMaxs(1, 1)
+			.type(Opcodes.NEW, Generator.getType(this.target))
+			.instruction(Opcodes.ARETURN)
+			.max(1, 1)
 		);
 		Generator.inline(mw);
 		this.bytecode.addMethod(mw);

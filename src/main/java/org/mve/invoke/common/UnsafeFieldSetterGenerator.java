@@ -51,20 +51,20 @@ public class UnsafeFieldSetterGenerator extends FieldSetterGenerator
 			load = Opcodes.ALOAD_1;
 		}
 
-		code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class));
+		code.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class));
 		if (statics)
 		{
-			code.addFieldInstruction(Opcodes.GETSTATIC, classWriter.getName(), "0", Generator.getSignature(Class.class));
+			code.field(Opcodes.GETSTATIC, classWriter.getName(), "0", Generator.getSignature(Class.class));
 		}
 		else
 		{
-			code.addInstruction(Opcodes.ALOAD_1);
+			code.instruction(Opcodes.ALOAD_1);
 			load++;
 		}
-		code.addConstantInstruction(off)
-			.addInstruction(load);
+		code.constant(off)
+			.instruction(load);
 		Generator.unsafeput(type, code);
-		code.addInstruction(Opcodes.RETURN)
-			.setMaxs(4 + Generator.typeSize(type), (statics ? 1 : 2) + Generator.typeSize(type));
+		code.instruction(Opcodes.RETURN)
+			.max(4 + Generator.typeSize(type), (statics ? 1 : 2) + Generator.typeSize(type));
 	}
 }

@@ -2,7 +2,7 @@ package org.mve.invoke.common;
 
 import org.mve.asm.ClassWriter;
 import org.mve.asm.FieldWriter;
-import org.mve.asm.Marker;
+import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.Type;
@@ -92,9 +92,9 @@ public class MagicAccessorBuilder
 			cw.addMethod(new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "version", "()I")
 				.addAttribute(new CodeWriter()
-					.addNumberInstruction(Opcodes.BIPUSH, vmVersion - 44)
-					.addInstruction(Opcodes.IRETURN)
-					.setMaxs(1, 1)
+					.number(Opcodes.BIPUSH, vmVersion - 44)
+					.instruction(Opcodes.IRETURN)
+					.max(1, 1)
 				)
 			);
 		}
@@ -107,11 +107,11 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addInstruction(Opcodes.ALOAD_1);
-			code.addInstruction(Opcodes.ILOAD_2);
-			code.addFieldInstruction(Opcodes.PUTFIELD, Generator.getType(AccessibleObject.class), "override", Generator.getSignature(boolean.class));
-			code.addInstruction(Opcodes.RETURN);
-			code.setMaxs(2, 3);
+			code.instruction(Opcodes.ALOAD_1);
+			code.instruction(Opcodes.ILOAD_2);
+			code.field(Opcodes.PUTFIELD, Generator.getType(AccessibleObject.class), "override", Generator.getSignature(boolean.class));
+			code.instruction(Opcodes.RETURN);
+			code.max(2, 3);
 		}
 
 		// Class<?> forName(String name);
@@ -122,28 +122,28 @@ public class MagicAccessorBuilder
 			mw.addAttribute(code);
 			if (openJ9VM)
 			{
-				code.addInstruction(Opcodes.ALOAD_1)
-					.addInstruction(Opcodes.ICONST_0)
-					.addInstruction(Opcodes.ALOAD_0)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
-					.addFieldInstruction(Opcodes.GETFIELD, Generator.getType(Class.class), "classLoader", Generator.getSignature(ClassLoader.class))
-					.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(Class.class), "forNameImpl", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ARETURN)
-					.setMaxs(3, 2);
+				code.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ICONST_0)
+					.instruction(Opcodes.ALOAD_0)
+					.method(Opcodes.INVOKESPECIAL, className, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
+					.field(Opcodes.GETFIELD, Generator.getType(Class.class), "classLoader", Generator.getSignature(ClassLoader.class))
+					.method(Opcodes.INVOKESTATIC, Generator.getType(Class.class), "forNameImpl", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ARETURN)
+					.max(3, 2);
 			}
 			else
 			{
-				code.addInstruction(Opcodes.ALOAD_1)
-					.addInstruction(Opcodes.ICONST_0)
-					.addInstruction(Opcodes.ALOAD_0)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.DUP)
-					.addInstruction(Opcodes.ASTORE_2)
-					.addFieldInstruction(Opcodes.GETFIELD, Generator.getType(Class.class), "classLoader", Generator.getSignature(ClassLoader.class))
-					.addInstruction(Opcodes.ALOAD_2)
-					.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(Class.class), "forName0", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ARETURN)
-					.setMaxs(4, 3);
+				code.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ICONST_0)
+					.instruction(Opcodes.ALOAD_0)
+					.method(Opcodes.INVOKESPECIAL, className, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.DUP)
+					.instruction(Opcodes.ASTORE_2)
+					.field(Opcodes.GETFIELD, Generator.getType(Class.class), "classLoader", Generator.getSignature(ClassLoader.class))
+					.instruction(Opcodes.ALOAD_2)
+					.method(Opcodes.INVOKESTATIC, Generator.getType(Class.class), "forName0", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ARETURN)
+					.max(4, 3);
 			}
 		}
 
@@ -155,23 +155,23 @@ public class MagicAccessorBuilder
 			mw.addAttribute(code);
 			if (openJ9VM)
 			{
-				code.addInstruction(Opcodes.ALOAD_1)
-					.addInstruction(Opcodes.ILOAD_2)
-					.addInstruction(Opcodes.ALOAD_3)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), "forNameImpl", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ARETURN)
-					.setMaxs(3, 4);
+				code.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ILOAD_2)
+					.instruction(Opcodes.ALOAD_3)
+					.method(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), "forNameImpl", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ARETURN)
+					.max(3, 4);
 			}
 			else
 			{
-				code.addInstruction(Opcodes.ALOAD_1)
-					.addInstruction(Opcodes.ILOAD_2)
-					.addInstruction(Opcodes.ALOAD_3)
-					.addInstruction(Opcodes.ALOAD_0)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
-					.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(Class.class), "forName0", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ARETURN)
-					.setMaxs(4, 4);
+				code.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ILOAD_2)
+					.instruction(Opcodes.ALOAD_3)
+					.instruction(Opcodes.ALOAD_0)
+					.method(Opcodes.INVOKESPECIAL, className, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
+					.method(Opcodes.INVOKESTATIC, Generator.getType(Class.class), "forName0", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ARETURN)
+					.max(4, 4);
 			}
 		}
 
@@ -180,17 +180,17 @@ public class MagicAccessorBuilder
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "defineClass", MethodType.methodType(Class.class, ClassLoader.class, byte[].class).toMethodDescriptorString())
 				.addAttribute(new CodeWriter()
-					.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-					.addInstruction(Opcodes.ACONST_NULL)
-					.addInstruction(Opcodes.ALOAD_2)
-					.addInstruction(Opcodes.ICONST_0)
-					.addInstruction(Opcodes.ALOAD_2)
-					.addInstruction(Opcodes.ARRAYLENGTH)
-					.addInstruction(Opcodes.ALOAD_1)
-					.addInstruction(Opcodes.ACONST_NULL)
-					.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class).toMethodDescriptorString(), true)
-					.addInstruction(Opcodes.ARETURN)
-					.setMaxs(7, 3)
+					.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
+					.instruction(Opcodes.ACONST_NULL)
+					.instruction(Opcodes.ALOAD_2)
+					.instruction(Opcodes.ICONST_0)
+					.instruction(Opcodes.ALOAD_2)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ACONST_NULL)
+					.method(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class).toMethodDescriptorString(), true)
+					.instruction(Opcodes.ARETURN)
+					.max(7, 3)
 				);
 			cw.addMethod(mw);
 		}
@@ -203,12 +203,12 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addFieldInstruction(Opcodes.GETSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.ICONST_2);
-			code.addInstruction(Opcodes.AALOAD);
-			code.addInstruction(Opcodes.ARETURN);
-			code.setMaxs(2, 1);
+			code.field(Opcodes.GETSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.ICONST_2);
+			code.instruction(Opcodes.AALOAD);
+			code.instruction(Opcodes.ARETURN);
+			code.max(2, 1);
 		}
 
 		/*
@@ -221,16 +221,16 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addFieldInstruction(Opcodes.GETSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.DUP);
-			code.addInstruction(Opcodes.ARRAYLENGTH);
-			code.addInstruction(Opcodes.ICONST_1);
-			code.addInstruction(Opcodes.SWAP);
-			code.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false);
-			code.addTypeInstruction(Opcodes.CHECKCAST, Generator.getType(Class[].class));
-			code.addInstruction(Opcodes.ARETURN);
-			code.setMaxs(3, 1);
+			code.field(Opcodes.GETSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.DUP);
+			code.instruction(Opcodes.ARRAYLENGTH);
+			code.instruction(Opcodes.ICONST_1);
+			code.instruction(Opcodes.SWAP);
+			code.method(Opcodes.INVOKESTATIC, Generator.getType(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false);
+			code.type(Opcodes.CHECKCAST, Generator.getType(Class[].class));
+			code.instruction(Opcodes.ARETURN);
+			code.max(3, 1);
 		}
 
 		/*
@@ -243,18 +243,18 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addInstruction(Opcodes.ALOAD_1);
-			code.addInstruction(Opcodes.ICONST_0);
-			code.addTypeInstruction(Opcodes.ANEWARRAY, Generator.getType(Class.class));
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getDeclaredConstructor", MethodType.methodType(Constructor.class, Class[].class).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.DUP);
-			code.addInstruction(Opcodes.ICONST_1);
-			code.addFieldInstruction(Opcodes.PUTFIELD, Generator.getType(AccessibleObject.class), "override", Generator.getSignature(boolean.class));
-			code.addInstruction(Opcodes.ICONST_0);
-			code.addTypeInstruction(Opcodes.ANEWARRAY, Generator.getType(Object.class));
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Constructor.class), "newInstance", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.ARETURN);
-			code.setMaxs(3, 2);
+			code.instruction(Opcodes.ALOAD_1);
+			code.instruction(Opcodes.ICONST_0);
+			code.type(Opcodes.ANEWARRAY, Generator.getType(Class.class));
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getDeclaredConstructor", MethodType.methodType(Constructor.class, Class[].class).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.DUP);
+			code.instruction(Opcodes.ICONST_1);
+			code.field(Opcodes.PUTFIELD, Generator.getType(AccessibleObject.class), "override", Generator.getSignature(boolean.class));
+			code.instruction(Opcodes.ICONST_0);
+			code.type(Opcodes.ANEWARRAY, Generator.getType(Object.class));
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Constructor.class), "newInstance", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.ARETURN);
+			code.max(3, 2);
 		}
 
 		/*
@@ -265,16 +265,16 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addInstruction(Opcodes.ALOAD_1);
-			code.addInstruction(Opcodes.ALOAD_2);
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getDeclaredConstructor", MethodType.methodType(Constructor.class, Class[].class).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.DUP);
-			code.addInstruction(Opcodes.ICONST_1);
-			code.addFieldInstruction(Opcodes.PUTFIELD, Generator.getType(AccessibleObject.class), "override", Generator.getSignature(boolean.class));
-			code.addInstruction(Opcodes.ALOAD_3);
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Constructor.class), "newInstance", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.ARETURN);
-			code.setMaxs(3, 4);
+			code.instruction(Opcodes.ALOAD_1);
+			code.instruction(Opcodes.ALOAD_2);
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getDeclaredConstructor", MethodType.methodType(Constructor.class, Class[].class).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.DUP);
+			code.instruction(Opcodes.ICONST_1);
+			code.field(Opcodes.PUTFIELD, Generator.getType(AccessibleObject.class), "override", Generator.getSignature(boolean.class));
+			code.instruction(Opcodes.ALOAD_3);
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Constructor.class), "newInstance", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.ARETURN);
+			code.max(3, 4);
 		}
 
 		/*
@@ -285,11 +285,11 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addInstruction(Opcodes.ALOAD_1);
-			code.addInstruction(Opcodes.ALOAD_2);
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.ARETURN);
-			code.setMaxs(2, 3);
+			code.instruction(Opcodes.ALOAD_1);
+			code.instruction(Opcodes.ALOAD_2);
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.ARETURN);
+			code.max(2, 3);
 		}
 
 		/*
@@ -302,50 +302,50 @@ public class MagicAccessorBuilder
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class, Class.class, String.class).toMethodDescriptorString())
 				.addAttribute(new CodeWriter()
-					.addInstruction(Opcodes.ALOAD_0)
-					.addInstruction(Opcodes.ALOAD_1)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ASTORE_3)
-					.addInstruction(Opcodes.ALOAD_3)
-					.addInstruction(Opcodes.ARRAYLENGTH)
-					.addLocalVariableInstruction(Opcodes.ISTORE, 4)
-					.addInstruction(Opcodes.ICONST_0)
-					.addLocalVariableInstruction(Opcodes.ISTORE, 5)
+					.instruction(Opcodes.ALOAD_0)
+					.instruction(Opcodes.ALOAD_1)
+					.method(Opcodes.INVOKESPECIAL, className, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ASTORE_3)
+					.instruction(Opcodes.ALOAD_3)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.localVariable(Opcodes.ISTORE, 4)
+					.instruction(Opcodes.ICONST_0)
+					.localVariable(Opcodes.ISTORE, 5)
 					.mark(m1)
-					.addLocalVariableInstruction(Opcodes.ILOAD, 5)
-					.addLocalVariableInstruction(Opcodes.ILOAD, 4)
-					.addJumpInstruction(Opcodes.IF_ICMPGE, m3)
-					.addInstruction(Opcodes.ALOAD_3)
-					.addLocalVariableInstruction(Opcodes.ILOAD, 5)
-					.addInstruction(Opcodes.AALOAD)
-					.addLocalVariableInstruction(Opcodes.ASTORE, 6)
-					.addLocalVariableInstruction(Opcodes.ALOAD, 6)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Field.class), "getName", "()Ljava/lang/String;", false)
-					.addInstruction(Opcodes.ALOAD_2)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(String.class), "equals", "(Ljava/lang/Object;)Z", false)
-					.addJumpInstruction(Opcodes.IFEQ, m2)
-					.addLocalVariableInstruction(Opcodes.ALOAD, 6)
-					.addInstruction(Opcodes.ARETURN)
+					.localVariable(Opcodes.ILOAD, 5)
+					.localVariable(Opcodes.ILOAD, 4)
+					.jump(Opcodes.IF_ICMPGE, m3)
+					.instruction(Opcodes.ALOAD_3)
+					.localVariable(Opcodes.ILOAD, 5)
+					.instruction(Opcodes.AALOAD)
+					.localVariable(Opcodes.ASTORE, 6)
+					.localVariable(Opcodes.ALOAD, 6)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Field.class), "getName", "()Ljava/lang/String;", false)
+					.instruction(Opcodes.ALOAD_2)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(String.class), "equals", "(Ljava/lang/Object;)Z", false)
+					.jump(Opcodes.IFEQ, m2)
+					.localVariable(Opcodes.ALOAD, 6)
+					.instruction(Opcodes.ARETURN)
 					.mark(m2)
-					.addIincInstruction(5, 1)
-					.addJumpInstruction(Opcodes.GOTO, m1)
+					.iinc(5, 1)
+					.jump(Opcodes.GOTO, m1)
 					.mark(m3)
-					.addTypeInstruction(Opcodes.NEW, Generator.getType(NoSuchFieldException.class))
-					.addInstruction(Opcodes.DUP)
-					.addTypeInstruction(Opcodes.NEW, Generator.getType(StringBuilder.class))
-					.addInstruction(Opcodes.DUP)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(StringBuilder.class), "<init>", "()V", false)
-					.addInstruction(Opcodes.ALOAD_1)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getTypeName", "()Ljava/lang/String;", false)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false)
-					.addConstantInstruction(".")
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false)
-					.addInstruction(Opcodes.ALOAD_2)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "toString", "()Ljava/lang/String;", false)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(NoSuchFieldException.class), "<init>", "(Ljava/lang/String;)V", false)
-					.addInstruction(Opcodes.ATHROW)
-					.setMaxs(4, 7)
+					.type(Opcodes.NEW, Generator.getType(NoSuchFieldException.class))
+					.instruction(Opcodes.DUP)
+					.type(Opcodes.NEW, Generator.getType(StringBuilder.class))
+					.instruction(Opcodes.DUP)
+					.method(Opcodes.INVOKESPECIAL, Generator.getType(StringBuilder.class), "<init>", "()V", false)
+					.instruction(Opcodes.ALOAD_1)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getTypeName", "()Ljava/lang/String;", false)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false)
+					.constant(".")
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false)
+					.instruction(Opcodes.ALOAD_2)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "toString", "()Ljava/lang/String;", false)
+					.method(Opcodes.INVOKESPECIAL, Generator.getType(NoSuchFieldException.class), "<init>", "(Ljava/lang/String;)V", false)
+					.instruction(Opcodes.ATHROW)
+					.max(4, 7)
 				);
 			cw.addMethod(mw);
 
@@ -361,67 +361,67 @@ public class MagicAccessorBuilder
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "getMethod", MethodType.methodType(Method.class, Class.class, String.class, Class.class, Class[].class).toMethodDescriptorString())
 				.addAttribute(new CodeWriter()
-					.addInstruction(Opcodes.ALOAD_0)
-					.addInstruction(Opcodes.ALOAD_1)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getMethods", "(Ljava/lang/Class;)[Ljava/lang/reflect/Method;", false)
-					.addLocalVariableInstruction(Opcodes.ASTORE, 5)
-					.addInstruction(Opcodes.ICONST_0)
-					.addLocalVariableInstruction(Opcodes.ISTORE, 6)
-					.addLocalVariableInstruction(Opcodes.ALOAD, 5)
-					.addInstruction(Opcodes.ARRAYLENGTH)
-					.addLocalVariableInstruction(Opcodes.ISTORE, 7)
+					.instruction(Opcodes.ALOAD_0)
+					.instruction(Opcodes.ALOAD_1)
+					.method(Opcodes.INVOKESPECIAL, className, "getMethods", "(Ljava/lang/Class;)[Ljava/lang/reflect/Method;", false)
+					.localVariable(Opcodes.ASTORE, 5)
+					.instruction(Opcodes.ICONST_0)
+					.localVariable(Opcodes.ISTORE, 6)
+					.localVariable(Opcodes.ALOAD, 5)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.localVariable(Opcodes.ISTORE, 7)
 					.mark(m1)
-					.addLocalVariableInstruction(Opcodes.ILOAD, 6)
-					.addLocalVariableInstruction(Opcodes.ILOAD, 7)
-					.addJumpInstruction(Opcodes.IF_ICMPGE, m3)
-					.addLocalVariableInstruction(Opcodes.ALOAD, 5)
-					.addLocalVariableInstruction(Opcodes.ILOAD, 6)
-					.addInstruction(Opcodes.AALOAD)
-					.addLocalVariableInstruction(Opcodes.ASTORE, 8)
-					.addLocalVariableInstruction(Opcodes.ALOAD, 8)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Method.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ALOAD_2)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(String.class), "equals", MethodType.methodType(boolean.class, Object.class).toMethodDescriptorString(), false)
-					.addJumpInstruction(Opcodes.IFEQ, m2)
-					.addLocalVariableInstruction(Opcodes.ALOAD, 8)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Method.class), "getReturnType", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ALOAD_3)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "equals", MethodType.methodType(boolean.class, Object.class).toMethodDescriptorString(), false)
-					.addJumpInstruction(Opcodes.IFEQ, m2)
-					.addLocalVariableInstruction(Opcodes.ALOAD, 8)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Method.class), "getParameterTypes", MethodType.methodType(Class[].class).toMethodDescriptorString(), false)
-					.addLocalVariableInstruction(Opcodes.ALOAD, 4)
-					.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(Arrays.class), "equals", MethodType.methodType(boolean.class, Object[].class, Object[].class).toMethodDescriptorString(), false)
-					.addJumpInstruction(Opcodes.IFEQ, m2)
-					.addLocalVariableInstruction(Opcodes.ALOAD, 8)
-					.addInstruction(Opcodes.ARETURN)
+					.localVariable(Opcodes.ILOAD, 6)
+					.localVariable(Opcodes.ILOAD, 7)
+					.jump(Opcodes.IF_ICMPGE, m3)
+					.localVariable(Opcodes.ALOAD, 5)
+					.localVariable(Opcodes.ILOAD, 6)
+					.instruction(Opcodes.AALOAD)
+					.localVariable(Opcodes.ASTORE, 8)
+					.localVariable(Opcodes.ALOAD, 8)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Method.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ALOAD_2)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(String.class), "equals", MethodType.methodType(boolean.class, Object.class).toMethodDescriptorString(), false)
+					.jump(Opcodes.IFEQ, m2)
+					.localVariable(Opcodes.ALOAD, 8)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Method.class), "getReturnType", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ALOAD_3)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "equals", MethodType.methodType(boolean.class, Object.class).toMethodDescriptorString(), false)
+					.jump(Opcodes.IFEQ, m2)
+					.localVariable(Opcodes.ALOAD, 8)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Method.class), "getParameterTypes", MethodType.methodType(Class[].class).toMethodDescriptorString(), false)
+					.localVariable(Opcodes.ALOAD, 4)
+					.method(Opcodes.INVOKESTATIC, Generator.getType(Arrays.class), "equals", MethodType.methodType(boolean.class, Object[].class, Object[].class).toMethodDescriptorString(), false)
+					.jump(Opcodes.IFEQ, m2)
+					.localVariable(Opcodes.ALOAD, 8)
+					.instruction(Opcodes.ARETURN)
 					.mark(m2)
-					.addIincInstruction(6, 1)
-					.addJumpInstruction(Opcodes.GOTO, m1)
+					.iinc(6, 1)
+					.jump(Opcodes.GOTO, m1)
 					.mark(m3)
-					.addTypeInstruction(Opcodes.NEW, Generator.getType(NoSuchMethodException.class))
-					.addInstruction(Opcodes.DUP)
-					.addTypeInstruction(Opcodes.NEW, Generator.getType(StringBuilder.class))
-					.addInstruction(Opcodes.DUP)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(StringBuilder.class), "<init>", "()V", false)
-					.addInstruction(Opcodes.ALOAD_1)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), false)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false)
-					.addConstantInstruction(".")
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ALOAD_2)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false)
-					.addConstantInstruction(":")
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ALOAD_3)
-					.addLocalVariableInstruction(Opcodes.ALOAD, 4)
-					.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(MethodType.class), "methodType", MethodType.methodType(MethodType.class, Class.class, Class[].class).toMethodDescriptorString(), false)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodType.class), "toString", MethodType.methodType(String.class).toMethodDescriptorString(), false)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "toString", MethodType.methodType(String.class).toMethodDescriptorString(), false)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(NoSuchMethodException.class), "<init>", MethodType.methodType(void.class, String.class).toMethodDescriptorString(), false)
-					.addInstruction(Opcodes.ATHROW)
-					.setMaxs(5, 9)
+					.type(Opcodes.NEW, Generator.getType(NoSuchMethodException.class))
+					.instruction(Opcodes.DUP)
+					.type(Opcodes.NEW, Generator.getType(StringBuilder.class))
+					.instruction(Opcodes.DUP)
+					.method(Opcodes.INVOKESPECIAL, Generator.getType(StringBuilder.class), "<init>", "()V", false)
+					.instruction(Opcodes.ALOAD_1)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), false)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false)
+					.constant(".")
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ALOAD_2)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false)
+					.constant(":")
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ALOAD_3)
+					.localVariable(Opcodes.ALOAD, 4)
+					.method(Opcodes.INVOKESTATIC, Generator.getType(MethodType.class), "methodType", MethodType.methodType(MethodType.class, Class.class, Class[].class).toMethodDescriptorString(), false)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodType.class), "toString", MethodType.methodType(String.class).toMethodDescriptorString(), false)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "toString", MethodType.methodType(String.class).toMethodDescriptorString(), false)
+					.method(Opcodes.INVOKESPECIAL, Generator.getType(NoSuchMethodException.class), "<init>", MethodType.methodType(void.class, String.class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ATHROW)
+					.max(5, 9)
 				);
 			cw.addMethod(mw);
 		}
@@ -437,53 +437,53 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addInstruction(Opcodes.ALOAD_0);
-			code.addInstruction(Opcodes.ALOAD_1);
-			code.addMethodInstruction(Opcodes.INVOKESPECIAL, className, "getConstructors", MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.ASTORE_3)
-				.addInstruction(Opcodes.ALOAD_3)
-				.addInstruction(Opcodes.ARRAYLENGTH)
-				.addLocalVariableInstruction(Opcodes.ISTORE, 4)
-				.addInstruction(Opcodes.ICONST_0)
-				.addLocalVariableInstruction(Opcodes.ISTORE, 5)
+			code.instruction(Opcodes.ALOAD_0);
+			code.instruction(Opcodes.ALOAD_1);
+			code.method(Opcodes.INVOKESPECIAL, className, "getConstructors", MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.ASTORE_3)
+				.instruction(Opcodes.ALOAD_3)
+				.instruction(Opcodes.ARRAYLENGTH)
+				.localVariable(Opcodes.ISTORE, 4)
+				.instruction(Opcodes.ICONST_0)
+				.localVariable(Opcodes.ISTORE, 5)
 				.mark(m1)
-				.addLocalVariableInstruction(Opcodes.ILOAD, 5)
-				.addLocalVariableInstruction(Opcodes.ILOAD, 4)
-				.addJumpInstruction(Opcodes.IF_ICMPGE, m3)
-				.addInstruction(Opcodes.ALOAD_3)
-				.addLocalVariableInstruction(Opcodes.ILOAD, 5)
-				.addInstruction(Opcodes.AALOAD)
-				.addLocalVariableInstruction(Opcodes.ASTORE, 6)
-				.addLocalVariableInstruction(Opcodes.ALOAD, 6)
-				.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/reflect/Constructor", "getParameterTypes", "()[Ljava/lang/Class;", false)
-				.addInstruction(Opcodes.ALOAD_2)
-				.addMethodInstruction(Opcodes.INVOKESTATIC, "java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false)
-				.addJumpInstruction(Opcodes.IFEQ, m2)
-				.addLocalVariableInstruction(Opcodes.ALOAD, 6)
-				.addInstruction(Opcodes.ARETURN)
+				.localVariable(Opcodes.ILOAD, 5)
+				.localVariable(Opcodes.ILOAD, 4)
+				.jump(Opcodes.IF_ICMPGE, m3)
+				.instruction(Opcodes.ALOAD_3)
+				.localVariable(Opcodes.ILOAD, 5)
+				.instruction(Opcodes.AALOAD)
+				.localVariable(Opcodes.ASTORE, 6)
+				.localVariable(Opcodes.ALOAD, 6)
+				.method(Opcodes.INVOKEVIRTUAL, "java/lang/reflect/Constructor", "getParameterTypes", "()[Ljava/lang/Class;", false)
+				.instruction(Opcodes.ALOAD_2)
+				.method(Opcodes.INVOKESTATIC, "java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false)
+				.jump(Opcodes.IFEQ, m2)
+				.localVariable(Opcodes.ALOAD, 6)
+				.instruction(Opcodes.ARETURN)
 				.mark(m2)
-				.addIincInstruction(5, 1)
-				.addJumpInstruction(Opcodes.GOTO, m1)
+				.iinc(5, 1)
+				.jump(Opcodes.GOTO, m1)
 				.mark(m3);
-			code.addTypeInstruction(Opcodes.NEW, Generator.getType(NoSuchMethodException.class));
-			code.addInstruction(Opcodes.DUP);
-			code.addTypeInstruction(Opcodes.NEW, Generator.getType(StringBuilder.class));
-			code.addInstruction(Opcodes.DUP);
-			code.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(StringBuilder.class), "<init>", "()V", false);
-			code.addInstruction(Opcodes.ALOAD_1);
-			code.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), "getTypeName", "()Ljava/lang/String;", false);
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
-			code.addConstantInstruction(".<init>:");
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
-			code.addFieldInstruction(Opcodes.GETSTATIC, "java/lang/Void", "TYPE", "Ljava/lang/Class;");
-			code.addInstruction(Opcodes.ALOAD_2)
-				.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(MethodType.class), "methodType", MethodType.methodType(MethodType.class, Class.class, Class[].class).toMethodDescriptorString(), false)
-				.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodType.class), "toString", MethodType.methodType(String.class).toMethodDescriptorString(), false);
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
-			code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
-			code.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(NoSuchMethodException.class), "<init>", "(Ljava/lang/String;)V", false);
-			code.addInstruction(Opcodes.ATHROW);
-			code.setMaxs(5, 7);
+			code.type(Opcodes.NEW, Generator.getType(NoSuchMethodException.class));
+			code.instruction(Opcodes.DUP);
+			code.type(Opcodes.NEW, Generator.getType(StringBuilder.class));
+			code.instruction(Opcodes.DUP);
+			code.method(Opcodes.INVOKESPECIAL, Generator.getType(StringBuilder.class), "<init>", "()V", false);
+			code.instruction(Opcodes.ALOAD_1);
+			code.method(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), "getTypeName", "()Ljava/lang/String;", false);
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
+			code.constant(".<init>:");
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
+			code.field(Opcodes.GETSTATIC, "java/lang/Void", "TYPE", "Ljava/lang/Class;");
+			code.instruction(Opcodes.ALOAD_2)
+				.method(Opcodes.INVOKESTATIC, Generator.getType(MethodType.class), "methodType", MethodType.methodType(MethodType.class, Class.class, Class[].class).toMethodDescriptorString(), false)
+				.method(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodType.class), "toString", MethodType.methodType(String.class).toMethodDescriptorString(), false);
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "append", MethodType.methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
+			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StringBuilder.class), "toString", "()Ljava/lang/String;", false);
+			code.method(Opcodes.INVOKESPECIAL, Generator.getType(NoSuchMethodException.class), "<init>", "(Ljava/lang/String;)V", false);
+			code.instruction(Opcodes.ATHROW);
+			code.max(5, 7);
 		}
 
 		/*
@@ -494,14 +494,14 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addInstruction(Opcodes.ALOAD_1);
+			code.instruction(Opcodes.ALOAD_1);
 			if (!openJ9VM)
 			{
-				code.addInstruction(Opcodes.ICONST_0);
+				code.instruction(Opcodes.ICONST_0);
 			}
-			code.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), openJ9VM ? "getDeclaredFieldsImpl" : "getDeclaredFields0", MethodType.methodType(Field[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.ARETURN);
-			code.setMaxs(2, 2);
+			code.method(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), openJ9VM ? "getDeclaredFieldsImpl" : "getDeclaredFields0", MethodType.methodType(Field[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.ARETURN);
+			code.max(2, 2);
 		}
 
 		/*
@@ -512,14 +512,14 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addInstruction(Opcodes.ALOAD_1);
+			code.instruction(Opcodes.ALOAD_1);
 			if (!openJ9VM)
 			{
-				code.addInstruction(Opcodes.ICONST_0);
+				code.instruction(Opcodes.ICONST_0);
 			}
-			code.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), openJ9VM ? "getDeclaredMethodsImpl" :"getDeclaredMethods0", MethodType.methodType(Method[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.ARETURN);
-			code.setMaxs(2, 2);
+			code.method(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), openJ9VM ? "getDeclaredMethodsImpl" :"getDeclaredMethods0", MethodType.methodType(Method[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.ARETURN);
+			code.max(2, 2);
 		}
 
 		/*
@@ -530,14 +530,14 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addInstruction(Opcodes.ALOAD_1);
+			code.instruction(Opcodes.ALOAD_1);
 			if (!openJ9VM)
 			{
-				code.addInstruction(Opcodes.ICONST_0);
+				code.instruction(Opcodes.ICONST_0);
 			}
-			code.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), openJ9VM ? "getDeclaredConstructorsImpl" :"getDeclaredConstructors0", MethodType.methodType(Constructor[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false);
-			code.addInstruction(Opcodes.ARETURN);
-			code.setMaxs(2, 2);
+			code.method(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), openJ9VM ? "getDeclaredConstructorsImpl" :"getDeclaredConstructors0", MethodType.methodType(Constructor[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false);
+			code.instruction(Opcodes.ARETURN);
+			code.max(2, 2);
 		}
 
 		/*
@@ -548,9 +548,9 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addInstruction(Opcodes.ALOAD_1);
-			code.addInstruction(Opcodes.ATHROW);
-			code.setMaxs(1, 2);
+			code.instruction(Opcodes.ALOAD_1);
+			code.instruction(Opcodes.ATHROW);
+			code.max(1, 2);
 		}
 
 		/*
@@ -560,10 +560,10 @@ public class MagicAccessorBuilder
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "initialize", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
 				.addAttribute(new CodeWriter()
-					.addInstruction(Opcodes.ALOAD_1)
-					.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(Object.class), "<init>", "()V", false)
-					.addInstruction(Opcodes.RETURN)
-					.setMaxs(1, 2)
+					.instruction(Opcodes.ALOAD_1)
+					.method(Opcodes.INVOKESPECIAL, Generator.getType(Object.class), "<init>", "()V", false)
+					.instruction(Opcodes.RETURN)
+					.max(1, 2)
 				);
 			cw.addMethod(mw);
 		}
@@ -578,29 +578,29 @@ public class MagicAccessorBuilder
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "getName", MethodType.methodType(String.class, Member.class).toMethodDescriptorString())
 				.addAttribute(new CodeWriter()
-					.addInstruction(Opcodes.ALOAD_1)
-					.addTypeInstruction(Opcodes.INSTANCEOF, Generator.getType(Method.class))
-					.addJumpInstruction(Opcodes.IFEQ, m1)
-					.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-					.addInstruction(Opcodes.ALOAD_1)
-					.addFieldInstruction(Opcodes.GETSTATIC, className, "2", Generator.getSignature(long.class))
-					.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "getObject", MethodType.methodType(Object.class, Object.class, long.class).toMethodDescriptorString(), true)
-					.addInstruction(Opcodes.ARETURN)
+					.instruction(Opcodes.ALOAD_1)
+					.type(Opcodes.INSTANCEOF, Generator.getType(Method.class))
+					.jump(Opcodes.IFEQ, m1)
+					.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
+					.instruction(Opcodes.ALOAD_1)
+					.field(Opcodes.GETSTATIC, className, "2", Generator.getSignature(long.class))
+					.method(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "getObject", MethodType.methodType(Object.class, Object.class, long.class).toMethodDescriptorString(), true)
+					.instruction(Opcodes.ARETURN)
 					.mark(m1)
-					.addInstruction(Opcodes.ALOAD_1)
-					.addTypeInstruction(Opcodes.INSTANCEOF, Generator.getType(Field.class))
-					.addJumpInstruction(Opcodes.IFEQ, m2)
-					.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-					.addInstruction(Opcodes.ALOAD_1)
-					.addFieldInstruction(Opcodes.GETSTATIC, className, "3", Generator.getSignature(long.class))
-					.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "getObject", MethodType.methodType(Object.class, Object.class, long.class).toMethodDescriptorString(), true)
-					.addInstruction(Opcodes.ARETURN)
+					.instruction(Opcodes.ALOAD_1)
+					.type(Opcodes.INSTANCEOF, Generator.getType(Field.class))
+					.jump(Opcodes.IFEQ, m2)
+					.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
+					.instruction(Opcodes.ALOAD_1)
+					.field(Opcodes.GETSTATIC, className, "3", Generator.getSignature(long.class))
+					.method(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "getObject", MethodType.methodType(Object.class, Object.class, long.class).toMethodDescriptorString(), true)
+					.instruction(Opcodes.ARETURN)
 					.mark(m2)
-					.addInstruction(Opcodes.ALOAD_1)
-					.addTypeInstruction(Opcodes.INSTANCEOF, Generator.getType(Constructor.class))
-					.addJumpInstruction(Opcodes.IFEQ, m3)
-					.addConstantInstruction("<init>")
-					.addInstruction(Opcodes.ARETURN)
+					.instruction(Opcodes.ALOAD_1)
+					.type(Opcodes.INSTANCEOF, Generator.getType(Constructor.class))
+					.jump(Opcodes.IFEQ, m3)
+					.constant("<init>")
+					.instruction(Opcodes.ARETURN)
 					.mark(m3)
 					.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Member.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), true)
 					.addInstruction(Opcodes.ARETURN)

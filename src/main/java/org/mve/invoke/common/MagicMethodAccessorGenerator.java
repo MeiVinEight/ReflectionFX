@@ -38,26 +38,26 @@ public class MagicMethodAccessorGenerator extends MethodAccessorGenerator
 		Class<?>[] parameters = this.method.getParameterTypes();
 		for (int i=0; i<load; i++)
 		{
-			code.addInstruction(Opcodes.ALOAD_1)
-				.addNumberInstruction(Opcodes.BIPUSH, i)
-				.addInstruction(Opcodes.AALOAD);
+			code.instruction(Opcodes.ALOAD_1)
+				.number(Opcodes.BIPUSH, i)
+				.instruction(Opcodes.AALOAD);
 			Class<?> parameterType;
 			if ((statics || i > 0) && (parameterType = parameters[statics ? i : (i-1)]).isPrimitive())
 			{
 				unwarp(parameterType, code);
 			}
 		}
-		code.addMethodInstruction(this.kind + 0xB6, Generator.getType(this.method.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(this.method), MethodType.methodType(this.method.getReturnType(), this.method.getParameterTypes()).toMethodDescriptorString(), interfaces);
+		code.method(this.kind + 0xB6, Generator.getType(this.method.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(this.method), MethodType.methodType(this.method.getReturnType(), this.method.getParameterTypes()).toMethodDescriptorString(), interfaces);
 		if (method.getReturnType() == void.class)
 		{
-			code.addInstruction(Opcodes.ACONST_NULL);
+			code.instruction(Opcodes.ACONST_NULL);
 		}
 		else
 		{
 			Generator.warp(method.getReturnType(), code);
 		}
-		code.addInstruction(Opcodes.ARETURN)
-			.setMaxs(this.stack(), 2);
+		code.instruction(Opcodes.ARETURN)
+			.max(this.stack(), 2);
 		if (statics && parameters.length == 0)
 		{
 			mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString());
@@ -65,18 +65,18 @@ public class MagicMethodAccessorGenerator extends MethodAccessorGenerator
 			Generator.inline(mw);
 			code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addMethodInstruction(this.kind + 0xB6, Generator.getType(this.method.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(this.method), MethodType.methodType(this.method.getReturnType()).toMethodDescriptorString(), interfaces);
+			code.method(this.kind + 0xB6, Generator.getType(this.method.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(this.method), MethodType.methodType(this.method.getReturnType()).toMethodDescriptorString(), interfaces);
 			if (method.getReturnType() == void.class)
 			{
-				code.addInstruction(Opcodes.ACONST_NULL);
+				code.instruction(Opcodes.ACONST_NULL);
 			}
 			else
 			{
 				Generator.warp(method.getReturnType(), code);
 			}
 			int ts = Generator.typeSize(this.method.getReturnType());
-			code.addInstruction(Opcodes.ARETURN)
-				.setMaxs(ts == 0 ? 1 : ts, 1);
+			code.instruction(Opcodes.ARETURN)
+				.max(ts == 0 ? 1 : ts, 1);
 		}
 	}
 

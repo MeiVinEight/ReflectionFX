@@ -35,9 +35,9 @@ public abstract class AccessorGenerator extends Generator
 		bytecode.addMethod(new MethodWriter()
 			.set(AccessFlag.ACC_PUBLIC, "access", MethodType.methodType(Class.class).toMethodDescriptorString())
 			.addAttribute(new CodeWriter()
-				.addFieldInstruction(Opcodes.GETSTATIC, this.bytecode.getName(), "0", Generator.getSignature(Class.class))
-				.addInstruction(Opcodes.ARETURN)
-				.setMaxs(1, 1)
+				.field(Opcodes.GETSTATIC, this.bytecode.getName(), "0", Generator.getSignature(Class.class))
+				.instruction(Opcodes.ARETURN)
+				.max(1, 1)
 			)
 		);
 	}

@@ -27,28 +27,28 @@ public class NativeDynamicBindConstructGenerator extends DynamicBindConstructGen
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
 		mw.addAttribute(code);
-		code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-			.addFieldInstruction(Opcodes.GETSTATIC, bytecode.getName(), "<init>".concat(MethodType.methodType(void.class, invocation().type().parameterArray()).toMethodDescriptorString()), Generator.getSignature(Constructor.class))
-			.addNumberInstruction(Opcodes.BIPUSH, invocation().type().parameterArray().length)
-			.addTypeInstruction(Opcodes.ANEWARRAY, Generator.getType(Class.class));
+		code.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
+			.field(Opcodes.GETSTATIC, bytecode.getName(), "<init>".concat(MethodType.methodType(void.class, invocation().type().parameterArray()).toMethodDescriptorString()), Generator.getSignature(Constructor.class))
+			.number(Opcodes.BIPUSH, invocation().type().parameterArray().length)
+			.type(Opcodes.ANEWARRAY, Generator.getType(Class.class));
 		int args = 0;
 		int local = 1;
 		Class<?>[] parameters = invocation().type().parameterArray();
 		for (Class<?> parameterType : parameters)
 		{
-			code.addInstruction(Opcodes.DUP)
-				.addNumberInstruction(Opcodes.BIPUSH, args++);
-			if (Generator.integer(parameterType)) code.addLocalVariableInstruction(Opcodes.ILOAD, local);
-			else if (parameterType == long.class) code.addLocalVariableInstruction(Opcodes.LLOAD, local);
-			else if (parameterType == float.class) code.addLocalVariableInstruction(Opcodes.FLOAD, local);
-			else if (parameterType == double.class) code.addLocalVariableInstruction(Opcodes.DLOAD, local);
-			else code.addLocalVariableInstruction(Opcodes.ALOAD, local);
+			code.instruction(Opcodes.DUP)
+				.number(Opcodes.BIPUSH, args++);
+			if (Generator.integer(parameterType)) code.localVariable(Opcodes.ILOAD, local);
+			else if (parameterType == long.class) code.localVariable(Opcodes.LLOAD, local);
+			else if (parameterType == float.class) code.localVariable(Opcodes.FLOAD, local);
+			else if (parameterType == double.class) code.localVariable(Opcodes.DLOAD, local);
+			else code.localVariable(Opcodes.ALOAD, local);
 			local += Generator.typeSize(parameterType);
 			Generator.warp(parameterType, code);
-			code.addInstruction(Opcodes.AASTORE);
+			code.instruction(Opcodes.AASTORE);
 		}
-		code.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), true)
-			.addInstruction(Opcodes.ARETURN)
-			.setMaxs(parameters.length == 0 ? 3 : 7, local);
+		code.method(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), true)
+			.instruction(Opcodes.ARETURN)
+			.max(parameters.length == 0 ? 3 : 7, local);
 	}
 }

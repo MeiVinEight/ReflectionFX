@@ -85,26 +85,26 @@ public abstract class Generator
 
 	public static void warp(Class<?> c, CodeWriter code)
 	{
-		if (c == byte.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false);
-		else if (c == short.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false);
-		else if (c == int.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
-		else if (c == long.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false);
-		else if (c == float.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false);
-		else if (c == double.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false);
-		else if (c == boolean.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
-		else if (c == char.class) code.addMethodInstruction(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false);
+		if (c == byte.class) code.method(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false);
+		else if (c == short.class) code.method(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false);
+		else if (c == int.class) code.method(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
+		else if (c == long.class) code.method(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false);
+		else if (c == float.class) code.method(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false);
+		else if (c == double.class) code.method(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false);
+		else if (c == boolean.class) code.method(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
+		else if (c == char.class) code.method(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false);
 	}
 
 	public static void unwarp(Class<?> c, CodeWriter code)
 	{
-		if (c == byte.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "byteValue", "()B", false);
-		else if (c == short.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "shortValue", "()S", false);
-		else if (c == int.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "intValue", "()I", false);
-		else if (c == long.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "longValue", "()J", false);
-		else if (c == float.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "floatValue", "()F", false);
-		else if (c == double.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "doubleValue", "()D", false);
-		else if (c == boolean.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false);
-		else if (c == char.class) code.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
+		if (c == byte.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "byteValue", "()B", false);
+		else if (c == short.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "shortValue", "()S", false);
+		else if (c == int.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "intValue", "()I", false);
+		else if (c == long.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "longValue", "()J", false);
+		else if (c == float.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "floatValue", "()F", false);
+		else if (c == double.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "doubleValue", "()D", false);
+		else if (c == boolean.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false);
+		else if (c == char.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
 	}
 
 	public static Class<?> typeWarp(Class<?> type)
@@ -125,27 +125,27 @@ public abstract class Generator
 	{
 		if (type == void.class)
 		{
-			code.addInstruction(Opcodes.RETURN);
+			code.instruction(Opcodes.RETURN);
 		}
 		else if (integer(type))
 		{
-			code.addInstruction(Opcodes.IRETURN);
+			code.instruction(Opcodes.IRETURN);
 		}
 		else if (type == long.class)
 		{
-			code.addInstruction(Opcodes.LRETURN);
+			code.instruction(Opcodes.LRETURN);
 		}
 		else if (type == float.class)
 		{
-			code.addInstruction(Opcodes.FRETURN);
+			code.instruction(Opcodes.FRETURN);
 		}
 		else if (type == double.class)
 		{
-			code.addInstruction(Opcodes.DRETURN);
+			code.instruction(Opcodes.DRETURN);
 		}
 		else
 		{
-			code.addInstruction(Opcodes.ARETURN);
+			code.instruction(Opcodes.ARETURN);
 		}
 	}
 
@@ -153,23 +153,23 @@ public abstract class Generator
 	{
 		if (integer(type))
 		{
-			code.addLocalVariableInstruction(Opcodes.ILOAD, slot);
+			code.localVariable(Opcodes.ILOAD, slot);
 		}
 		else if (long.class == type)
 		{
-			code.addLocalVariableInstruction(Opcodes.LLOAD, slot);
+			code.localVariable(Opcodes.LLOAD, slot);
 		}
 		else if (float.class == type)
 		{
-			code.addLocalVariableInstruction(Opcodes.FLOAD, slot);
+			code.localVariable(Opcodes.FLOAD, slot);
 		}
 		else if (double.class == type)
 		{
-			code.addLocalVariableInstruction(Opcodes.DLOAD, slot);
+			code.localVariable(Opcodes.DLOAD, slot);
 		}
 		else
 		{
-			code.addLocalVariableInstruction(Opcodes.ALOAD, slot);
+			code.localVariable(Opcodes.ALOAD, slot);
 		}
 	}
 
@@ -177,23 +177,23 @@ public abstract class Generator
 	{
 		if (integer(type))
 		{
-			code.addLocalVariableInstruction(Opcodes.ISTORE, slot);
+			code.localVariable(Opcodes.ISTORE, slot);
 		}
 		else if (long.class == type)
 		{
-			code.addLocalVariableInstruction(Opcodes.LSTORE, slot);
+			code.localVariable(Opcodes.LSTORE, slot);
 		}
 		else if (float.class == type)
 		{
-			code.addLocalVariableInstruction(Opcodes.FSTORE, slot);
+			code.localVariable(Opcodes.FSTORE, slot);
 		}
 		else if (double.class == type)
 		{
-			code.addLocalVariableInstruction(Opcodes.DSTORE, slot);
+			code.localVariable(Opcodes.DSTORE, slot);
 		}
 		else
 		{
-			code.addLocalVariableInstruction(Opcodes.ASTORE, slot);
+			code.localVariable(Opcodes.ASTORE, slot);
 		}
 	}
 
@@ -206,28 +206,28 @@ public abstract class Generator
 
 	public static void unsafeput(Class<?> type, CodeWriter code)
 	{
-		if (type == byte.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", true);
-		else if (type == short.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", true);
-		else if (type == int.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", true);
-		else if (type == long.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", true);
-		else if (type == float.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", true);
-		else if (type == double.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", true);
-		else if (type == boolean.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", true);
-		else if (type == char.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", true);
-		else code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
+		if (type == byte.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", true);
+		else if (type == short.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", true);
+		else if (type == int.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", true);
+		else if (type == long.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", true);
+		else if (type == float.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", true);
+		else if (type == double.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", true);
+		else if (type == boolean.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", true);
+		else if (type == char.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", true);
+		else code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
 	}
 
 	public static void unsafeget(Class<?> type, CodeWriter code)
 	{
-		if (type == byte.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getByteVolatile", "(Ljava/lang/Object;J)B", true);
-		else if (type == short.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getShortVolatile", "(Ljava/lang/Object;J)S", true);
-		else if (type == int.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getIntVolatile", "(Ljava/lang/Object;J)I", true);
-		else if (type == long.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getLongVolatile", "(Ljava/lang/Object;J)J", true);
-		else if (type == float.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getFloatVolatile", "(Ljava/lang/Object;J)F", true);
-		else if (type == double.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getDoubleVolatile", "(Ljava/lang/Object;J)D", true);
-		else if (type == boolean.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getBooleanVolatile", "(Ljava/lang/Object;J)Z", true);
-		else if (type == char.class) code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getCharVolatile", "(Ljava/lang/Object;J)C", true);
-		else code.addMethodInstruction(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getObjectVolatile", "(Ljava/lang/Object;J)Ljava/lang/Object;", true);
+		if (type == byte.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getByteVolatile", "(Ljava/lang/Object;J)B", true);
+		else if (type == short.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getShortVolatile", "(Ljava/lang/Object;J)S", true);
+		else if (type == int.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getIntVolatile", "(Ljava/lang/Object;J)I", true);
+		else if (type == long.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getLongVolatile", "(Ljava/lang/Object;J)J", true);
+		else if (type == float.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getFloatVolatile", "(Ljava/lang/Object;J)F", true);
+		else if (type == double.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getDoubleVolatile", "(Ljava/lang/Object;J)D", true);
+		else if (type == boolean.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getBooleanVolatile", "(Ljava/lang/Object;J)Z", true);
+		else if (type == char.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getCharVolatile", "(Ljava/lang/Object;J)C", true);
+		else code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getObjectVolatile", "(Ljava/lang/Object;J)Ljava/lang/Object;", true);
 	}
 
 	public static boolean integer(Class<?> type)
