@@ -16,6 +16,7 @@ import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -26,10 +27,11 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
+import java.util.Map;
 
 public class MagicAccessorBuilder
 {
-	public static ClassWriter build(String[] constantPool, int vmVersion, boolean openJ9VM)
+	public static ClassWriter build(String[] constantPool, int vmVersion, boolean openJ9VM) throws Throwable
 	{
 		String className = "org/mve/invoke/ReflectionMagicAccessor";
 		ClassWriter cw = new ClassWriter();
@@ -572,6 +574,10 @@ public class MagicAccessorBuilder
 		 * String getName(Member member);
 		 */
 		{
+			MethodHandles.Lookup lookup = ReflectionFactory.TRUSTED_LOOKUP;
+			MethodHandle getter = lookup.findStaticGetter(Class.forName(vmVersion == 0x34 ? "sun.reflect.Reflection" : "jdk.internal.reflect.Reflection"), "fieldFilterMap", Map.class);
+			MethodHandle setter = lookup.findStaticSetter(Class.forName(vmVersion == 0x34 ? "sun.reflect.Reflection" : "jdk.internal.reflect.Reflection"), "fieldFilterMap", Map.class);
+			Map<?, ?> filter = (Map<?, ?>) getter.invoke();
 			Marker m1 = new Marker();
 			Marker m2 = new Marker();
 			Marker m3 = new Marker();
@@ -583,7 +589,7 @@ public class MagicAccessorBuilder
 					.jump(Opcodes.IFEQ, m1)
 					.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
 					.instruction(Opcodes.ALOAD_1)
-					.field(Opcodes.GETSTATIC, className, "2", Generator.getSignature(long.class))
+					.constant(ReflectionFactory.UNSAFE.objectFieldOffset(Method.class.getDeclaredField("name")))
 					.method(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "getObject", MethodType.methodType(Object.class, Object.class, long.class).toMethodDescriptorString(), true)
 					.instruction(Opcodes.ARETURN)
 					.mark(m1)
@@ -592,7 +598,7 @@ public class MagicAccessorBuilder
 					.jump(Opcodes.IFEQ, m2)
 					.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
 					.instruction(Opcodes.ALOAD_1)
-					.field(Opcodes.GETSTATIC, className, "3", Generator.getSignature(long.class))
+					.constant(ReflectionFactory.UNSAFE.objectFieldOffset(Field.class.getDeclaredField("name")))
 					.method(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "getObject", MethodType.methodType(Object.class, Object.class, long.class).toMethodDescriptorString(), true)
 					.instruction(Opcodes.ARETURN)
 					.mark(m2)
@@ -602,9 +608,10 @@ public class MagicAccessorBuilder
 					.constant("<init>")
 					.instruction(Opcodes.ARETURN)
 					.mark(m3)
-					.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Member.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), true)
-					.addInstruction(Opcodes.ARETURN)
-					.setMaxs(4, 2)
+					.instruction(Opcodes.ALOAD_1)
+					.method(Opcodes.INVOKEINTERFACE, Generator.getType(Member.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), true)
+					.instruction(Opcodes.ARETURN)
+					.max(4, 2)
 				)
 				.addAttribute(new StackMapTableWriter()
 					.sameFrame(m1)
@@ -612,6 +619,7 @@ public class MagicAccessorBuilder
 					.sameFrame(m3)
 				);
 			cw.addMethod(mw);
+			setter.invoke(filter);
 		}
 
 		/*
