@@ -492,10 +492,6 @@ public class ReflectionFactory
 				catch (Throwable t)
 				{
 					byte[] code = MagicAccessorBuilder.build(CONSTANT_POOL, majorVersion, openJ9VM).toByteArray();
-					FileOutputStream out = new FileOutputStream("MagicAccessor.class");
-					out.write(code);
-					out.flush();
-					out.close();
 					c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 				}
 				ACCESSOR = (MagicAccessor) UNSAFE.allocateInstance(c);
