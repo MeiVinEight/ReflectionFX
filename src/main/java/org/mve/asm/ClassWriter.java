@@ -142,7 +142,10 @@ public class ClassWriter
 			method.setNameIndex((short) ConstantPoolFinder.findUTF8(pool, writer.getName()));
 			method.setDescriptorIndex((short) ConstantPoolFinder.findUTF8(pool, writer.getType()));
 			AttributeWriter[] attrs = writer.getAttributes();
-			for (AttributeWriter attr : attrs) method.addAttribute(attr.getAttribute(pool));
+			for (AttributeWriter attr : attrs)
+			{
+				method.addAttribute(attr.getAttribute(pool));
+			}
 			file.addMethod(method);
 		}
 		for (AttributeWriter attr : this.attributes) file.addAttribute(attr.getAttribute(pool));
