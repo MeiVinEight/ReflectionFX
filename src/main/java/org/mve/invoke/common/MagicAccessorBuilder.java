@@ -5,7 +5,6 @@ import org.mve.asm.FieldWriter;
 import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
-import org.mve.asm.Type;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.SignatureWriter;
 import org.mve.asm.attribute.SourceWriter;
@@ -19,7 +18,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -38,9 +36,6 @@ public class MagicAccessorBuilder
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER | AccessFlag.ACC_FINAL, className, constantPool[0], new String[]{Generator.getType(MagicAccessor.class)});
 		cw.addAttribute(new SourceWriter("MagicAccessor.java"));
 		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "0", Generator.getSignature(SecurityManager.class)));
-		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", "I"));
-		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "2", Generator.getSignature(long.class)));
-		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "3", Generator.getSignature(long.class)));
 
 		/*
 		 * <clinit>
@@ -50,41 +45,13 @@ public class MagicAccessorBuilder
 			cw.addMethod(mw);
 			CodeWriter code = new CodeWriter();
 			mw.addAttribute(code);
-			code.addTypeInstruction(Opcodes.NEW, Generator.getType(SecurityManager.class));
-			code.addInstruction(Opcodes.DUP);
-			code.addMethodInstruction(Opcodes.INVOKESPECIAL, Generator.getType(SecurityManager.class), "<init>", "()V", false);
-			code.addFieldInstruction(Opcodes.PUTSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
-			if (openJ9VM)
-			{
-				// com.ibm.lang.management.internal.ExtendedRuntimeMXBeanImpl
-				code.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(ManagementFactory.class), "getRuntimeMXBean", MethodType.methodType(RuntimeMXBean.class).toMethodDescriptorString(), false)
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "com/ibm/lang/management/internal/ExtendedRuntimeMXBeanImpl", "getProcessIDImpl", "()J", false)
-					.addInstruction(Opcodes.L2I);
-			}
-			else
-			{
-				code.addMethodInstruction(Opcodes.INVOKESTATIC, Generator.getType(ManagementFactory.class), "getRuntimeMXBean", MethodType.methodType(RuntimeMXBean.class).toMethodDescriptorString(), false)
-					.addFieldInstruction(Opcodes.GETFIELD, "sun/management/RuntimeImpl", "jvm", "Lsun/management/VMManagement;")
-					.addMethodInstruction(Opcodes.INVOKEVIRTUAL, "sun/management/VMManagementImpl", "getProcessId", MethodType.methodType(int.class).toMethodDescriptorString(), false);
-			}
-			code.addFieldInstruction(Opcodes.PUTSTATIC, className, "1", "I");
+			code.type(Opcodes.NEW, Generator.getType(SecurityManager.class));
+			code.instruction(Opcodes.DUP);
+			code.method(Opcodes.INVOKESPECIAL, Generator.getType(SecurityManager.class), "<init>", "()V", false);
+			code.field(Opcodes.PUTSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
 
-			code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-				.addConstantInstruction(new Type(Method.class))
-				.addConstantInstruction("name")
-				.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getDeclaredField", MethodType.methodType(Field.class, String.class).toMethodDescriptorString(), false)
-				.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "objectFieldOffset", MethodType.methodType(long.class, Field.class).toMethodDescriptorString(), true)
-				.addFieldInstruction(Opcodes.PUTSTATIC, className, "2", Generator.getSignature(long.class));
-
-			code.addFieldInstruction(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-				.addConstantInstruction(new Type(Field.class))
-				.addConstantInstruction("name")
-				.addMethodInstruction(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getDeclaredField", MethodType.methodType(Field.class, String.class).toMethodDescriptorString(), false)
-				.addMethodInstruction(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "objectFieldOffset", MethodType.methodType(long.class, Field.class).toMethodDescriptorString(), true)
-				.addFieldInstruction(Opcodes.PUTSTATIC, className, "3", Generator.getSignature(long.class));
-
-			code.addInstruction(Opcodes.RETURN);
-			code.setMaxs(2, 0);
+			code.instruction(Opcodes.RETURN);
+			code.max(2, 0);
 		}
 
 		/*
