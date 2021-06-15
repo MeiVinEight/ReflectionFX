@@ -545,6 +545,7 @@ public class MagicAccessorBuilder
 			MethodHandle getter = lookup.findStaticGetter(Class.forName(vmVersion == 0x34 ? "sun.reflect.Reflection" : "jdk.internal.reflect.Reflection"), "fieldFilterMap", Map.class);
 			MethodHandle setter = lookup.findStaticSetter(Class.forName(vmVersion == 0x34 ? "sun.reflect.Reflection" : "jdk.internal.reflect.Reflection"), "fieldFilterMap", Map.class);
 			Map<?, ?> filter = (Map<?, ?>) getter.invoke();
+			setter.invoke((Object) null);
 			Marker m1 = new Marker();
 			Marker m2 = new Marker();
 			Marker m3 = new Marker();
