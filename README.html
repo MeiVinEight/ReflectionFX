@@ -6,10 +6,7 @@
 		<style type="text/css">
 			h1, h2
 			{
-				margin-left: 0;
-				margin-right: 0;
-				margin-top: 15px;
-				margin-bottom: 15px;
+				margin: 15px 0;
 			}
 			a
 			{
@@ -37,13 +34,10 @@
 			}
 			.word
 			{
-				padding-left: 4px;
-				padding-right: 4px;
-				padding-top: 3px;
-				padding-bottom: 3px;
+				padding: 3px 4px;
 				margin: 0;
 				background-color: rgba(27, 31, 35, 0.05);
-				font-family: "Consolas";
+				font-family: "Consolas",serif;
 				border-radius: 6px;
 			}
 			.passage
@@ -54,7 +48,7 @@
 				margin: 0;
 				word-wrap: normal;
 				background-color: rgba(246, 248, 250, 1);
-				font-family: "Consolas";
+				font-family: "Consolas",serif;
 				border-radius: 6px;
 			}
 			.link
@@ -236,29 +230,93 @@ SOFTWARE.
 			<ul>
 				<li>
 					<strong style="user-select: none;">ReflectionFactory</strong>
-					<div id="type-1-introduction">
-						<span class="link">
-							<a href="https://github.com/MeiVinEight/ReflectionFX/blob/master/src/main/java/org/mve/invoke/ReflectionFactory.java">
-								<code class="word">ReflectionFactory</code>
-							</a>
-						</span>
-						<span>和</span>
-						<span class="link">
-							<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/MethodHandle.html">
-								<code class="word">MethodHandle</code>
-							</a>
-						</span>
-						<span>类似，其中提供了对方法，字段，构造方法的调用获取</span>
-						<br/>
-					</div>
+					<span class="link">
+						<a href="https://github.com/MeiVinEight/ReflectionFX/blob/master/src/main/java/org/mve/invoke/ReflectionFactory.java">
+							<code class="word">ReflectionFactory</code>
+						</a>
+					</span>
+					<span>和</span>
+					<span class="link">
+						<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/MethodHandle.html">
+							<code class="word">MethodHandle</code>
+						</a>
+					</span>
+					<span>类似，其中提供了对方法，字段，构造方法的调用获取</span>
+					<br/>
+					<span class="link">
+						<a href="javascript:void(0)">wiki</a>
+					</span>
 				</li>
 				<li>
 					<strong style="user-select: none;">PolymorphismFactory</strong>
+					<br/>
+					<span class="link">
+						<a href="https://github.com/MeiVinEight/ReflectionFX/blob/master/src/main/java/org/mve/invoke/PolymorphismFactory.java">
+							<code class="word">
+								PolymorphismFactory
+							</code>
+						</a>
+					</span>
+					<span>提供了一种类似动态绑定的反射方法，由开发者提供方法，交由</span>
+					<code class="word">PolymorphismFactory</code>
+					<span>来实现方法，可在运行时由开发者决定方法的具体实现来决定调用的目标方法</span>
+					<br/>
+					<span class="link">
+						<a href="javascript:void(0)">wiki</a>
+					</span>
 				</li>
 				<li>
 					<strong style="user-select: none;">MagicAccessFactory</strong>
+					<br/>
+					<span class="link">
+						<a href="https://github.com/MeiVinEight/ReflectionFX/blob/master/src/main/java/org/mve/invoke/MagicAccessFactory.java">
+							<code class="word">MagicAccessFactory</code>
+						</a>
+					</span>
+					<span>不同于前两种方法，虽然也是由开发者提供实现的方法，但提供的必须是接口，而且是由注解来声明实现调用的目标方法</span>
+					<br/>
+					<span class="link">
+						<a href="javascript:void(0)">wiki</a>
+					</span>
 				</li>
 			</ul>
+			<h3><code class="word">ReflectionFX</code> 不止可以达到反射目的</h3>
+			<div style="margin-left: 20px; margin-right: 20px; margin-top: 0; padding: 0;">
+				<code class="word">ReflectionFX</code>
+				<span>的高效性使得它不仅可以完成反射调用方法，还可以作为一个函数式编程库来使用</span>
+				<br/>
+				<span class="link">
+					<a href="https://github.com/MeiVinEight/ReflectionFX/blob/master/src/main/java/org/mve/invoke/ReflectionAccessor.java">
+						<code class="word">
+							ReflectionAccessor
+						</code>
+					</a>
+				</span>
+				<span>中的invoke方法使用了可变参数，使得它拥有更大的扩展性和更小的局限性</span>
+				<br/>
+				<span>可以在开发中仅声明一个</span>
+				<span class="link">
+					<a href="https://github.com/MeiVinEight/ReflectionFX/blob/master/src/main/java/org/mve/invoke/ReflectionAccessor.java">
+						<code class="word">
+							ReflectionAccessor
+						</code>
+					</a>
+				</span>
+				<span>变量，在不同的情况下这个变量会有不同的值，可以传入不同类型甚至不同数量的参数来调用不同方法，或者获取与修改变量</span>
+			</div>
+			<h3><code class="word">MagicAccessor</code> 一些可能会用到的小工具</h3>
+			<div style="margin-left: 20px; margin-right: 20px; margin-top: 0; padding: 0;">
+				<span class="link">
+					<a href="https://github.com/MeiVinEight/ReflectionFX/blob/master/src/main/java/org/mve/invoke/MagicAccessor.java">
+						<code class="word">MagicAccessor</code>
+					</a>
+				</span>
+				<span>中提供了许多或许会需要用到的小工具</span>
+				<br/>
+				<span class="link">
+					<a href="javascript:void(0)">wiki</a>
+				</span>
+			</div>
 		</div>
 	</body>
 </html>
