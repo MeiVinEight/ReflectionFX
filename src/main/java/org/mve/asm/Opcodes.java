@@ -244,4 +244,9 @@ public class Opcodes
 
 	// frame_type = 255;
 	public static final short STACK_MAP_FULL_FRAME								= 255;
+
+	public static int version(int version)
+	{
+		return version + 44;
+	}
 }
