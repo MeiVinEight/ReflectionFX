@@ -153,23 +153,23 @@ public abstract class Generator
 	{
 		if (integer(type))
 		{
-			code.localVariable(Opcodes.ILOAD, slot);
+			code.variable(Opcodes.ILOAD, slot);
 		}
 		else if (long.class == type)
 		{
-			code.localVariable(Opcodes.LLOAD, slot);
+			code.variable(Opcodes.LLOAD, slot);
 		}
 		else if (float.class == type)
 		{
-			code.localVariable(Opcodes.FLOAD, slot);
+			code.variable(Opcodes.FLOAD, slot);
 		}
 		else if (double.class == type)
 		{
-			code.localVariable(Opcodes.DLOAD, slot);
+			code.variable(Opcodes.DLOAD, slot);
 		}
 		else
 		{
-			code.localVariable(Opcodes.ALOAD, slot);
+			code.variable(Opcodes.ALOAD, slot);
 		}
 	}
 
@@ -177,23 +177,23 @@ public abstract class Generator
 	{
 		if (integer(type))
 		{
-			code.localVariable(Opcodes.ISTORE, slot);
+			code.variable(Opcodes.ISTORE, slot);
 		}
 		else if (long.class == type)
 		{
-			code.localVariable(Opcodes.LSTORE, slot);
+			code.variable(Opcodes.LSTORE, slot);
 		}
 		else if (float.class == type)
 		{
-			code.localVariable(Opcodes.FSTORE, slot);
+			code.variable(Opcodes.FSTORE, slot);
 		}
 		else if (double.class == type)
 		{
-			code.localVariable(Opcodes.DSTORE, slot);
+			code.variable(Opcodes.DSTORE, slot);
 		}
 		else
 		{
-			code.localVariable(Opcodes.ASTORE, slot);
+			code.variable(Opcodes.ASTORE, slot);
 		}
 	}
 

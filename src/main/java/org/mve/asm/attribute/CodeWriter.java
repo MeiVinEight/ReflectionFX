@@ -98,7 +98,7 @@ public class CodeWriter implements AttributeWriter
 		return this.element(new JumpInstruction(opcode, marker));
 	}
 
-	public CodeWriter localVariable(int opcode, int index)
+	public CodeWriter variable(int opcode, int index)
 	{
 		return this.element(new LocalVariableInstruction(opcode, index));
 	}

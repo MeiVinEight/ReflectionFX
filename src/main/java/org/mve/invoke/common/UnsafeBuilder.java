@@ -97,11 +97,11 @@ public class UnsafeBuilder
 					{
 						size++;
 						Class<?> type = arr[i];
-						if (type == byte.class || type == short.class || type == int.class || type == boolean.class || type == char.class) code.localVariable(Opcodes.ILOAD, size);
-						else if (type == long.class) code.localVariable(Opcodes.LLOAD, size);
-						else if (type == float.class) code.localVariable(Opcodes.FLOAD, size);
-						else if (type == double.class) code.localVariable(Opcodes.DLOAD, size);
-						else code.localVariable(Opcodes.ALOAD, size);
+						if (type == byte.class || type == short.class || type == int.class || type == boolean.class || type == char.class) code.variable(Opcodes.ILOAD, size);
+						else if (type == long.class) code.variable(Opcodes.LLOAD, size);
+						else if (type == float.class) code.variable(Opcodes.FLOAD, size);
+						else if (type == double.class) code.variable(Opcodes.DLOAD, size);
+						else code.variable(Opcodes.ALOAD, size);
 						if (type == double.class || type == long.class) size++;
 					}
 					code.method(Opcodes.INVOKEVIRTUAL, unsafeType, name[1], desc, false);
