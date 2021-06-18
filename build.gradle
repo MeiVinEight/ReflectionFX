@@ -1,7 +1,7 @@
 apply plugin: 'java'
 
 group 'org.mve'
-version '1.9.4'
+version '1.10-SNAPSHOT-1'
 
 java
 {
