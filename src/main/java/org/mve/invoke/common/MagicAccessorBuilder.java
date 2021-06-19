@@ -582,11 +582,11 @@ public class MagicAccessorBuilder
 					.method(Opcodes.INVOKEINTERFACE, Generator.getType(Member.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), true)
 					.instruction(Opcodes.ARETURN)
 					.max(4, 2)
-				)
-				.addAttribute(new StackMapTableWriter()
-					.sameFrame(m1)
-					.sameFrame(m2)
-					.sameFrame(m3)
+					.addAttribute(new StackMapTableWriter()
+						.sameFrame(m1)
+						.sameFrame(m2)
+						.sameFrame(m3)
+					)
 				);
 			cw.addMethod(mw);
 			setter.invoke(filter);
