@@ -8,10 +8,12 @@ import org.mve.asm.file.constant.ConstantInteger;
 import org.mve.asm.file.constant.ConstantInterfaceMethodReference;
 import org.mve.asm.file.constant.ConstantLong;
 import org.mve.asm.file.constant.ConstantMethodReference;
+import org.mve.asm.file.constant.ConstantModule;
 import org.mve.asm.file.constant.ConstantNameAndType;
 import org.mve.asm.file.constant.ConstantNull;
 import org.mve.asm.file.constant.ConstantArray;
 import org.mve.asm.file.constant.Constant;
+import org.mve.asm.file.constant.ConstantPackage;
 import org.mve.asm.file.constant.ConstantString;
 import org.mve.asm.file.constant.ConstantUTF8;
 
@@ -231,6 +233,46 @@ public class ConstantPoolFinder
 		int nameAndTypeIndex = findNameAndType(array, name, sign);
 		Constant element = isAbstract ? new ConstantInterfaceMethodReference((short) classIndex, (short) nameAndTypeIndex) : new ConstantMethodReference((short) classIndex, (short) nameAndTypeIndex);
 		array.add(element);
+		return (array.element.length & 0XFFFF) - 1;
+	}
+
+	public static int findPackage(ConstantArray array, String name)
+	{
+		byte[] bytes = name.getBytes(StandardCharsets.UTF_8);
+		int size = array.element.length & 0XFFFF;
+		for (int i = 0; i < size; i++)
+		{
+			Constant element = array.element[i];
+			if (element instanceof ConstantPackage)
+			{
+				ConstantPackage constant = (ConstantPackage) element;
+				int nameIndex = constant.name & 0XFFFF;
+				if (Arrays.equals(((ConstantUTF8)array.element[nameIndex]).value, bytes)) return i;
+			}
+		}
+		int nameIndex = findUTF8(array, name);
+		ConstantPackage constant = new ConstantPackage((short) nameIndex);
+		array.add(constant);
+		return (array.element.length & 0XFFFF) - 1;
+	}
+
+	public static int findModule(ConstantArray array, String name)
+	{
+		byte[] bytes = name.getBytes(StandardCharsets.UTF_8);
+		int size = array.element.length & 0XFFFF;
+		for (int i = 0; i < size; i++)
+		{
+			Constant element = array.element[i];
+			if (element instanceof ConstantModule)
+			{
+				ConstantModule constant = (ConstantModule) element;
+				int nameIndex = constant.name & 0XFFFF;
+				if (Arrays.equals(((ConstantUTF8)array.element[nameIndex]).value, bytes)) return i;
+			}
+		}
+		int nameIndex = findUTF8(array, name);
+		ConstantModule constant = new ConstantModule((short) nameIndex);
+		array.add(constant);
 		return (array.element.length & 0XFFFF) - 1;
 	}
 }
