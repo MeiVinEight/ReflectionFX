@@ -25,7 +25,7 @@ public class NativeConstructorAccessorGenerator extends ConstructorAccessorGener
 	public void generate()
 	{
 		Constructor<?> constructor = this.getConstructor();
-		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
 		this.bytecode.method(mw);
 		Generator.inline(mw);
 		mw.attribute(new CodeWriter()
@@ -39,7 +39,7 @@ public class NativeConstructorAccessorGenerator extends ConstructorAccessorGener
 		);
 		if (constructor.getParameterTypes().length == 0)
 		{
-			mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString());
+			mw = new MethodWriter().set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString());
 			this.bytecode.method(mw);
 			Generator.inline(mw);
 			mw.attribute(new CodeWriter()

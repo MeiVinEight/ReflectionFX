@@ -26,7 +26,7 @@ public abstract class ConstructorAccessorGenerator extends AccessibleObjectAcces
 	{
 		super.pregenerate(bytecode);
 		bytecode.method(new MethodWriter()
-			.set(AccessFlag.ACC_PUBLIC, "getConstructor", MethodType.methodType(Constructor.class).toMethodDescriptorString())
+			.set(AccessFlag.PUBLIC, "getConstructor", MethodType.methodType(Constructor.class).toMethodDescriptorString())
 			.attribute(new CodeWriter()
 				.field(Opcodes.GETSTATIC, bytecode.name, "1", Generator.getSignature(AccessibleObject.class))
 				.type(Opcodes.CHECKCAST, Generator.getType(Constructor.class))

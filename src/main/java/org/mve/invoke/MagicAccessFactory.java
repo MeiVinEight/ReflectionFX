@@ -41,7 +41,7 @@ public class MagicAccessFactory
 				Class<?>[] parameters = method.getParameterTypes();
 				Class<?> returnType = method.getReturnType();
 
-				MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, method.getName(), MethodType.methodType(returnType, parameters).toMethodDescriptorString());
+				MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, method.getName(), MethodType.methodType(returnType, parameters).toMethodDescriptorString());
 				CodeWriter cw = new CodeWriter();
 				mw.attribute(cw);
 

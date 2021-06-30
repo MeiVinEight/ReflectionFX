@@ -183,7 +183,7 @@ public class PolymorphismFactory<T>
 				ClassWriter bridge = new ClassWriter()
 					.set(
 						0x34,
-						AccessFlag.ACC_PUBLIC | AccessFlag.ACC_INTERFACE | AccessFlag.ACC_ABSTRACT,
+						AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT,
 						name,
 						"java/lang/Object",
 						null
@@ -191,7 +191,7 @@ public class PolymorphismFactory<T>
 				List<MethodKind> kinds = this.kinds.get(objective);
 				for (MethodKind kind : kinds)
 				{
-					bridge.method(new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_ABSTRACT, kind.name(), kind.type().toMethodDescriptorString()));
+					bridge.method(new MethodWriter().set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, kind.name(), kind.type().toMethodDescriptorString()));
 				}
 				byte[] code = bridge.toByteArray();
 				accessor = UNSAFE.defineClass(name, code, 0, code.length, null, null);
@@ -201,7 +201,7 @@ public class PolymorphismFactory<T>
 				ClassWriter invoke = new ClassWriter()
 					.set(
 						0x34,
-						AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER,
+						AccessFlag.PUBLIC | AccessFlag.SUPER,
 						UUID.randomUUID().toString().toUpperCase(),
 						Generator.CONSTANT_POOL[0],
 						new String[]{name}
@@ -222,7 +222,7 @@ public class PolymorphismFactory<T>
 
 		for (Class<?> accessor : cidList)
 		{
-			cw.field(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, cids.get(accessor), Generator.getSignature(accessor)));
+			cw.field(new FieldWriter().set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.FINAL, cids.get(accessor), Generator.getSignature(accessor)));
 		}
 
 		for (Map.Entry<MethodKind, Class<?>> entry : this.objectives.entrySet())
@@ -235,7 +235,7 @@ public class PolymorphismFactory<T>
 			MethodWriter method;
 			CodeWriter code;
 			cw.method(method = new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
 				.attribute(code = new CodeWriter()
 					.field(Opcodes.GETSTATIC, cw.name, name, Generator.getSignature(accessor))
 				)

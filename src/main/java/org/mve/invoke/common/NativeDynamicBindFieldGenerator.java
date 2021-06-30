@@ -19,7 +19,7 @@ public class NativeDynamicBindFieldGenerator extends DynamicBindFieldGenerator
 	public void generate(ClassWriter bytecode)
 	{
 		Field field = ReflectionFactory.ACCESSOR.getField(this.getTarget(), this.operation());
-		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
 		bytecode.method(mw);
 		Generator.inline(mw);
 		if (this.kind() == ReflectionFactory.KIND_PUT)

@@ -18,7 +18,7 @@ public class MagicDynamicBindInstantiationGenerator extends DynamicBindInstantia
 	public void generate(ClassWriter bytecode)
 	{
 		MethodWriter mw = new MethodWriter()
-			.set(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString())
+			.set(AccessFlag.PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString())
 			.attribute(new CodeWriter()
 				.type(Opcodes.NEW, Generator.getType(getTarget()))
 				.instruction(Opcodes.ARETURN)

@@ -22,7 +22,7 @@ public class NativeDynamicBindConstructGenerator extends DynamicBindConstructGen
 	@Override
 	public void generate(ClassWriter bytecode)
 	{
-		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
 		bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();

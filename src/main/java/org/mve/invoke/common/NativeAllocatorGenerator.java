@@ -23,7 +23,7 @@ public class NativeAllocatorGenerator extends AllocatorGenerator
 	public void generate()
 	{
 		MethodWriter mw = new MethodWriter()
-			.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString())
+			.set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString())
 			.attribute(new CodeWriter()
 				.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
 				.field(Opcodes.GETSTATIC, this.bytecode.name, "0", Generator.getSignature(Class.class))
@@ -35,7 +35,7 @@ public class NativeAllocatorGenerator extends AllocatorGenerator
 		this.bytecode.method(mw);
 
 		mw = new MethodWriter()
-		.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString())
+		.set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString())
 		.attribute(new CodeWriter()
 			.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
 			.field(Opcodes.GETSTATIC, this.bytecode.name, "0", Generator.getSignature(Class.class))

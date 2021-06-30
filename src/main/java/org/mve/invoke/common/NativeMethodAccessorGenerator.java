@@ -29,7 +29,7 @@ public class NativeMethodAccessorGenerator extends MethodAccessorGenerator
 	{
 		int modifiers = this.method.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
-		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
 		this.bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
@@ -58,7 +58,7 @@ public class NativeMethodAccessorGenerator extends MethodAccessorGenerator
 		if (statics && this.method.getParameterTypes().length == 0)
 		{
 			mw = new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString())
 				.attribute(new CodeWriter()
 					.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
 					.field(Opcodes.GETSTATIC, this.bytecode.name, "1", Generator.getSignature(AccessibleObject.class))

@@ -22,7 +22,7 @@ public class NativeDynamicBindInstantiationGenerator extends DynamicBindInstanti
 	public void generate(ClassWriter bytecode)
 	{
 		MethodWriter mw = new MethodWriter()
-			.set(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString())
+			.set(AccessFlag.PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString())
 			.attribute(new CodeWriter()
 				.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
 				.field(Opcodes.GETSTATIC, bytecode.name, "0", Generator.getSignature(Class.class))

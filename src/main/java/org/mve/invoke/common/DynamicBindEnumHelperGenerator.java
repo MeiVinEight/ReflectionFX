@@ -53,7 +53,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 		Marker m1 = new Marker();
 		bytecode
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, String.class).toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, "construct", MethodType.methodType(Object.class, String.class).toMethodDescriptorString())
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -72,7 +72,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				)
 			)
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(this.target, String.class).toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, "construct", MethodType.methodType(this.target, String.class).toMethodDescriptorString())
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -91,7 +91,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				)
 			)
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, String.class, int.class).toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, "construct", MethodType.methodType(Object.class, String.class, int.class).toMethodDescriptorString())
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -109,7 +109,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				)
 			)
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(this.target, String.class, int.class).toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, "construct", MethodType.methodType(this.target, String.class, int.class).toMethodDescriptorString())
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -127,7 +127,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				)
 			)
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "values", MethodType.methodType(Object[].class).toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, "values", MethodType.methodType(Object[].class).toMethodDescriptorString())
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -141,7 +141,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				)
 			)
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "values", "()[".concat(Generator.getSignature(target)))
+				.set(AccessFlag.PUBLIC, "values", "()[".concat(Generator.getSignature(target)))
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -155,7 +155,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				)
 			)
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "values", MethodType.methodType(void.class, Object[].class).toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, "values", MethodType.methodType(void.class, Object[].class).toMethodDescriptorString())
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -175,7 +175,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				)
 			)
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "values", "([".concat(Generator.getSignature(this.target)).concat(")V"))
+				.set(AccessFlag.PUBLIC, "values", "([".concat(Generator.getSignature(this.target)).concat(")V"))
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -195,7 +195,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				)
 			)
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "add", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, "add", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -231,7 +231,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				)
 			)
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "add", MethodType.methodType(void.class, target).toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, "add", MethodType.methodType(void.class, target).toMethodDescriptorString())
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -267,7 +267,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 				)
 			)
 			.method(new MethodWriter()
-				.set(AccessFlag.ACC_PUBLIC, "remove", MethodType.methodType(void.class, int.class).toMethodDescriptorString())
+				.set(AccessFlag.PUBLIC, "remove", MethodType.methodType(void.class, int.class).toMethodDescriptorString())
 				.attribute(
 					new RuntimeVisibleAnnotationsWriter()
 						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
@@ -324,7 +324,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 		if (openJ9VM)
 		{
 			bytecode.method(new MethodWriter()
-				.set(AccessFlag.ACC_PRIVATE, "clearEnumConstants", "()V")
+				.set(AccessFlag.PRIVATE, "clearEnumConstants", "()V")
 				.attribute(new CodeWriter()
 					.constant(this.target)
 					.instruction(Opcodes.ACONST_NULL)
@@ -337,7 +337,7 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 		else
 		{
 			bytecode.method(new MethodWriter()
-				.set(AccessFlag.ACC_PRIVATE, "clearEnumConstants", "()V")
+				.set(AccessFlag.PRIVATE, "clearEnumConstants", "()V")
 				.attribute(new CodeWriter()
 					.constant(this.target)
 					.instruction(Opcodes.ACONST_NULL)

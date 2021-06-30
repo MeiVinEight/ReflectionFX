@@ -29,14 +29,14 @@ public class UnsafeBuilder
 		String className = "org/mve/invoke/UnsafeWrapper";
 		ClassWriter cw = new ClassWriter();
 		cw.set(0x34, 0x21, className, constantPool[0], new String[]{"org/mve/invoke/Unsafe"});
-		cw.field(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "final", unsafeSignature));
+		cw.field(new FieldWriter().set(AccessFlag.PRIVATE | AccessFlag.FINAL | AccessFlag.STATIC, "final", unsafeSignature));
 
 		// implement methods
 		{
 			Consumer<ClassWriter> implement = (cw1) ->
 			{
 				{
-					MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "getJavaVMVersion", "()I");
+					MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, "getJavaVMVersion", "()I");
 					cw1.method(mw);
 					CodeWriter code = new CodeWriter();
 					mw.attribute(code);
@@ -47,7 +47,7 @@ public class UnsafeBuilder
 
 				{
 					cw1.method(new MethodWriter()
-						.set(AccessFlag.ACC_PUBLIC, "getJavaVMVendor", "()Ljava/lang/String;")
+						.set(AccessFlag.PUBLIC, "getJavaVMVendor", "()Ljava/lang/String;")
 						.attribute(new CodeWriter()
 							.constant(vm)
 							.instruction(Opcodes.ARETURN)
@@ -58,7 +58,7 @@ public class UnsafeBuilder
 
 				{
 					cw1.method(new MethodWriter()
-						.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString())
+						.set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString())
 						.attribute(new CodeWriter()
 							.instruction(Opcodes.ALOAD_1)
 							.instruction(Opcodes.ALOAD_2)
@@ -72,7 +72,7 @@ public class UnsafeBuilder
 
 				{
 					cw1.method(new MethodWriter()
-						.set(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString())
+						.set(AccessFlag.PUBLIC, "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString())
 						.attribute(new CodeWriter()
 							.instruction(Opcodes.ALOAD_1)
 							.instruction(Opcodes.ALOAD_2)
@@ -86,7 +86,7 @@ public class UnsafeBuilder
 				BiConsumer<String[], Class<?>[]> method = (name, arr) ->
 				{
 					String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
-					MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, name[0], desc);
+					MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, name[0], desc);
 					cw1.method(mw);
 					if (name.length == 3) mw.attribute(new SignatureWriter(name[2]));
 					CodeWriter code = new CodeWriter();
@@ -117,7 +117,7 @@ public class UnsafeBuilder
 				BiConsumer<String[], Class<?>[]> unsupported = (name, arr) ->
 				{
 					String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
-					MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, name[0], desc);
+					MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC | AccessFlag.FINAL, name[0], desc);
 					cw1.method(mw);
 					if (name.length == 2 && name[1] != null)
 					{
@@ -672,7 +672,7 @@ public class UnsafeBuilder
 
 		// static constructor
 		{
-			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_STATIC, "<clinit>", "()V");
+			MethodWriter mw = new MethodWriter().set(AccessFlag.STATIC, "<clinit>", "()V");
 			cw.method(mw);
 			CodeWriter code = new CodeWriter();
 			mw.attribute(code);

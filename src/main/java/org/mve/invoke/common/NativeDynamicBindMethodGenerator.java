@@ -23,7 +23,7 @@ public class NativeDynamicBindMethodGenerator extends DynamicBindMethodGenerator
 	public void generate(ClassWriter bytecode)
 	{
 		boolean statics = this.kind() == ReflectionFactory.KIND_INVOKE_STATIC;
-		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, this.implementation().name(), this.implementation().type().toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, this.implementation().name(), this.implementation().type().toMethodDescriptorString());
 		bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();

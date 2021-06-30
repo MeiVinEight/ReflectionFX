@@ -25,7 +25,7 @@ public abstract class AccessibleObjectAccessorGenerator extends AccessorGenerato
 	{
 		super.pregenerate(bytecode);
 		bytecode.field(new FieldWriter()
-			.set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "1", Generator.getSignature(AccessibleObject.class))
+			.set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.FINAL, "1", Generator.getSignature(AccessibleObject.class))
 		);
 	}
 

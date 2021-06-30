@@ -23,17 +23,17 @@ public abstract class AccessorGenerator extends Generator
 	public AccessorGenerator(Class<?> target)
 	{
 		this.target = target;
-		this.bytecode.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER, UUID.randomUUID().toString().toUpperCase(), CONSTANT_POOL[0], new String[]{});
+		this.bytecode.set(0x34, AccessFlag.PUBLIC | AccessFlag.SUPER, UUID.randomUUID().toString().toUpperCase(), CONSTANT_POOL[0], new String[]{});
 		this.pregenerate(this.bytecode);
 	}
 
 	public void pregenerate(ClassWriter bytecode)
 	{
 		bytecode.field(new FieldWriter()
-			.set(AccessFlag.ACC_FINAL | AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "0", Generator.getSignature(Class.class))
+			.set(AccessFlag.FINAL | AccessFlag.PRIVATE | AccessFlag.STATIC, "0", Generator.getSignature(Class.class))
 		);
 		bytecode.method(new MethodWriter()
-			.set(AccessFlag.ACC_PUBLIC, "access", MethodType.methodType(Class.class).toMethodDescriptorString())
+			.set(AccessFlag.PUBLIC, "access", MethodType.methodType(Class.class).toMethodDescriptorString())
 			.attribute(new CodeWriter()
 				.field(Opcodes.GETSTATIC, this.bytecode.name, "0", Generator.getSignature(Class.class))
 				.instruction(Opcodes.ARETURN)

@@ -29,7 +29,7 @@ public class MagicMethodAccessorGenerator extends MethodAccessorGenerator
 		int modifiers = this.method.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
 		boolean	interfaces = Modifier.isAbstract(modifiers);
-		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
 		this.bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
@@ -60,7 +60,7 @@ public class MagicMethodAccessorGenerator extends MethodAccessorGenerator
 			.max(this.stack(), 2);
 		if (statics && parameters.length == 0)
 		{
-			mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString());
+			mw = new MethodWriter().set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString());
 			this.bytecode.method(mw);
 			Generator.inline(mw);
 			code = new CodeWriter();

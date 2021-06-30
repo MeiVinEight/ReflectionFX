@@ -20,7 +20,7 @@ public abstract class DynamicBind extends Generator
 		this.define = Generator.checkAccessible(c.getClassLoader()) ? c : ReflectionFactory.class;
 		this.target = target;
 		this.bytecode.set(0x34, 0x21, UUID.randomUUID().toString().toUpperCase(), CONSTANT_POOL[0], new String[]{Generator.getType(handle)});
-		this.bytecode.field(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "0", Generator.getSignature(Class.class)));
+		this.bytecode.field(new FieldWriter().set(AccessFlag.PRIVATE | AccessFlag.STATIC, "0", Generator.getSignature(Class.class)));
 	}
 
 	public void postgenerate(Class<?> generated)
