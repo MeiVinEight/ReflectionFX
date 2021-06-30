@@ -127,7 +127,7 @@ public class MagicAccessorBuilder
 				code.instruction(Opcodes.ALOAD_1)
 					.instruction(Opcodes.ILOAD_2)
 					.instruction(Opcodes.ALOAD_3)
-					.method(Opcodes.INVOKESPECIAL, Generator.getType(Class.class), "forNameImpl", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(), false)
+					.method(Opcodes.INVOKESTATIC, Generator.getType(Class.class), "forNameImpl", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(), false)
 					.instruction(Opcodes.ARETURN)
 					.max(3, 4);
 			}
