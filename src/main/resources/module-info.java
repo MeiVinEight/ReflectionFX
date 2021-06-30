@@ -1,5 +1,6 @@
 open module org.mve.rfx {
 	requires java.base;
+	requires java.management;
 	requires jdk.unsupported;
 
 	exports org.mve.asm;
