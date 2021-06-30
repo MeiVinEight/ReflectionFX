@@ -1,6 +1,7 @@
 package org.mve.asm;
 
 import org.mve.asm.attribute.AttributeWriter;
+import org.mve.asm.file.AccessFlag;
 import org.mve.asm.file.Field;
 import org.mve.asm.file.Class;
 import org.mve.asm.file.Method;
@@ -106,7 +107,7 @@ public class ClassWriter
 		file.major = this.major;
 		file.access = this.access;
 		file.self = ConstantPoolFinder.findClass(pool, this.name);
-		file.supers = ConstantPoolFinder.findClass(pool, this.supers);
+		file.supers = (this.access & AccessFlag.MODULE) != 0 ? 0 : ConstantPoolFinder.findClass(pool, this.supers);
 		for (String str : this.interfaces)
 		{
 			file.interfaces(ConstantPoolFinder.findClass(pool, str));
