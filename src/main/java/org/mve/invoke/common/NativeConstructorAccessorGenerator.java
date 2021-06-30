@@ -26,11 +26,11 @@ public class NativeConstructorAccessorGenerator extends ConstructorAccessorGener
 	{
 		Constructor<?> constructor = this.getConstructor();
 		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
-		this.bytecode.addMethod(mw);
+		this.bytecode.method(mw);
 		Generator.inline(mw);
-		mw.addAttribute(new CodeWriter()
+		mw.attribute(new CodeWriter()
 			.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-			.field(Opcodes.GETSTATIC, this.bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
+			.field(Opcodes.GETSTATIC, this.bytecode.name, "1", Generator.getSignature(AccessibleObject.class))
 			.type(Opcodes.CHECKCAST, Generator.getType(Constructor.class))
 			.instruction(Opcodes.ALOAD_1)
 			.method(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), true)
@@ -40,11 +40,11 @@ public class NativeConstructorAccessorGenerator extends ConstructorAccessorGener
 		if (constructor.getParameterTypes().length == 0)
 		{
 			mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString());
-			this.bytecode.addMethod(mw);
+			this.bytecode.method(mw);
 			Generator.inline(mw);
-			mw.addAttribute(new CodeWriter()
+			mw.attribute(new CodeWriter()
 				.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-				.field(Opcodes.GETSTATIC, this.bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
+				.field(Opcodes.GETSTATIC, this.bytecode.name, "1", Generator.getSignature(AccessibleObject.class))
 				.type(Opcodes.CHECKCAST, Generator.getType(Constructor.class))
 				.instruction(Opcodes.ICONST_0)
 				.type(Opcodes.ANEWARRAY, Generator.getType(Object.class))

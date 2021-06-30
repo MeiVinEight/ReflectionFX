@@ -23,10 +23,10 @@ public class MagicDynamicBindMethodGenerator extends DynamicBindMethodGenerator
 		MethodKind invocation = this.invocation();
 		int kind = this.kind();
 		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString());
-		bytecode.addMethod(mw);
+		bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
-		mw.addAttribute(code);
+		mw.attribute(code);
 		int local = 1;
 		Class<?>[] params = implementation.type().parameterArray();
 		for (Class<?> c : params)

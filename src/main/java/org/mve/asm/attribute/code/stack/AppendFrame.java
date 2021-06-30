@@ -1,10 +1,12 @@
 package org.mve.asm.attribute.code.stack;
 
 import org.mve.asm.attribute.code.Marker;
-import org.mve.asm.file.ConstantPool;
-import org.mve.asm.file.StackMapAppendFrame;
-import org.mve.asm.file.StackMapFrameType;
+import org.mve.asm.file.constant.ConstantArray;
+import org.mve.asm.file.attribute.stack.StackMapAppendFrame;
+import org.mve.asm.file.attribute.stack.StackMapFrameType;
 import org.mve.asm.attribute.code.stack.verification.Verification;
+
+import java.util.Arrays;
 
 public class AppendFrame extends StackMapFrame
 {
@@ -12,22 +14,31 @@ public class AppendFrame extends StackMapFrame
 	 * length = k
 	 * k = frame_type - 251
 	 */
-	private final Verification[] verifications;
+	public Verification[] verification;
 
-	public AppendFrame(Marker marker, Verification[] verifications)
+	public AppendFrame verification(Verification verification)
 	{
-		super(marker);
-		this.verifications = verifications;
+		this.verification = Arrays.copyOf(this.verification, this.verification.length+1);
+		this.verification[this.verification.length-1] = verification;
+		return this;
 	}
 
 	@Override
-	public org.mve.asm.file.StackMapFrame transform(int previous, ConstantPool pool)
+	public AppendFrame mark(Marker marker)
 	{
-		StackMapAppendFrame frame = new StackMapAppendFrame((byte) (StackMapFrameType.STACK_MAP_APPEND_FRAME.getLow() + this.verifications.length - 1));
-		frame.setOffsetDelta((short) (this.marker.address - previous));
-		for (int i = 0; i < this.verifications.length; i++)
+		return (AppendFrame) super.mark(marker);
+	}
+
+	@Override
+	public org.mve.asm.file.attribute.stack.StackMapFrame transform(int previous, ConstantArray pool)
+	{
+		StackMapAppendFrame frame = new StackMapAppendFrame();
+		frame.type = StackMapFrameType.STACK_MAP_APPEND_FRAME.low() + this.verification.length - 1;
+		frame.verification = new org.mve.asm.file.attribute.stack.verification.Verification[this.verification.length];
+		frame.offset = this.marker.address - previous;
+		for (int i = 0; i < this.verification.length; i++)
 		{
-			frame.setVerification(i, this.verifications[i].transform(pool));
+			frame.verification[i] = this.verification[i].transform(pool);
 		}
 		return frame;
 	}

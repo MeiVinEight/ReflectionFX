@@ -29,7 +29,7 @@ public class NativeDynamicBind extends DynamicBind
 	{
 		String name = invocation.name().concat(invocation.type().toMethodDescriptorString());
 		this.methods.put(name, ReflectionFactory.ACCESSOR.getMethod(this.target, invocation.name(), invocation.type().returnType(), invocation.type().parameterArray()));
-		this.bytecode.addField(new FieldWriter()
+		this.bytecode.field(new FieldWriter()
 			.set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, name, Generator.getSignature(Method.class))
 		);
 		new NativeDynamicBindMethodGenerator(this.target, implementation, invocation, kind).generate(this.bytecode);
@@ -47,7 +47,7 @@ public class NativeDynamicBind extends DynamicBind
 		Constructor<?> constructor = ReflectionFactory.ACCESSOR.getConstructor(this.target, invocation.type().parameterArray());
 		String name = "<init>".concat(MethodType.methodType(void.class, invocation.type().parameterArray()).toMethodDescriptorString());
 		this.constructors.put(name, constructor);
-		this.bytecode.addField(new FieldWriter()
+		this.bytecode.field(new FieldWriter()
 			.set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, name, Generator.getSignature(Constructor.class))
 		);
 		new NativeDynamicBindConstructGenerator(this.target, implementation, invocation).generate(this.bytecode);

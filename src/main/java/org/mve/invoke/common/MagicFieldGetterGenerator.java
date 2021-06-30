@@ -23,7 +23,7 @@ public class MagicFieldGetterGenerator extends FieldGetterGenerator
 		int modifiers = field.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
 		CodeWriter code = new CodeWriter();
-		method.addAttribute(code);
+		method.attribute(code);
 		if (statics)
 		{
 			code.field(Opcodes.GETSTATIC, Generator.getType(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.getSignature(field.getType()))

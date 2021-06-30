@@ -2,8 +2,7 @@ package org.mve.asm.attribute.code.local;
 
 import org.mve.asm.ConstantPoolFinder;
 import org.mve.asm.attribute.code.Marker;
-import org.mve.asm.file.ConstantPool;
-import org.mve.asm.file.StructLocalVariableTable;
+import org.mve.asm.file.constant.ConstantArray;
 
 public class LocalVariable
 {
@@ -22,14 +21,14 @@ public class LocalVariable
 		this.type = type;
 	}
 
-	public StructLocalVariableTable transform(ConstantPool pool)
+	public org.mve.asm.file.attribute.local.LocalVariable transform(ConstantArray pool)
 	{
-		StructLocalVariableTable lvt = new StructLocalVariableTable();
-		lvt.setStartPc((short) this.from.address);
-		lvt.setLength((short) (this.to.address - this.from.address));
-		lvt.setIndex((short) this.slot);
-		lvt.setNameIndex((short) ConstantPoolFinder.findUTF8(pool, this.name));
-		lvt.setDescriptorIndex((short) ConstantPoolFinder.findUTF8(pool, this.type));
+		org.mve.asm.file.attribute.local.LocalVariable lvt = new org.mve.asm.file.attribute.local.LocalVariable();
+		lvt.start = this.from.address;
+		lvt.length = (this.to.address - this.from.address);
+		lvt.slot = this.slot;
+		lvt.name = ConstantPoolFinder.findUTF8(pool, this.name);
+		lvt.type = ConstantPoolFinder.findUTF8(pool, this.type);
 		return lvt;
 	}
 }

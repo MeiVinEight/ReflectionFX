@@ -1,8 +1,8 @@
 package org.mve.asm.attribute.code.stack.verification;
 
 import org.mve.asm.attribute.code.Marker;
-import org.mve.asm.file.ConstantPool;
-import org.mve.asm.file.VerificationUninitializedVariable;
+import org.mve.asm.file.constant.ConstantArray;
+import org.mve.asm.file.attribute.stack.verification.VerificationUninitializedVariable;
 
 public class UninitializedVariable implements Verification
 {
@@ -14,10 +14,10 @@ public class UninitializedVariable implements Verification
 	}
 
 	@Override
-	public org.mve.asm.file.Verification transform(ConstantPool pool)
+	public org.mve.asm.file.attribute.stack.verification.Verification transform(ConstantArray pool)
 	{
 		VerificationUninitializedVariable variable = new VerificationUninitializedVariable();
-		variable.setOffset((short) this.offset.address);
+		variable.offset = (short) this.offset.address;
 		return variable;
 	}
 }

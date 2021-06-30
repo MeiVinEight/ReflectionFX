@@ -2,16 +2,16 @@ package org.mve.asm.attribute;
 
 import org.mve.asm.AnnotationWriter;
 import org.mve.asm.ConstantPoolFinder;
-import org.mve.asm.file.Attribute;
-import org.mve.asm.file.AttributeRuntimeVisibleAnnotations;
-import org.mve.asm.file.AttributeType;
-import org.mve.asm.file.ConstantPool;
+import org.mve.asm.file.attribute.Attribute;
+import org.mve.asm.file.attribute.AttributeRuntimeVisibleAnnotations;
+import org.mve.asm.file.attribute.AttributeType;
+import org.mve.asm.file.constant.ConstantArray;
 
 import java.util.Arrays;
 
 public class RuntimeVisibleAnnotationsWriter implements AttributeWriter
 {
-	private AnnotationWriter[] annotations = new AnnotationWriter[0];
+	public AnnotationWriter[] annotations = new AnnotationWriter[0];
 
 	public RuntimeVisibleAnnotationsWriter addAnnotation(AnnotationWriter writer)
 	{
@@ -22,10 +22,11 @@ public class RuntimeVisibleAnnotationsWriter implements AttributeWriter
 	}
 
 	@Override
-	public Attribute getAttribute(ConstantPool pool)
+	public Attribute getAttribute(ConstantArray pool)
 	{
-		AttributeRuntimeVisibleAnnotations attr = new AttributeRuntimeVisibleAnnotations((short) ConstantPoolFinder.findUTF8(pool, AttributeType.RUNTIME_VISIBLE_ANNOTATIONS.getName()));
-		for (AnnotationWriter writer : this.annotations) attr.addAnnotation(writer.get(pool));
+		AttributeRuntimeVisibleAnnotations attr = new AttributeRuntimeVisibleAnnotations();
+		attr.name = ConstantPoolFinder.findUTF8(pool, AttributeType.RUNTIME_VISIBLE_ANNOTATIONS.getName());
+		for (AnnotationWriter writer : this.annotations) attr.annotation(writer.get(pool));
 		return attr;
 	}
 }

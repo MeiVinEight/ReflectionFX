@@ -1,14 +1,14 @@
 package org.mve.asm.attribute;
 
 import org.mve.asm.ConstantPoolFinder;
-import org.mve.asm.file.Attribute;
-import org.mve.asm.file.AttributeSourceFile;
-import org.mve.asm.file.AttributeType;
-import org.mve.asm.file.ConstantPool;
+import org.mve.asm.file.attribute.Attribute;
+import org.mve.asm.file.attribute.AttributeSourceFile;
+import org.mve.asm.file.attribute.AttributeType;
+import org.mve.asm.file.constant.ConstantArray;
 
 public class SourceWriter implements AttributeWriter
 {
-	public final String source;
+	public String source;
 
 	public SourceWriter(String source)
 	{
@@ -16,10 +16,11 @@ public class SourceWriter implements AttributeWriter
 	}
 
 	@Override
-	public Attribute getAttribute(ConstantPool pool)
+	public Attribute getAttribute(ConstantArray pool)
 	{
-		AttributeSourceFile attr = new AttributeSourceFile((short) ConstantPoolFinder.findUTF8(pool, AttributeType.SOURCE_FILE.getName()));
-		attr.setSourceFileIndex((short) ConstantPoolFinder.findUTF8(pool, this.source));
+		AttributeSourceFile attr = new AttributeSourceFile();
+		attr.name = ConstantPoolFinder.findUTF8(pool, AttributeType.SOURCE_FILE.getName());
+		attr.source = ConstantPoolFinder.findUTF8(pool, this.source);
 		return attr;
 	}
 }

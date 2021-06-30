@@ -1,6 +1,6 @@
 package org.mve.asm.attribute.code;
 
-import org.mve.asm.file.ConstantPool;
+import org.mve.asm.file.constant.ConstantArray;
 import org.mve.io.RandomAccessByteArray;
 
 import java.util.Map;
@@ -15,7 +15,7 @@ public abstract class Instruction implements Element
 	}
 
 	@Override
-	public void consume(ConstantPool pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
 	{
 		array.write(this.opcode);
 	}

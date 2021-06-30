@@ -19,7 +19,7 @@ public abstract class Generator
 
 	public static void inline(MethodWriter mw)
 	{
-		mw.addAttribute(new RuntimeVisibleAnnotationsWriter()
+		mw.attribute(new RuntimeVisibleAnnotationsWriter()
 			.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
 			.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
 			.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))

@@ -23,12 +23,12 @@ public class NativeDynamicBindConstructGenerator extends DynamicBindConstructGen
 	public void generate(ClassWriter bytecode)
 	{
 		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
-		bytecode.addMethod(mw);
+		bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
-		mw.addAttribute(code);
+		mw.attribute(code);
 		code.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-			.field(Opcodes.GETSTATIC, bytecode.getName(), "<init>".concat(MethodType.methodType(void.class, invocation().type().parameterArray()).toMethodDescriptorString()), Generator.getSignature(Constructor.class))
+			.field(Opcodes.GETSTATIC, bytecode.name, "<init>".concat(MethodType.methodType(void.class, invocation().type().parameterArray()).toMethodDescriptorString()), Generator.getSignature(Constructor.class))
 			.number(Opcodes.BIPUSH, invocation().type().parameterArray().length)
 			.type(Opcodes.ANEWARRAY, Generator.getType(Class.class));
 		int args = 0;

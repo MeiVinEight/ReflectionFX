@@ -191,7 +191,7 @@ public class PolymorphismFactory<T>
 				List<MethodKind> kinds = this.kinds.get(objective);
 				for (MethodKind kind : kinds)
 				{
-					bridge.addMethod(new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_ABSTRACT, kind.name(), kind.type().toMethodDescriptorString()));
+					bridge.method(new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_ABSTRACT, kind.name(), kind.type().toMethodDescriptorString()));
 				}
 				byte[] code = bridge.toByteArray();
 				accessor = UNSAFE.defineClass(name, code, 0, code.length, null, null);
@@ -222,7 +222,7 @@ public class PolymorphismFactory<T>
 
 		for (Class<?> accessor : cidList)
 		{
-			cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, cids.get(accessor), Generator.getSignature(accessor)));
+			cw.field(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, cids.get(accessor), Generator.getSignature(accessor)));
 		}
 
 		for (Map.Entry<MethodKind, Class<?>> entry : this.objectives.entrySet())
@@ -234,10 +234,10 @@ public class PolymorphismFactory<T>
 			String invoke = this.names.get(implementation);
 			MethodWriter method;
 			CodeWriter code;
-			cw.addMethod(method = new MethodWriter()
+			cw.method(method = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
-				.addAttribute(code = new CodeWriter()
-					.field(Opcodes.GETSTATIC, cw.getName(), name, Generator.getSignature(accessor))
+				.attribute(code = new CodeWriter()
+					.field(Opcodes.GETSTATIC, cw.name, name, Generator.getSignature(accessor))
 				)
 			);
 			Class<?>[] parameters = implementation.type().parameterArray();

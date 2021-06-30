@@ -1,8 +1,8 @@
 package org.mve.asm.attribute.code.stack.verification;
 
 import org.mve.asm.ConstantPoolFinder;
-import org.mve.asm.file.ConstantPool;
-import org.mve.asm.file.VerificationObjectVariable;
+import org.mve.asm.file.constant.ConstantArray;
+import org.mve.asm.file.attribute.stack.verification.VerificationObjectVariable;
 
 public class ObjectVariable implements Verification
 {
@@ -14,10 +14,10 @@ public class ObjectVariable implements Verification
 	}
 
 	@Override
-	public org.mve.asm.file.Verification transform(ConstantPool pool)
+	public org.mve.asm.file.attribute.stack.verification.Verification transform(ConstantArray pool)
 	{
 		VerificationObjectVariable variable = new VerificationObjectVariable();
-		variable.setConstantPoolIndex((short) ConstantPoolFinder.findClass(pool, this.type));
+		variable.type = (short) ConstantPoolFinder.findClass(pool, this.type);
 		return variable;
 	}
 }

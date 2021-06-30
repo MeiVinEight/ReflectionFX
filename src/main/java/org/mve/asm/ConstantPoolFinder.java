@@ -1,198 +1,209 @@
 package org.mve.asm;
 
-import org.mve.asm.file.ConstantClass;
-import org.mve.asm.file.ConstantDouble;
-import org.mve.asm.file.ConstantFieldReference;
-import org.mve.asm.file.ConstantFloat;
-import org.mve.asm.file.ConstantInteger;
-import org.mve.asm.file.ConstantInterfaceMethodReference;
-import org.mve.asm.file.ConstantLong;
-import org.mve.asm.file.ConstantMethodReference;
-import org.mve.asm.file.ConstantNameAndType;
-import org.mve.asm.file.ConstantNull;
-import org.mve.asm.file.ConstantPool;
-import org.mve.asm.file.ConstantPoolElement;
-import org.mve.asm.file.ConstantString;
-import org.mve.asm.file.ConstantUTF8;
+import org.mve.asm.file.constant.ConstantClass;
+import org.mve.asm.file.constant.ConstantDouble;
+import org.mve.asm.file.constant.ConstantFieldReference;
+import org.mve.asm.file.constant.ConstantFloat;
+import org.mve.asm.file.constant.ConstantInteger;
+import org.mve.asm.file.constant.ConstantInterfaceMethodReference;
+import org.mve.asm.file.constant.ConstantLong;
+import org.mve.asm.file.constant.ConstantMethodReference;
+import org.mve.asm.file.constant.ConstantNameAndType;
+import org.mve.asm.file.constant.ConstantNull;
+import org.mve.asm.file.constant.ConstantArray;
+import org.mve.asm.file.constant.Constant;
+import org.mve.asm.file.constant.ConstantString;
+import org.mve.asm.file.constant.ConstantUTF8;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class ConstantPoolFinder
 {
-	public static int findUTF8(ConstantPool pool, String str)
+	public static int findUTF8(ConstantArray array, String str)
 	{
-		int size = pool.size() & 0XFFFF;
+		byte[] bytes =  str.getBytes(StandardCharsets.UTF_8);
+		int size = array.element.length & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
-			ConstantPoolElement element = pool.getConstantPoolElement(i);
-			if (element instanceof ConstantUTF8 && ((ConstantUTF8)element).getUTF8().equals(str)) return i;
+			Constant element = array.element[i];
+			if (element instanceof ConstantUTF8 && Arrays.equals(((ConstantUTF8) element).value, bytes)) return i;
 		}
-		ConstantUTF8 constantUTF8 = new ConstantUTF8(str);
-		pool.addConstantPoolElement(constantUTF8);
-		return (pool.size() & 0XFFFF) - 1;
+		ConstantUTF8 constantUTF8 = new ConstantUTF8(bytes);
+		array.add(constantUTF8);
+		return (array.element.length & 0XFFFF) - 1;
 	}
 
-	public static int findInteger(ConstantPool pool, int num)
+	public static int findInteger(ConstantArray array, int num)
 	{
-		int size = pool.size() & 0XFFFF;
+		int size = array.element.length & 0XFFFF;
 		for (int i=0; i< size; i++)
 		{
-			ConstantPoolElement element = pool.getConstantPoolElement(i);
-			if (element instanceof ConstantInteger && ((ConstantInteger)element).getValue() == num) return i;
+			Constant element = array.element[i];
+			if (element instanceof ConstantInteger && ((ConstantInteger) element).value == num) return i;
 		}
 		ConstantInteger integer = new ConstantInteger(num);
-		pool.addConstantPoolElement(integer);
+		array.add(integer);
 		return size;
 	}
 
-	public static int findFloat(ConstantPool pool, float num)
+	public static int findFloat(ConstantArray array, float num)
 	{
-		int size = pool.size() & 0XFFFF;
+		int size = array.element.length & 0XFFFF;
 		for (int i=0; i< size; i++)
 		{
-			ConstantPoolElement element = pool.getConstantPoolElement(i);
-			if (element instanceof ConstantFloat && ((ConstantFloat)element).getValue() == num) return i;
+			Constant element = array.element[i];
+			if (element instanceof ConstantFloat && ((ConstantFloat) element).value == num) return i;
 		}
 		ConstantFloat integer = new ConstantFloat(num);
-		pool.addConstantPoolElement(integer);
+		array.add(integer);
 		return size;
 	}
 
-	public static int findLong(ConstantPool pool, long num)
+	public static int findLong(ConstantArray array, long num)
 	{
-		int size = pool.size() & 0XFFFF;
+		int size = array.element.length & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
-			ConstantPoolElement element = pool.getConstantPoolElement(i);
-			if (element instanceof ConstantLong && ((ConstantLong)element).getValue() == num) return i;
+			Constant element = array.element[i];
+			if (element instanceof ConstantLong && ((ConstantLong) element).value == num) return i;
 		}
 		ConstantLong constant = new ConstantLong(num);
-		pool.addConstantPoolElement(constant);
-		int ret = pool.size() & 0XFFFF;
-		pool.addConstantPoolElement(new ConstantNull());
+		array.add(constant);
+		int ret = array.element.length & 0XFFFF;
+		array.add(new ConstantNull());
 		return ret - 1;
 	}
 
-	public static int findDouble(ConstantPool pool, double num)
+	public static int findDouble(ConstantArray array, double num)
 	{
-		int size = pool.size() & 0XFFFF;
+		int size = array.element.length & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
-			ConstantPoolElement element = pool.getConstantPoolElement(i);
-			if (element instanceof ConstantDouble && ((ConstantDouble)element).getValue() == num) return i;
+			Constant element = array.element[i];
+			if (element instanceof ConstantDouble && ((ConstantDouble)element).value == num) return i;
 		}
 		ConstantDouble constant = new ConstantDouble(num);
-		pool.addConstantPoolElement(constant);
-		int ret = pool.size() & 0XFFFF;
-		pool.addConstantPoolElement(new ConstantNull());
+		array.add(constant);
+		int ret = array.element.length & 0XFFFF;
+		array.add(new ConstantNull());
 		return ret - 1;
 	}
 
-	public static int findString(ConstantPool pool, String string)
+	public static int findString(ConstantArray array, String string)
 	{
-		int size = pool.size() & 0XFFFF;
+		byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
+		int size = array.element.length & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
-			ConstantPoolElement element = pool.getConstantPoolElement(i);
-			if (element instanceof ConstantString && ((ConstantUTF8)pool.getConstantPoolElement(((ConstantString)element).getStringIndex())).getUTF8().equals(string)) return i;
+			Constant element = array.element[i];
+			if (element instanceof ConstantString && Arrays.equals(((ConstantUTF8)array.element[((ConstantString) element).value]).value, bytes)) return i;
 		}
-		int utfIndex = findUTF8(pool, string);
+		int utfIndex = findUTF8(array, string);
 		ConstantString constantString = new ConstantString((short) utfIndex);
-		pool.addConstantPoolElement(constantString);
-		return (pool.size() & 0XFFFF) - 1;
+		array.add(constantString);
+		return (array.element.length & 0XFFFF) - 1;
 	}
 
-	public static int findClass(ConstantPool pool, String type)
+	public static int findClass(ConstantArray array, String type)
 	{
-		int size = pool.size() & 0XFFFF;
+		byte[] bytes = type.getBytes(StandardCharsets.UTF_8);
+		int size = array.element.length & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
-			ConstantPoolElement element = pool.getConstantPoolElement(i);
+			Constant element = array.element[i];
 			if (element instanceof ConstantClass)
 			{
 				ConstantClass constant = (ConstantClass) element;
-				int nameIndex = constant.getNameIndex() & 0XFFFF;
-				if (((ConstantUTF8)pool.getConstantPoolElement(nameIndex)).getUTF8().equals(type)) return i;
+				int nameIndex = constant.name & 0XFFFF;
+				if (Arrays.equals(((ConstantUTF8)array.element[nameIndex]).value, bytes)) return i;
 			}
 		}
-		int nameIndex = findUTF8(pool, type);
+		int nameIndex = findUTF8(array, type);
 		ConstantClass constantClass = new ConstantClass((short) nameIndex);
-		pool.addConstantPoolElement(constantClass);
-		return (pool.size() & 0XFFFF) - 1;
+		array.add(constantClass);
+		return (array.element.length & 0XFFFF) - 1;
 	}
 
-	public static int findNameAndType(ConstantPool pool, String name, String type)
+	public static int findNameAndType(ConstantArray array, String name, String type)
 	{
 		Objects.requireNonNull(name);
 		Objects.requireNonNull(type);
-		int size = pool.size() & 0XFFFF;
+		int size = array.element.length & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
-			ConstantPoolElement element = pool.getConstantPoolElement(i);
+			Constant element = array.element[i];
 			if (element instanceof ConstantNameAndType)
 			{
 				ConstantNameAndType constantNameAndType = (ConstantNameAndType) element;
-				String name1 = ((ConstantUTF8)pool.getConstantPoolElement(constantNameAndType.getNameIndex() & 0XFFFF)).getUTF8();
-				String type1 = ((ConstantUTF8)pool.getConstantPoolElement(constantNameAndType.getTypeIndex() & 0XFFFF)).getUTF8();
+				String name1 = new String(((ConstantUTF8)array.element[constantNameAndType.name & 0XFFFF]).value, StandardCharsets.UTF_8);
+				String type1 = new String(((ConstantUTF8)array.element[constantNameAndType.type & 0XFFFF]).value, StandardCharsets.UTF_8);
 				if (name1.equals(name) && type1.equals(type)) return i;
 			}
 		}
-		int nameIndex = findUTF8(pool, name);
-		int typeIndex = findUTF8(pool, type);
+		int nameIndex = findUTF8(array, name);
+		int typeIndex = findUTF8(array, type);
 		ConstantNameAndType constantNameAndType = new ConstantNameAndType((short) nameIndex, (short) typeIndex);
-		pool.addConstantPoolElement(constantNameAndType);
-		return (pool.size() & 0XFFFF) - 1;
+		array.add(constantNameAndType);
+		return (array.element.length & 0XFFFF) - 1;
 	}
 
-	public static int findField(ConstantPool pool, String type, String name, String desc)
+	public static int findField(ConstantArray array, String type, String name, String sign)
 	{
-		int size = pool.size() & 0XFFFF;
+		byte[] typeValue = type.getBytes(StandardCharsets.UTF_8);
+		byte[] nameValue = name.getBytes(StandardCharsets.UTF_8);
+		byte[] signValue = sign.getBytes(StandardCharsets.UTF_8);
+		int size = array.element.length & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
-			ConstantPoolElement element = pool.getConstantPoolElement(i);
+			Constant element = array.element[i];
 			if (element instanceof ConstantFieldReference)
 			{
 				ConstantFieldReference fieldReference = (ConstantFieldReference) element;
-				int fieldClassIndex = fieldReference.getClassIndex() & 0XFFFF;
-				int nameAndTypeIndex = fieldReference.getNameAndTypeIndex() & 0XFFFF;
-				ConstantClass fieldClass = (ConstantClass) pool.getConstantPoolElement(fieldClassIndex);
-				ConstantNameAndType nameAndType = (ConstantNameAndType) pool.getConstantPoolElement(nameAndTypeIndex);
+				int fieldClassIndex = fieldReference.clazz & 0XFFFF;
+				int nameAndTypeIndex = fieldReference.nameAndType & 0XFFFF;
+				ConstantClass fieldClass = (ConstantClass) array.element[fieldClassIndex];
+				ConstantNameAndType nameAndType = (ConstantNameAndType) array.element[nameAndTypeIndex];
 				if (
-					((ConstantUTF8)pool.getConstantPoolElement(fieldClass.getNameIndex() & 0XFFFF)).getUTF8().equals(type) &&
+					Arrays.equals(((ConstantUTF8)array.element[fieldClass.name & 0XFFFF]).value, typeValue) &&
 						(
-							((ConstantUTF8)pool.getConstantPoolElement(nameAndType.getNameIndex() & 0XFFFF)).getUTF8().equals(name) &&
-								((ConstantUTF8)pool.getConstantPoolElement(nameAndType.getTypeIndex() & 0XFFFF)).getUTF8().equals(desc)
+							Arrays.equals(((ConstantUTF8)array.element[nameAndType.name & 0XFFFF]).value, nameValue) &&
+							Arrays.equals(((ConstantUTF8)array.element[nameAndType.type & 0XFFFF]).value, signValue)
 						)
 				) return i;
 			}
 		}
-		int classIndex = findClass(pool, type);
-		int nameAndTypeIndex = findNameAndType(pool, name, desc);
+		int classIndex = findClass(array, type);
+		int nameAndTypeIndex = findNameAndType(array, name, sign);
 		ConstantFieldReference fieldReference = new ConstantFieldReference((short) classIndex, (short) nameAndTypeIndex);
-		pool.addConstantPoolElement(fieldReference);
-		return (pool.size() & 0XFFFF) - 1;
+		array.add(fieldReference);
+		return (array.element.length & 0XFFFF) - 1;
 	}
 
-	public static int findMethod(ConstantPool pool, String type, String name, String desc, boolean isAbstract)
+	public static int findMethod(ConstantArray array, String type, String name, String sign, boolean isAbstract)
 	{
-		int size = pool.size() & 0XFFFF;
+		byte[] typeValue = type.getBytes(StandardCharsets.UTF_8);
+		byte[] nameValue = name.getBytes(StandardCharsets.UTF_8);
+		byte[] signValue = sign.getBytes(StandardCharsets.UTF_8);
+		int size = array.element.length & 0XFFFF;
 		for (int i = 0; i < size; i++)
 		{
-			ConstantPoolElement element = pool.getConstantPoolElement(i);
+			Constant element = array.element[i];
 			if (isAbstract)
 			{
 				if (element instanceof ConstantMethodReference)
 				{
 					ConstantMethodReference methodReference = (ConstantMethodReference) element;
-					int methodClassIndex = methodReference.getClassIndex() & 0XFFFF;
-					int nameAndTypeIndex = methodReference.getNameAndTypeIndex() & 0XFFFF;
-					ConstantClass methodClass = (ConstantClass) pool.getConstantPoolElement(methodClassIndex);
-					ConstantNameAndType nameAndType = (ConstantNameAndType) pool.getConstantPoolElement(nameAndTypeIndex);
+					int methodClassIndex = (short) methodReference.clazz;
+					int nameAndTypeIndex = (short) methodReference.nameAndType;
+					ConstantClass methodClass = (ConstantClass) array.element[methodClassIndex];
+					ConstantNameAndType nameAndType = (ConstantNameAndType) array.element[nameAndTypeIndex];
 					if (
-						((ConstantUTF8)pool.getConstantPoolElement(methodClass.getNameIndex() & 0XFFFF)).getUTF8().equals(type) &&
+						Arrays.equals(((ConstantUTF8)array.element[methodClass.name & 0XFFFF]).value, typeValue) &&
 							(
-								((ConstantUTF8)pool.getConstantPoolElement(nameAndType.getNameIndex() & 0XFFFF)).getUTF8().equals(name) &&
-									((ConstantUTF8)pool.getConstantPoolElement(nameAndType.getTypeIndex() & 0XFFFF)).getUTF8().equals(desc)
+								Arrays.equals(((ConstantUTF8)array.element[nameAndType.name & 0XFFFF]).value, nameValue) &&
+								Arrays.equals(((ConstantUTF8)array.element[nameAndType.type & 0XFFFF]).value, signValue)
 							)
 					) return i;
 				}
@@ -202,24 +213,24 @@ public class ConstantPoolFinder
 				if (element instanceof ConstantInterfaceMethodReference)
 				{
 					ConstantInterfaceMethodReference methodReference = (ConstantInterfaceMethodReference) element;
-					int methodClassIndex = methodReference.getClassIndex() & 0XFFFF;
-					int nameAndTypeIndex = methodReference.getNameAndTypeIndex() & 0XFFFF;
-					ConstantClass methodClass = (ConstantClass) pool.getConstantPoolElement(methodClassIndex);
-					ConstantNameAndType nameAndType = (ConstantNameAndType) pool.getConstantPoolElement(nameAndTypeIndex);
+					int methodClassIndex = (short) methodReference.clazz;
+					int nameAndTypeIndex = (short) methodReference.nameAndType;
+					ConstantClass methodClass = (ConstantClass) array.element[methodClassIndex];
+					ConstantNameAndType nameAndType = (ConstantNameAndType) array.element[nameAndTypeIndex];
 					if (
-						((ConstantUTF8)pool.getConstantPoolElement(methodClass.getNameIndex() & 0XFFFF)).getUTF8().equals(type) &&
+						Arrays.equals(((ConstantUTF8)array.element[methodClass.name & 0XFFFF]).value, typeValue) &&
 							(
-								((ConstantUTF8)pool.getConstantPoolElement(nameAndType.getNameIndex() & 0XFFFF)).getUTF8().equals(name) &&
-									((ConstantUTF8)pool.getConstantPoolElement(nameAndType.getTypeIndex() & 0XFFFF)).getUTF8().equals(desc)
+								Arrays.equals(((ConstantUTF8)array.element[nameAndType.name & 0XFFFF]).value, nameValue) &&
+								Arrays.equals(((ConstantUTF8)array.element[nameAndType.type & 0XFFFF]).value, signValue)
 							)
 					) return i;
 				}
 			}
 		}
-		int classIndex = findClass(pool, type);
-		int nameAndTypeIndex = findNameAndType(pool, name, desc);
-		ConstantPoolElement element = isAbstract ? new ConstantInterfaceMethodReference((short) classIndex, (short) nameAndTypeIndex) : new ConstantMethodReference((short) classIndex, (short) nameAndTypeIndex);
-		pool.addConstantPoolElement(element);
-		return (pool.size() & 0XFFFF) - 1;
+		int classIndex = findClass(array, type);
+		int nameAndTypeIndex = findNameAndType(array, name, sign);
+		Constant element = isAbstract ? new ConstantInterfaceMethodReference((short) classIndex, (short) nameAndTypeIndex) : new ConstantMethodReference((short) classIndex, (short) nameAndTypeIndex);
+		array.add(element);
+		return (array.element.length & 0XFFFF) - 1;
 	}
 }

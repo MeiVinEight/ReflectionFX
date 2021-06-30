@@ -34,17 +34,17 @@ public class MagicAccessorBuilder
 		String className = "org/mve/invoke/ReflectionMagicAccessor";
 		ClassWriter cw = new ClassWriter();
 		cw.set(0x34, AccessFlag.ACC_PUBLIC | AccessFlag.ACC_SUPER | AccessFlag.ACC_FINAL, className, constantPool[0], new String[]{Generator.getType(MagicAccessor.class)});
-		cw.addAttribute(new SourceWriter("MagicAccessor.java"));
-		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "0", Generator.getSignature(SecurityManager.class)));
+		cw.attribute(new SourceWriter("MagicAccessor.java"));
+		cw.field(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC | AccessFlag.ACC_FINAL, "0", Generator.getSignature(SecurityManager.class)));
 
 		/*
 		 * <clinit>
 		 */
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_STATIC, "<clinit>", "()V");
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.type(Opcodes.NEW, Generator.getType(SecurityManager.class));
 			code.instruction(Opcodes.DUP);
 			code.method(Opcodes.INVOKESPECIAL, Generator.getType(SecurityManager.class), "<init>", "()V", false);
@@ -58,9 +58,9 @@ public class MagicAccessorBuilder
 		 * int version()
 		 */
 		{
-			cw.addMethod(new MethodWriter()
+			cw.method(new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "version", "()I")
-				.addAttribute(new CodeWriter()
+				.attribute(new CodeWriter()
 					.number(Opcodes.BIPUSH, vmVersion - 44)
 					.instruction(Opcodes.IRETURN)
 					.max(1, 1)
@@ -73,9 +73,9 @@ public class MagicAccessorBuilder
 		 */
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "setAccessible", MethodType.methodType(void.class, AccessibleObject.class, boolean.class).toMethodDescriptorString());
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.instruction(Opcodes.ALOAD_1);
 			code.instruction(Opcodes.ILOAD_2);
 			code.field(Opcodes.PUTFIELD, Generator.getType(AccessibleObject.class), "override", Generator.getSignature(boolean.class));
@@ -86,9 +86,9 @@ public class MagicAccessorBuilder
 		// Class<?> forName(String name);
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "forName", MethodType.methodType(Class.class, String.class).toMethodDescriptorString());
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			if (openJ9VM)
 			{
 				code.instruction(Opcodes.ALOAD_1)
@@ -119,9 +119,9 @@ public class MagicAccessorBuilder
 		// Class<?> forName(String name, boolean initialize, ClassLoader loader);
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString());
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			if (openJ9VM)
 			{
 				code.instruction(Opcodes.ALOAD_1)
@@ -148,7 +148,7 @@ public class MagicAccessorBuilder
 		{
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "defineClass", MethodType.methodType(Class.class, ClassLoader.class, byte[].class).toMethodDescriptorString())
-				.addAttribute(new CodeWriter()
+				.attribute(new CodeWriter()
 					.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
 					.instruction(Opcodes.ACONST_NULL)
 					.instruction(Opcodes.ALOAD_2)
@@ -161,7 +161,7 @@ public class MagicAccessorBuilder
 					.instruction(Opcodes.ARETURN)
 					.max(7, 3)
 				);
-			cw.addMethod(mw);
+			cw.method(mw);
 		}
 
 		/*
@@ -169,9 +169,9 @@ public class MagicAccessorBuilder
 		 */
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString());
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.field(Opcodes.GETSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
 			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
 			code.instruction(Opcodes.ICONST_2);
@@ -186,10 +186,10 @@ public class MagicAccessorBuilder
 		{
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_FINAL | AccessFlag.ACC_PUBLIC, "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString())
-				.addAttribute(new SignatureWriter("()[Ljava/lang/Class<*>;"));
-			cw.addMethod(mw);
+				.attribute(new SignatureWriter("()[Ljava/lang/Class<*>;"));
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.field(Opcodes.GETSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
 			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
 			code.instruction(Opcodes.DUP);
@@ -208,10 +208,10 @@ public class MagicAccessorBuilder
 		{
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "construct", MethodType.methodType(Object.class, Class.class).toMethodDescriptorString())
-				.addAttribute(new SignatureWriter("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;)TT;"));
-			cw.addMethod(mw);
+				.attribute(new SignatureWriter("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;)TT;"));
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.instruction(Opcodes.ALOAD_1);
 			code.instruction(Opcodes.ICONST_0);
 			code.type(Opcodes.ANEWARRAY, Generator.getType(Class.class));
@@ -231,9 +231,9 @@ public class MagicAccessorBuilder
 		 */
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, "construct", MethodType.methodType(Object.class, Class.class, Class[].class, Object[].class).toMethodDescriptorString());
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.instruction(Opcodes.ALOAD_1);
 			code.instruction(Opcodes.ALOAD_2);
 			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getDeclaredConstructor", MethodType.methodType(Constructor.class, Class[].class).toMethodDescriptorString(), false);
@@ -251,9 +251,9 @@ public class MagicAccessorBuilder
 		 */
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "invokeMethodHandle", MethodType.methodType(Object.class, MethodHandle.class, Object[].class).toMethodDescriptorString());
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.instruction(Opcodes.ALOAD_1);
 			code.instruction(Opcodes.ALOAD_2);
 			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
@@ -270,7 +270,7 @@ public class MagicAccessorBuilder
 			Marker m3 = new Marker();
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "getField", MethodType.methodType(Field.class, Class.class, String.class).toMethodDescriptorString())
-				.addAttribute(new CodeWriter()
+				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_0)
 					.instruction(Opcodes.ALOAD_1)
 					.method(Opcodes.INVOKESPECIAL, className, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString(), false)
@@ -316,7 +316,7 @@ public class MagicAccessorBuilder
 					.instruction(Opcodes.ATHROW)
 					.max(4, 7)
 				);
-			cw.addMethod(mw);
+			cw.method(mw);
 
 		}
 
@@ -329,7 +329,7 @@ public class MagicAccessorBuilder
 			Marker m3 = new Marker();
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "getMethod", MethodType.methodType(Method.class, Class.class, String.class, Class.class, Class[].class).toMethodDescriptorString())
-				.addAttribute(new CodeWriter()
+				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_0)
 					.instruction(Opcodes.ALOAD_1)
 					.method(Opcodes.INVOKESPECIAL, className, "getMethods", "(Ljava/lang/Class;)[Ljava/lang/reflect/Method;", false)
@@ -392,7 +392,7 @@ public class MagicAccessorBuilder
 					.instruction(Opcodes.ATHROW)
 					.max(5, 9)
 				);
-			cw.addMethod(mw);
+			cw.method(mw);
 		}
 
 		/*
@@ -403,9 +403,9 @@ public class MagicAccessorBuilder
 			Marker m2 = new Marker();
 			Marker m3 = new Marker();
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_VARARGS, "getConstructor", MethodType.methodType(Constructor.class, Class.class, Class[].class).toMethodDescriptorString());
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.instruction(Opcodes.ALOAD_0);
 			code.instruction(Opcodes.ALOAD_1);
 			code.method(Opcodes.INVOKESPECIAL, className, "getConstructors", MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString(), false);
@@ -460,9 +460,9 @@ public class MagicAccessorBuilder
 		 */
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString());
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.instruction(Opcodes.ALOAD_1);
 			if (!openJ9VM)
 			{
@@ -478,9 +478,9 @@ public class MagicAccessorBuilder
 		 */
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "getMethods", MethodType.methodType(Method[].class, Class.class).toMethodDescriptorString());
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.instruction(Opcodes.ALOAD_1);
 			if (!openJ9VM)
 			{
@@ -496,9 +496,9 @@ public class MagicAccessorBuilder
 		 */
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "getConstructors", MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString());
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.instruction(Opcodes.ALOAD_1);
 			if (!openJ9VM)
 			{
@@ -514,9 +514,9 @@ public class MagicAccessorBuilder
 		 */
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "throwException", "(Ljava/lang/Throwable;)V");
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.instruction(Opcodes.ALOAD_1);
 			code.instruction(Opcodes.ATHROW);
 			code.max(1, 2);
@@ -528,13 +528,13 @@ public class MagicAccessorBuilder
 		{
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "initialize", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
-				.addAttribute(new CodeWriter()
+				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_1)
 					.method(Opcodes.INVOKESPECIAL, Generator.getType(Object.class), "<init>", "()V", false)
 					.instruction(Opcodes.RETURN)
 					.max(1, 2)
 				);
-			cw.addMethod(mw);
+			cw.method(mw);
 		}
 
 		/*
@@ -551,7 +551,7 @@ public class MagicAccessorBuilder
 			Marker m3 = new Marker();
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "getName", MethodType.methodType(String.class, Member.class).toMethodDescriptorString())
-				.addAttribute(new CodeWriter()
+				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_1)
 					.type(Opcodes.INSTANCEOF, Generator.getType(Method.class))
 					.jump(Opcodes.IFEQ, m1)
@@ -582,13 +582,13 @@ public class MagicAccessorBuilder
 					.method(Opcodes.INVOKEINTERFACE, Generator.getType(Member.class), "getName", MethodType.methodType(String.class).toMethodDescriptorString(), true)
 					.instruction(Opcodes.ARETURN)
 					.max(4, 2)
-					.addAttribute(new StackMapTableWriter()
+					.attribute(new StackMapTableWriter()
 						.sameFrame(m1)
 						.sameFrame(m2)
 						.sameFrame(m3)
 					)
 				);
-			cw.addMethod(mw);
+			cw.method(mw);
 			setter.invoke(filter);
 		}
 
@@ -636,12 +636,12 @@ public class MagicAccessorBuilder
 
 			MethodWriter mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "getPID", MethodType.methodType(int.class).toMethodDescriptorString())
-				.addAttribute(new CodeWriter()
+				.attribute(new CodeWriter()
 					.constant(pid)
 					.instruction(Opcodes.IRETURN)
 					.max(1, 1)
 				);
-			cw.addMethod(mw);
+			cw.method(mw);
 		}
 
 		return cw;

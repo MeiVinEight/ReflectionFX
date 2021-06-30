@@ -29,7 +29,7 @@ public class UnsafeBuilder
 		String className = "org/mve/invoke/UnsafeWrapper";
 		ClassWriter cw = new ClassWriter();
 		cw.set(0x34, 0x21, className, constantPool[0], new String[]{"org/mve/invoke/Unsafe"});
-		cw.addField(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "final", unsafeSignature));
+		cw.field(new FieldWriter().set(AccessFlag.ACC_PRIVATE | AccessFlag.ACC_FINAL | AccessFlag.ACC_STATIC, "final", unsafeSignature));
 
 		// implement methods
 		{
@@ -37,18 +37,18 @@ public class UnsafeBuilder
 			{
 				{
 					MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "getJavaVMVersion", "()I");
-					cw1.addMethod(mw);
+					cw1.method(mw);
 					CodeWriter code = new CodeWriter();
-					mw.addAttribute(code);
+					mw.attribute(code);
 					code.number(Opcodes.BIPUSH, majorVersion);
 					code.instruction(Opcodes.IRETURN);
 					code.max(1, 1);
 				}
 
 				{
-					cw1.addMethod(new MethodWriter()
+					cw1.method(new MethodWriter()
 						.set(AccessFlag.ACC_PUBLIC, "getJavaVMVendor", "()Ljava/lang/String;")
-						.addAttribute(new CodeWriter()
+						.attribute(new CodeWriter()
 							.constant(vm)
 							.instruction(Opcodes.ARETURN)
 							.max(1, 1)
@@ -57,9 +57,9 @@ public class UnsafeBuilder
 				}
 
 				{
-					cw1.addMethod(new MethodWriter()
+					cw1.method(new MethodWriter()
 						.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString())
-						.addAttribute(new CodeWriter()
+						.attribute(new CodeWriter()
 							.instruction(Opcodes.ALOAD_1)
 							.instruction(Opcodes.ALOAD_2)
 							.instruction(Opcodes.ALOAD_3)
@@ -71,9 +71,9 @@ public class UnsafeBuilder
 				}
 
 				{
-					cw1.addMethod(new MethodWriter()
+					cw1.method(new MethodWriter()
 						.set(AccessFlag.ACC_PUBLIC, "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString())
-						.addAttribute(new CodeWriter()
+						.attribute(new CodeWriter()
 							.instruction(Opcodes.ALOAD_1)
 							.instruction(Opcodes.ALOAD_2)
 							.method(Opcodes.INVOKESTATIC, majorVersion <= 0x34 ? "sun/reflect/NativeConstructorAccessorImpl" : "jdk/internal/reflect/NativeConstructorAccessorImpl", "newInstance0", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), false)
@@ -87,10 +87,10 @@ public class UnsafeBuilder
 				{
 					String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
 					MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, name[0], desc);
-					cw1.addMethod(mw);
-					if (name.length == 3) mw.addAttribute(new SignatureWriter(name[2]));
+					cw1.method(mw);
+					if (name.length == 3) mw.attribute(new SignatureWriter(name[2]));
 					CodeWriter code = new CodeWriter();
-					mw.addAttribute(code);
+					mw.attribute(code);
 					code.field(Opcodes.GETSTATIC, className, "final", unsafeSignature);
 					int size = 0;
 					for (int i = 1; i < arr.length; i++)
@@ -118,13 +118,13 @@ public class UnsafeBuilder
 				{
 					String desc = MethodType.methodType(arr[0], Arrays.copyOfRange(arr, 1, arr.length)).toMethodDescriptorString();
 					MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC | AccessFlag.ACC_FINAL, name[0], desc);
-					cw1.addMethod(mw);
+					cw1.method(mw);
 					if (name.length == 2 && name[1] != null)
 					{
-						mw.addAttribute(new SignatureWriter(name[1]));
+						mw.attribute(new SignatureWriter(name[1]));
 					}
 					CodeWriter code = new CodeWriter();
-					mw.addAttribute(code);
+					mw.attribute(code);
 					int size = arr.length;
 					for (Class<?> c : arr) if (c == long.class || c == double.class) size++;
 					code.type(Opcodes.NEW, "java/lang/UnsupportedOperationException");
@@ -673,9 +673,9 @@ public class UnsafeBuilder
 		// static constructor
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_STATIC, "<clinit>", "()V");
-			cw.addMethod(mw);
+			cw.method(mw);
 			CodeWriter code = new CodeWriter();
-			mw.addAttribute(code);
+			mw.attribute(code);
 			code.field(Opcodes.GETSTATIC, "org/mve/invoke/ReflectionFactory", "TRUSTED_LOOKUP", "Ljava/lang/invoke/MethodHandles$Lookup;");
 			code.constant(Opcodes.LDC, new Type(usfClass));
 			code.constant(Opcodes.LDC_W, "theUnsafe");

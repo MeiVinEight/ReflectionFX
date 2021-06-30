@@ -24,15 +24,15 @@ public class NativeDynamicBindMethodGenerator extends DynamicBindMethodGenerator
 	{
 		boolean statics = this.kind() == ReflectionFactory.KIND_INVOKE_STATIC;
 		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, this.implementation().name(), this.implementation().type().toMethodDescriptorString());
-		bytecode.addMethod(mw);
+		bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
-		mw.addAttribute(code);
+		mw.attribute(code);
 		code.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-			.field(Opcodes.GETSTATIC, bytecode.getName(), this.invocation().name().concat(this.invocation().type().toMethodDescriptorString()), Generator.getSignature(Method.class));
+			.field(Opcodes.GETSTATIC, bytecode.name, this.invocation().name().concat(this.invocation().type().toMethodDescriptorString()), Generator.getSignature(Method.class));
 		if (statics)
 		{
-			code.field(Opcodes.GETSTATIC, bytecode.getName(), "0", Generator.getSignature(Class.class));
+			code.field(Opcodes.GETSTATIC, bytecode.name, "0", Generator.getSignature(Class.class));
 		}
 		else
 		{

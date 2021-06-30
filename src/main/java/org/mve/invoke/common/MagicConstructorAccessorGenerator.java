@@ -24,10 +24,10 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 	public void generate()
 	{
 		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
-		this.bytecode.addMethod(mw);
+		this.bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
-		mw.addAttribute(code);
+		mw.attribute(code);
 		code.type(Opcodes.NEW, Generator.getType(constructor.getDeclaringClass()))
 			.instruction(Opcodes.DUP);
 		Class<?>[] parameters = this.constructor.getParameterTypes();
@@ -47,7 +47,7 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 		if (parameters.length == 0)
 		{
 			mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString())
-				.addAttribute(new CodeWriter()
+				.attribute(new CodeWriter()
 					.type(Opcodes.NEW, Generator.getType(this.constructor.getDeclaringClass()))
 					.instruction(Opcodes.DUP)
 					.method(Opcodes.INVOKESPECIAL, Generator.getType(this.constructor.getDeclaringClass()), "<init>", "()V", false)
@@ -55,7 +55,7 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 					.max(2, 1)
 				);
 			Generator.inline(mw);
-			this.bytecode.addMethod(mw);
+			this.bytecode.method(mw);
 		}
 	}
 }

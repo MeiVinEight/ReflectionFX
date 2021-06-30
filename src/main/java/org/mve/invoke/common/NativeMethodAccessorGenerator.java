@@ -30,16 +30,16 @@ public class NativeMethodAccessorGenerator extends MethodAccessorGenerator
 		int modifiers = this.method.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
 		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
-		this.bytecode.addMethod(mw);
+		this.bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
-		mw.addAttribute(code);
+		mw.attribute(code);
 		code.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-			.field(Opcodes.GETSTATIC, this.bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
+			.field(Opcodes.GETSTATIC, this.bytecode.name, "1", Generator.getSignature(AccessibleObject.class))
 			.type(Opcodes.CHECKCAST, Generator.getType(Method.class));
 		if (statics)
 		{
-			code.field(Opcodes.GETSTATIC, this.bytecode.getName(), "0", Generator.getSignature(Class.class));
+			code.field(Opcodes.GETSTATIC, this.bytecode.name, "0", Generator.getSignature(Class.class));
 		}
 		else
 		{
@@ -59,11 +59,11 @@ public class NativeMethodAccessorGenerator extends MethodAccessorGenerator
 		{
 			mw = new MethodWriter()
 				.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString())
-				.addAttribute(new CodeWriter()
+				.attribute(new CodeWriter()
 					.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-					.field(Opcodes.GETSTATIC, this.bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
+					.field(Opcodes.GETSTATIC, this.bytecode.name, "1", Generator.getSignature(AccessibleObject.class))
 					.type(Opcodes.CHECKCAST, Generator.getType(Method.class))
-					.field(Opcodes.GETSTATIC, this.bytecode.getName(), "0", Generator.getSignature(Class.class))
+					.field(Opcodes.GETSTATIC, this.bytecode.name, "0", Generator.getSignature(Class.class))
 					.instruction(Opcodes.ICONST_0)
 					.type(Opcodes.ANEWARRAY, Generator.getType(Object.class))
 					.method(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString(), true)
@@ -71,7 +71,7 @@ public class NativeMethodAccessorGenerator extends MethodAccessorGenerator
 					.max(4, 1)
 				);
 			Generator.inline(mw);
-			this.bytecode.addMethod(mw);
+			this.bytecode.method(mw);
 		}
 	}
 }

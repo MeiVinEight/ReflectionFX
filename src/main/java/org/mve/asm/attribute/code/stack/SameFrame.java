@@ -1,19 +1,22 @@
 package org.mve.asm.attribute.code.stack;
 
 import org.mve.asm.attribute.code.Marker;
-import org.mve.asm.file.ConstantPool;
-import org.mve.asm.file.StackMapSameFrame;
+import org.mve.asm.file.constant.ConstantArray;
+import org.mve.asm.file.attribute.stack.StackMapSameFrame;
 
 public class SameFrame extends StackMapFrame
 {
-	public SameFrame(Marker marker)
+	@Override
+	public SameFrame mark(Marker marker)
 	{
-		super(marker);
+		return (SameFrame) super.mark(marker);
 	}
 
 	@Override
-	public org.mve.asm.file.StackMapFrame transform(int previous, ConstantPool pool)
+	public org.mve.asm.file.attribute.stack.StackMapFrame transform(int previous, ConstantArray pool)
 	{
-		return new StackMapSameFrame((byte) (this.marker.address - previous));
+		StackMapSameFrame frame = new StackMapSameFrame();
+		frame.type = this.marker.address - previous;
+		return frame;
 	}
 }

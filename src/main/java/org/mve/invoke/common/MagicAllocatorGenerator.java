@@ -24,22 +24,22 @@ public class MagicAllocatorGenerator extends AllocatorGenerator
 	{
 		MethodWriter mw = new MethodWriter()
 			.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString())
-			.addAttribute(new CodeWriter()
+			.attribute(new CodeWriter()
 				.type(Opcodes.NEW, Generator.getType(this.target))
 				.instruction(Opcodes.ARETURN)
 				.max(1, 2)
 			);
 		Generator.inline(mw);
-		this.bytecode.addMethod(mw);
+		this.bytecode.method(mw);
 
 		mw = new MethodWriter()
 		.set(AccessFlag.ACC_PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString())
-		.addAttribute(new CodeWriter()
+		.attribute(new CodeWriter()
 			.type(Opcodes.NEW, Generator.getType(this.target))
 			.instruction(Opcodes.ARETURN)
 			.max(1, 1)
 		);
 		Generator.inline(mw);
-		this.bytecode.addMethod(mw);
+		this.bytecode.method(mw);
 	}
 }

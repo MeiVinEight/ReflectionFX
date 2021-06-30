@@ -21,16 +21,16 @@ public abstract class MethodAccessorGenerator extends AccessibleObjectAccessorGe
 		super(method, method.getDeclaringClass());
 		this.method = method;
 		this.kind = kind;
-		this.bytecode().setInterfaces(new String[]{Generator.getType(MethodAccessor.class)});
+		this.bytecode().interfaces = new String[]{Generator.getType(MethodAccessor.class)};
 	}
 
 	public void pregenerate(ClassWriter bytecode)
 	{
 		super.pregenerate(bytecode);
-		bytecode.addMethod(new MethodWriter()
+		bytecode.method(new MethodWriter()
 			.set(AccessFlag.ACC_PUBLIC, "getMethod", MethodType.methodType(Method.class).toMethodDescriptorString())
-			.addAttribute(new CodeWriter()
-				.field(Opcodes.GETSTATIC, bytecode.getName(), "1", Generator.getSignature(AccessibleObject.class))
+			.attribute(new CodeWriter()
+				.field(Opcodes.GETSTATIC, bytecode.name, "1", Generator.getSignature(AccessibleObject.class))
 				.type(Opcodes.CHECKCAST, Generator.getType(Method.class))
 				.instruction(Opcodes.ARETURN)
 				.max(1, 1)

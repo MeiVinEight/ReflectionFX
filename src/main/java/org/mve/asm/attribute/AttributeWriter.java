@@ -1,9 +1,9 @@
 package org.mve.asm.attribute;
 
-import org.mve.asm.file.Attribute;
-import org.mve.asm.file.ConstantPool;
+import org.mve.asm.file.attribute.Attribute;
+import org.mve.asm.file.constant.ConstantArray;
 
 public interface AttributeWriter
 {
-	Attribute getAttribute(ConstantPool pool);
+	Attribute getAttribute(ConstantArray pool);
 }

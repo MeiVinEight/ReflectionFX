@@ -1,11 +1,11 @@
 package org.mve.asm.attribute.code.stack.verification;
 
 import org.mve.asm.attribute.code.Marker;
-import org.mve.asm.file.ConstantPool;
+import org.mve.asm.file.constant.ConstantArray;
 
 public interface Verification
 {
-	org.mve.asm.file.Verification transform(ConstantPool pool);
+	org.mve.asm.file.attribute.stack.verification.Verification transform(ConstantArray pool);
 
 	static Verification topVariable()
 	{

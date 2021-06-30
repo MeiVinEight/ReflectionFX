@@ -24,7 +24,7 @@ public class MagicFieldSetterGenerator extends FieldSetterGenerator
 		boolean statics = Modifier.isStatic(modifiers);
 
 		CodeWriter code = new CodeWriter();
-		method.addAttribute(code);
+		method.attribute(code);
 
 		Class<?> type = field.getType();
 		int load;

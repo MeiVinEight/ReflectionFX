@@ -1,6 +1,6 @@
 package org.mve.asm.attribute.code;
 
-import org.mve.asm.file.ConstantPool;
+import org.mve.asm.file.constant.ConstantArray;
 import org.mve.io.RandomAccessByteArray;
 
 import java.util.Map;
@@ -16,7 +16,7 @@ public class LocalVariableInstruction extends Instruction
 	}
 
 	@Override
-	public void consume(ConstantPool pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
 	{
 		super.consume(pool, array, wide, marker);
 		if (wide[0])

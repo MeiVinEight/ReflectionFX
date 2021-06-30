@@ -43,7 +43,7 @@ public class MagicAccessFactory
 
 				MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, method.getName(), MethodType.methodType(returnType, parameters).toMethodDescriptorString());
 				CodeWriter cw = new CodeWriter();
-				mw.addAttribute(cw);
+				mw.attribute(cw);
 
 				switch (accessType)
 				{
@@ -123,7 +123,7 @@ public class MagicAccessFactory
 				}
 
 				Generator.inline(mw);
-				writer.addMethod(mw);
+				writer.method(mw);
 			}
 		}
 

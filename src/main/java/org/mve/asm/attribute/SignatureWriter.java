@@ -1,14 +1,14 @@
 package org.mve.asm.attribute;
 
 import org.mve.asm.ConstantPoolFinder;
-import org.mve.asm.file.Attribute;
-import org.mve.asm.file.AttributeSignature;
-import org.mve.asm.file.AttributeType;
-import org.mve.asm.file.ConstantPool;
+import org.mve.asm.file.attribute.Attribute;
+import org.mve.asm.file.attribute.AttributeSignature;
+import org.mve.asm.file.attribute.AttributeType;
+import org.mve.asm.file.constant.ConstantArray;
 
 public class SignatureWriter implements AttributeWriter
 {
-	public final String signature;
+	public String signature;
 
 	public SignatureWriter(String signature)
 	{
@@ -16,10 +16,11 @@ public class SignatureWriter implements AttributeWriter
 	}
 
 	@Override
-	public Attribute getAttribute(ConstantPool pool)
+	public Attribute getAttribute(ConstantArray pool)
 	{
-		AttributeSignature attr = new AttributeSignature((short) ConstantPoolFinder.findUTF8(pool, AttributeType.SIGNATURE.getName()));
-		attr.setSignatureIndex((short) ConstantPoolFinder.findUTF8(pool, signature));
+		AttributeSignature attr = new AttributeSignature();
+		attr.name = ConstantPoolFinder.findUTF8(pool, AttributeType.SIGNATURE.getName());
+		attr.signature = ConstantPoolFinder.findUTF8(pool, signature);
 		return attr;
 	}
 }

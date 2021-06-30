@@ -23,14 +23,14 @@ public class NativeDynamicBindInstantiationGenerator extends DynamicBindInstanti
 	{
 		MethodWriter mw = new MethodWriter()
 			.set(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString())
-			.addAttribute(new CodeWriter()
+			.attribute(new CodeWriter()
 				.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-				.field(Opcodes.GETSTATIC, bytecode.getName(), "0", Generator.getSignature(Class.class))
+				.field(Opcodes.GETSTATIC, bytecode.name, "0", Generator.getSignature(Class.class))
 				.method(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "allocateInstance", MethodType.methodType(Object.class, Class.class).toMethodDescriptorString(), true)
 				.instruction(Opcodes.ARETURN)
 				.max(3, 1 + Generator.parameterSize(implementation().type().parameterArray()))
 			);
 		Generator.inline(mw);
-		bytecode.addMethod(mw);
+		bytecode.method(mw);
 	}
 }

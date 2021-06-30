@@ -29,13 +29,13 @@ public abstract class AccessorGenerator extends Generator
 
 	public void pregenerate(ClassWriter bytecode)
 	{
-		bytecode.addField(new FieldWriter()
+		bytecode.field(new FieldWriter()
 			.set(AccessFlag.ACC_FINAL | AccessFlag.ACC_PRIVATE | AccessFlag.ACC_STATIC, "0", Generator.getSignature(Class.class))
 		);
-		bytecode.addMethod(new MethodWriter()
+		bytecode.method(new MethodWriter()
 			.set(AccessFlag.ACC_PUBLIC, "access", MethodType.methodType(Class.class).toMethodDescriptorString())
-			.addAttribute(new CodeWriter()
-				.field(Opcodes.GETSTATIC, this.bytecode.getName(), "0", Generator.getSignature(Class.class))
+			.attribute(new CodeWriter()
+				.field(Opcodes.GETSTATIC, this.bytecode.name, "0", Generator.getSignature(Class.class))
 				.instruction(Opcodes.ARETURN)
 				.max(1, 1)
 			)

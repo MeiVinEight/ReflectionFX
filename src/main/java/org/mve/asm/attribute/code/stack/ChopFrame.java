@@ -1,28 +1,41 @@
 package org.mve.asm.attribute.code.stack;
 
 import org.mve.asm.attribute.code.Marker;
-import org.mve.asm.file.ConstantPool;
-import org.mve.asm.file.StackMapChopFrame;
-import org.mve.asm.file.StackMapFrameType;
+import org.mve.asm.file.constant.ConstantArray;
+import org.mve.asm.file.attribute.stack.StackMapChopFrame;
+import org.mve.asm.file.attribute.stack.StackMapFrameType;
 
 public class ChopFrame extends StackMapFrame
 {
 	/**
 	 * k, k = 251 - frame_type
 	 */
-	private final int chop;
+	public int chop;
 
-	public ChopFrame(Marker marker, int chop)
+	/**
+	 * k, frame_type = 251 - k
+	 *
+	 * @param i count of local variables to chop
+	 * @return this
+	 */
+	public ChopFrame chop(int i)
 	{
-		super(marker);
-		this.chop = chop;
+		this.chop = 251 - i;
+		return this;
 	}
 
 	@Override
-	public org.mve.asm.file.StackMapFrame transform(int previous, ConstantPool pool)
+	public ChopFrame mark(Marker marker)
 	{
-		StackMapChopFrame frame = new StackMapChopFrame((byte) ((StackMapFrameType.STACK_MAP_CHOP_FRAME.getHigh() - this.chop) + 1));
-		frame.setOffsetDelta((short) (this.marker.address - previous));
+		return (ChopFrame) super.mark(marker);
+	}
+
+	@Override
+	public org.mve.asm.file.attribute.stack.StackMapFrame transform(int previous, ConstantArray pool)
+	{
+		StackMapChopFrame frame = new StackMapChopFrame();
+		frame.type = (StackMapFrameType.STACK_MAP_CHOP_FRAME.high() - this.chop) + 1;
+		frame.offset =this.marker.address - previous;
 		return frame;
 	}
 }

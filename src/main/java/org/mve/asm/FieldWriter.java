@@ -6,58 +6,47 @@ import java.util.Arrays;
 
 public class FieldWriter
 {
-	private int accessFlag;
-	private String name;
-	private String desc;
-	private AttributeWriter[] attributes = new AttributeWriter[0];
+	public int access;
+	public String name;
+	public String type;
+	public AttributeWriter[] attribute = new AttributeWriter[0];
 
 	public FieldWriter set(int accessFlag, String name, String desc)
 	{
-		this.accessFlag = accessFlag;
+		this.access = accessFlag;
 		this.name = name;
-		this.desc = desc;
+		this.type = desc;
 		return this;
 	}
 
-	public int getAccessFlag()
+	public FieldWriter access(int access)
 	{
-		return accessFlag;
+		this.access = access;
+		return this;
 	}
 
-	public void setAccessFlag(int accessFlag)
-	{
-		this.accessFlag = accessFlag;
-	}
-
-	public String getName()
-	{
-		return name;
-	}
-
-	public void setName(String name)
+	public FieldWriter name(String name)
 	{
 		this.name = name;
+		return this;
 	}
 
-	public String getDesc()
+	public FieldWriter type(String type)
 	{
-		return desc;
+		this.type = type;
+		return this;
 	}
 
-	public void setDesc(String desc)
+	public FieldWriter attribute(AttributeWriter writer)
 	{
-		this.desc = desc;
+		int i = this.attribute.length;
+		this.attribute = Arrays.copyOf(this.attribute, i+1);
+		this.attribute[i] = writer;
+		return this;
 	}
 
-	public void addAttribute(AttributeWriter writer)
+	public AttributeWriter[] getAttribute()
 	{
-		int i = this.attributes.length;
-		this.attributes = Arrays.copyOf(this.attributes, i+1);
-		this.attributes[i] = writer;
-	}
-
-	public AttributeWriter[] getAttributes()
-	{
-		return Arrays.copyOf(this.attributes, this.attributes.length);
+		return Arrays.copyOf(this.attribute, this.attribute.length);
 	}
 }

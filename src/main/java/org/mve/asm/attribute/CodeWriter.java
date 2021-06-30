@@ -1,27 +1,26 @@
 package org.mve.asm.attribute;
 
-import org.mve.asm.attribute.code.Element;
-import org.mve.io.RandomAccessByteArray;
 import org.mve.asm.ConstantPoolFinder;
-import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.Opcodes;
 import org.mve.asm.Type;
-import org.mve.asm.file.Attribute;
-import org.mve.asm.file.AttributeCode;
-import org.mve.asm.file.AttributeType;
-import org.mve.asm.file.ConstantPool;
-import org.mve.asm.file.StructExceptionTable;
 import org.mve.asm.attribute.code.ConstantInstruction;
+import org.mve.asm.attribute.code.Element;
 import org.mve.asm.attribute.code.FieldInstruction;
 import org.mve.asm.attribute.code.IincInstruction;
-import org.mve.asm.attribute.code.Instruction;
 import org.mve.asm.attribute.code.InterfaceMethodInstruction;
 import org.mve.asm.attribute.code.JumpInstruction;
 import org.mve.asm.attribute.code.LocalVariableInstruction;
+import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.attribute.code.MethodInstruction;
 import org.mve.asm.attribute.code.NumberInstruction;
 import org.mve.asm.attribute.code.SimpleInstruction;
 import org.mve.asm.attribute.code.TypeInstruction;
+import org.mve.asm.attribute.code.exception.Exception;
+import org.mve.asm.file.attribute.Attribute;
+import org.mve.asm.file.attribute.AttributeCode;
+import org.mve.asm.file.attribute.AttributeType;
+import org.mve.asm.file.constant.ConstantArray;
+import org.mve.io.RandomAccessByteArray;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,11 +28,11 @@ import java.util.Map;
 
 public class CodeWriter implements AttributeWriter
 {
-	private int stack;
-	private int local;
-	private Element[] elements = new Element[0];
-	private StructExceptionTable[] exceptionTables = new StructExceptionTable[0];
-	private AttributeWriter[] attributes = new AttributeWriter[0];
+	public int stack;
+	public int local;
+	public Element[] element = new Element[0];
+	public Exception[] exception = new Exception[0];
+	public AttributeWriter[] attribute = new AttributeWriter[0];
 
 	public int stack()
 	{
@@ -72,9 +71,9 @@ public class CodeWriter implements AttributeWriter
 
 	private CodeWriter element(Element element)
 	{
-		int i = this.elements.length;
-		this.elements = Arrays.copyOf(this.elements, i+1);
-		this.elements[i] = element;
+		int i = this.element.length;
+		this.element = Arrays.copyOf(this.element, i+1);
+		this.element[i] = element;
 		return this;
 	}
 
@@ -129,26 +128,34 @@ public class CodeWriter implements AttributeWriter
 		return this.element(new IincInstruction(indexbyte, constbyte));
 	}
 
-	public CodeWriter addAttribute(AttributeWriter writer)
+	public CodeWriter exception(Marker start, Marker end, Marker caught, String type)
 	{
-		int i = this.attributes.length;
-		this.attributes = Arrays.copyOf(this.attributes, i+1);
-		this.attributes[i] = writer;
+		this.exception = Arrays.copyOf(this.exception, this.exception.length+1);
+		this.exception[this.exception.length-1] = new Exception(start, end, caught, type);
+		return this;
+	}
+
+	public CodeWriter attribute(AttributeWriter writer)
+	{
+		int i = this.attribute.length;
+		this.attribute = Arrays.copyOf(this.attribute, i+1);
+		this.attribute[i] = writer;
 		return this;
 	}
 
 	@Override
-	public Attribute getAttribute(ConstantPool pool)
+	public Attribute getAttribute(ConstantArray pool)
 	{
-		AttributeCode code = new AttributeCode((short) ConstantPoolFinder.findUTF8(pool, AttributeType.CODE.getName()));
-		code.setMaxStack((short) this.stack);
-		code.setMaxLocals((short) this.local);
+		AttributeCode code = new AttributeCode();
+		code.name = ConstantPoolFinder.findUTF8(pool, AttributeType.CODE.getName());
+		code.stack = this.stack;
+		code.local = this.local;
 
 		RandomAccessByteArray array = new RandomAccessByteArray();
 		boolean[] wide = {false};
 		Map<Integer, Marker> markerMap = new HashMap<>();
 
-		for (Element element : elements)
+		for (Element element : element)
 		{
 			element.consume(pool, array, wide, markerMap);
 		}
@@ -165,20 +172,25 @@ public class CodeWriter implements AttributeWriter
 			}
 			else
 			{
-				array.writeShort(marker.address - position);;
+				array.writeShort(marker.address - position);
 			}
 		}
 
-		code.setCode(array.toByteArray());
+		code.code = array.toByteArray();
 
-		for (StructExceptionTable table : this.exceptionTables)
+		for (Exception table : this.exception)
 		{
-			code.addExceptionTable(table);
+			org.mve.asm.file.attribute.code.exception.Exception exception = new org.mve.asm.file.attribute.code.exception.Exception();
+			exception.start = table.start.address;
+			exception.end = table.end.address;
+			exception.caught = table.caught.address;
+			exception.type = ConstantPoolFinder.findClass(pool, table.type);
+			code.exception(exception);
 		}
 
-		for (AttributeWriter writer : this.attributes)
+		for (AttributeWriter writer : this.attribute)
 		{
-			code.addAttribute(writer.getAttribute(pool));
+			code.attribute(writer.getAttribute(pool));
 		}
 
 		return code;

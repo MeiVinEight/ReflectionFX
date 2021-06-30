@@ -1,7 +1,7 @@
 package org.mve.asm;
 
-import org.mve.asm.file.ConstantPool;
-import org.mve.asm.file.StructAnnotation;
+import org.mve.asm.file.constant.ConstantArray;
+import org.mve.asm.file.attribute.annotation.Annotation;
 
 public class AnnotationWriter
 {
@@ -13,10 +13,10 @@ public class AnnotationWriter
 		return this;
 	}
 
-	public StructAnnotation get(ConstantPool pool)
+	public Annotation get(ConstantArray pool)
 	{
-		StructAnnotation annotation = new StructAnnotation();
-		annotation.setTypeIndex((short) ConstantPoolFinder.findUTF8(pool, type));
+		Annotation annotation = new Annotation();
+		annotation.type = ConstantPoolFinder.findUTF8(pool, type);
 		return annotation;
 	}
 }

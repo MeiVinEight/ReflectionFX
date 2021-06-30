@@ -21,10 +21,10 @@ public class MagicDynamicBindConstructGenerator extends DynamicBindConstructGene
 		MethodKind implementation = this.implementation();
 		MethodKind invocation = this.invocation();
 		MethodWriter mw = new MethodWriter().set(AccessFlag.ACC_PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
-		bytecode.addMethod(mw);
+		bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
-		mw.addAttribute(code);
+		mw.attribute(code);
 		code.type(Opcodes.NEW, Generator.getType(target))
 			.instruction(Opcodes.DUP)
 			.max(2 + Generator.parameterSize(implementation.type().parameterArray()), 1 + Generator.parameterSize(implementation.type().parameterArray()));
