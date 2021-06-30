@@ -1,15 +1,12 @@
 package org.mve.asm.file.attribute.inner;
 
-import org.mve.util.Binary;
-
-public class InnerClass implements Binary
+public class InnerClass
 {
 	public int inner;
 	public int outer;
 	public int name;
 	public int access;
 
-	@Override
 	public byte[] toByteArray()
 	{
 		byte[] b = new byte[8];
