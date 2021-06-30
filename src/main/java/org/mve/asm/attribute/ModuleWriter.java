@@ -88,14 +88,14 @@ public class ModuleWriter implements AttributeWriter
 
 		module.module = ConstantPoolFinder.findModule(pool, this.name);
 		module.flag = this.flag;
-		module.version = ConstantPoolFinder.findUTF8(pool, this.version);
+		module.version = this.version != null ? ConstantPoolFinder.findUTF8(pool, this.version) : 0;
 
 		for (Require require : this.require)
 		{
 			ModuleRequire r = new ModuleRequire();
 			r.require = ConstantPoolFinder.findModule(pool, require.name);
 			r.flag = require.flag;
-			r.version = ConstantPoolFinder.findUTF8(pool, require.version);
+			r.version = require.version != null ? ConstantPoolFinder.findUTF8(pool, require.version) : 0;
 			module.require(r);
 		}
 
