@@ -52,6 +52,11 @@ public class ModuleWriter implements AttributeWriter
 		return this;
 	}
 
+	public ModuleWriter require(String name, int flag, String version)
+	{
+		return this.require(new Require().name(name).flag(flag).version(version));
+	}
+
 	public ModuleWriter export(Export export)
 	{
 		this.export = Arrays.copyOf(this.export, this.export.length+1);
@@ -59,11 +64,25 @@ public class ModuleWriter implements AttributeWriter
 		return this;
 	}
 
+	public ModuleWriter export(String name, int flag, String... to)
+	{
+		Export export = new Export().name(name).flag(flag);
+		export.to = to;
+		return this.export(export);
+	}
+
 	public ModuleWriter open(Open open)
 	{
 		this.open = Arrays.copyOf(this.open, this.open.length+1);
 		this.open[this.open.length-1] = open;
 		return this;
+	}
+
+	public ModuleWriter open(String name, int flag, String... to)
+	{
+		Open open = new Open().name(name).flag(flag);
+		open.to = to;
+		return this.open(open);
 	}
 
 	public ModuleWriter use(String use)
@@ -78,6 +97,14 @@ public class ModuleWriter implements AttributeWriter
 		this.provide = Arrays.copyOf(this.provide, this.provide.length+1);
 		this.provide[this.provide.length-1] = provide;
 		return this;
+	}
+
+	public ModuleWriter provide(String name, String... with)
+	{
+		Provide provide = new Provide();
+		provide.name = name;
+		provide.with = with;
+		return this.provide(provide);
 	}
 
 	@Override
