@@ -2,7 +2,7 @@ package org.mve.asm.file.constant;
 
 public class ConstantModule extends Constant
 {
-	private final int name;
+	public int name;
 
 	public ConstantModule(int name)
 	{

@@ -2,8 +2,8 @@ package org.mve.asm.file.constant;
 
 public class ConstantMethodHandle extends Constant
 {
-	private final int referenceKind;
-	private final int reference;
+	public int referenceKind;
+	public int reference;
 
 	public ConstantMethodHandle(int referenceKind, int reference)
 	{
