@@ -15,7 +15,7 @@ public class ClassWriter
 	public int major;
 	public String name;
 	public String supers;
-	public String[] interfaces;
+	public String[] interfaces = new String[0];
 	public FieldWriter[] field = new FieldWriter[0];
 	public MethodWriter[] method = new MethodWriter[0];
 	public AttributeWriter[] attribute = new AttributeWriter[0];
