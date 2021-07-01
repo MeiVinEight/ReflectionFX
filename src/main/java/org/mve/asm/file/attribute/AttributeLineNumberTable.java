@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class AttributeLineNumberTable extends Attribute
 {
-	private LineNumber[] line = new LineNumber[0];
+	public LineNumber[] line = new LineNumber[0];
 
 	public void line(LineNumber line)
 	{
