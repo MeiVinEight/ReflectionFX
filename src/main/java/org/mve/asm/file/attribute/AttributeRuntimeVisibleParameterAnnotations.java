@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class AttributeRuntimeVisibleParameterAnnotations extends Attribute
 {
-	private ParameterAnnotation[] annotation = new ParameterAnnotation[0];
+	public ParameterAnnotation[] annotation = new ParameterAnnotation[0];
 
 	public void annotation(ParameterAnnotation annotation)
 	{

@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class AttributeRuntimeVisibleTypeAnnotations extends Attribute
 {
-	private TypeAnnotation[] annotation = new TypeAnnotation[0];
+	public TypeAnnotation[] annotation = new TypeAnnotation[0];
 
 	public void annotation(TypeAnnotation annotation)
 	{

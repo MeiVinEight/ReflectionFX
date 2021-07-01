@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class AttributeLocalVariableTypeTable extends Attribute
 {
-	private LocalVariableType[] local = new LocalVariableType[0];
+	public LocalVariableType[] local = new LocalVariableType[0];
 
 	public void local(LocalVariableType local)
 	{
