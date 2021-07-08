@@ -26,7 +26,7 @@ public class Switch extends Instruction
 	{
 		super.consume(pool, array, wide, marker);
 
-		int pos = array.position() + 1;
+		int pos = array.position();
 		int pad = (4 - (pos % 4)) % 4;
 		array.write(new byte[pad]);
 
