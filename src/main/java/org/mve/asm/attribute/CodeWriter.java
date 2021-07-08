@@ -13,6 +13,7 @@ import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.attribute.code.Method;
 import org.mve.asm.attribute.code.Number;
 import org.mve.asm.attribute.code.Simple;
+import org.mve.asm.attribute.code.Switch;
 import org.mve.asm.attribute.code.Type;
 import org.mve.asm.attribute.code.exception.Exception;
 import org.mve.asm.file.attribute.Attribute;
@@ -125,6 +126,16 @@ public class CodeWriter implements AttributeWriter
 	public CodeWriter iinc(int indexbyte, int constbyte)
 	{
 		return this.element(new Iinc(indexbyte, constbyte));
+	}
+
+	public CodeWriter switcher(int opcode, Marker defaults, int[] cases, Marker[] offset)
+	{
+		this.element(new Switch(opcode, defaults, cases, offset));
+		for (Marker m : offset)
+		{
+			this.element(m);
+		}
+		return this;
 	}
 
 	public CodeWriter exception(Marker start, Marker end, Marker caught, String type)
