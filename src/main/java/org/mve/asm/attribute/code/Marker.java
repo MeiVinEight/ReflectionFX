@@ -10,7 +10,7 @@ public class Marker implements Element
 	public int address = 0;
 
 	@Override
-	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
 		this.address = array.position();
 	}

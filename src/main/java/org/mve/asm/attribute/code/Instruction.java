@@ -15,7 +15,7 @@ public abstract class Instruction implements Element
 	}
 
 	@Override
-	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
 		array.write(this.opcode);
 	}

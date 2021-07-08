@@ -6,13 +6,13 @@ import org.mve.io.RandomAccessByteArray;
 
 import java.util.Map;
 
-public class FieldInstruction extends Instruction
+public class Field extends Instruction
 {
 	public final String type;
 	public final String name;
 	public final String desc;
 
-	public FieldInstruction(int opcode, String type, String name, String desc)
+	public Field(int opcode, String type, String name, String desc)
 	{
 		super(opcode);
 		this.type = type;
@@ -21,7 +21,7 @@ public class FieldInstruction extends Instruction
 	}
 
 	@Override
-	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
 		super.consume(pool, array, wide, marker);
 		array.writeShort(ConstantPoolFinder.findField(pool, this.type, this.name, this.desc));

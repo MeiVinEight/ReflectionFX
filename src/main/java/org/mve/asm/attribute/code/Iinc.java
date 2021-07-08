@@ -6,12 +6,12 @@ import org.mve.io.RandomAccessByteArray;
 
 import java.util.Map;
 
-public class IincInstruction extends Instruction
+public class Iinc extends Instruction
 {
 	public final int indexbyte;
 	public final int constbyte;
 
-	public IincInstruction(int indexbyte, int constbyte)
+	public Iinc(int indexbyte, int constbyte)
 	{
 		super(Opcodes.IINC);
 		this.indexbyte = indexbyte;
@@ -19,7 +19,7 @@ public class IincInstruction extends Instruction
 	}
 
 	@Override
-	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
 		super.consume(pool, array, wide, marker);
 		if (wide[0])

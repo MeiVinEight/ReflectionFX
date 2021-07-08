@@ -42,7 +42,8 @@ public class Class
 	public Method[] method = new Method[0];
 	public Attribute[] attribute = new Attribute[0];
 
-	public Class(){}
+	public Class()
+	{}
 
 	public Class(byte[] code)
 	{

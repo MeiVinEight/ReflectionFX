@@ -5,18 +5,18 @@ import org.mve.io.RandomAccessByteArray;
 
 import java.util.Map;
 
-public class LocalVariableInstruction extends Instruction
+public class LocalVariable extends Instruction
 {
 	public final int index;
 
-	public LocalVariableInstruction(int opcode, int index)
+	public LocalVariable(int opcode, int index)
 	{
 		super(opcode);
 		this.index = index;
 	}
 
 	@Override
-	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
 		super.consume(pool, array, wide, marker);
 		if (wide[0])

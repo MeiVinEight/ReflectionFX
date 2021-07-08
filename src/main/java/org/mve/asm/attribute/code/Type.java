@@ -6,18 +6,18 @@ import org.mve.io.RandomAccessByteArray;
 
 import java.util.Map;
 
-public class TypeInstruction extends Instruction
+public class Type extends Instruction
 {
 	public final String type;
 
-	public TypeInstruction(int opcode, String type)
+	public Type(int opcode, String type)
 	{
 		super(opcode);
 		this.type = type;
 	}
 
 	@Override
-	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
 		super.consume(pool, array, wide, marker);
 		array.writeShort(ConstantPoolFinder.findClass(pool, this.type));

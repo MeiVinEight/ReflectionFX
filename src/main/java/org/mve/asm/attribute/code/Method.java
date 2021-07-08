@@ -6,14 +6,14 @@ import org.mve.io.RandomAccessByteArray;
 
 import java.util.Map;
 
-public class MethodInstruction extends Instruction
+public class Method extends Instruction
 {
 	public final String type;
 	public final String name;
 	public final String desc;
 	public final boolean isAbstract;
 
-	public MethodInstruction(int opcode, String type, String name, String desc, boolean isAbstract)
+	public Method(int opcode, String type, String name, String desc, boolean isAbstract)
 	{
 		super(opcode);
 		this.type = type;
@@ -23,13 +23,13 @@ public class MethodInstruction extends Instruction
 	}
 
 	@Override
-	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
 		super.consume(pool, array, wide, marker);
 		array.writeShort(ConstantPoolFinder.findMethod(pool, this.type, this.name, this.desc, this.isAbstract));
-		if (this instanceof InterfaceMethodInstruction)
+		if (this instanceof InterfaceMethod)
 		{
-			array.write(((InterfaceMethodInstruction)this).count);
+			array.write(((InterfaceMethod)this).count);
 			array.write(0);
 		}
 	}

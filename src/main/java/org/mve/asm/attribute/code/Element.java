@@ -7,5 +7,5 @@ import java.util.Map;
 
 public interface Element
 {
-	void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker);
+	void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker);
 }

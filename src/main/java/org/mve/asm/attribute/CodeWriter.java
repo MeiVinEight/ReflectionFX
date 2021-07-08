@@ -2,19 +2,18 @@ package org.mve.asm.attribute;
 
 import org.mve.asm.ConstantPoolFinder;
 import org.mve.asm.Opcodes;
-import org.mve.asm.Type;
-import org.mve.asm.attribute.code.ConstantInstruction;
+import org.mve.asm.attribute.code.Constant;
 import org.mve.asm.attribute.code.Element;
-import org.mve.asm.attribute.code.FieldInstruction;
-import org.mve.asm.attribute.code.IincInstruction;
-import org.mve.asm.attribute.code.InterfaceMethodInstruction;
-import org.mve.asm.attribute.code.JumpInstruction;
-import org.mve.asm.attribute.code.LocalVariableInstruction;
+import org.mve.asm.attribute.code.Field;
+import org.mve.asm.attribute.code.Iinc;
+import org.mve.asm.attribute.code.InterfaceMethod;
+import org.mve.asm.attribute.code.Jump;
+import org.mve.asm.attribute.code.LocalVariable;
 import org.mve.asm.attribute.code.Marker;
-import org.mve.asm.attribute.code.MethodInstruction;
-import org.mve.asm.attribute.code.NumberInstruction;
-import org.mve.asm.attribute.code.SimpleInstruction;
-import org.mve.asm.attribute.code.TypeInstruction;
+import org.mve.asm.attribute.code.Method;
+import org.mve.asm.attribute.code.Number;
+import org.mve.asm.attribute.code.Simple;
+import org.mve.asm.attribute.code.Type;
 import org.mve.asm.attribute.code.exception.Exception;
 import org.mve.asm.file.attribute.Attribute;
 import org.mve.asm.file.attribute.AttributeCode;
@@ -79,53 +78,53 @@ public class CodeWriter implements AttributeWriter
 
 	public CodeWriter constant(int opcode, Object value)
 	{
-		return this.element(new ConstantInstruction(value));
+		return this.element(new Constant(value));
 	}
 
 	public CodeWriter constant(Object value)
 	{
-		return this.element(new ConstantInstruction(value));
+		return this.element(new Constant(value));
 	}
 
 	public CodeWriter field(int opcode, String type, String name, String desc)
 	{
-		return this.element(new FieldInstruction(opcode, type, name, desc));
+		return this.element(new Field(opcode, type, name, desc));
 	}
 
 	public CodeWriter jump(int opcode, Marker marker)
 	{
-		return this.element(new JumpInstruction(opcode, marker));
+		return this.element(new Jump(opcode, marker));
 	}
 
 	public CodeWriter variable(int opcode, int index)
 	{
-		return this.element(new LocalVariableInstruction(opcode, index));
+		return this.element(new LocalVariable(opcode, index));
 	}
 
 	public CodeWriter method(int opcode, String type, String name, String desc, boolean isAbstract)
 	{
-		if (isAbstract) return this.element(new InterfaceMethodInstruction(opcode, type, name, desc, Type.getArgumentsAndReturnSizes(desc) >> 2));
-		else return this.element(new MethodInstruction(opcode, type, name, desc, isAbstract));
+		if (isAbstract) return this.element(new InterfaceMethod(opcode, type, name, desc, org.mve.asm.Type.getArgumentsAndReturnSizes(desc) >> 2));
+		else return this.element(new Method(opcode, type, name, desc, isAbstract));
 	}
 
 	public CodeWriter number(int opcode, int num)
 	{
-		return this.element(new NumberInstruction(opcode, num));
+		return this.element(new Number(opcode, num));
 	}
 
 	public CodeWriter instruction(int opcode)
 	{
-		return this.element(new SimpleInstruction(opcode));
+		return this.element(new Simple(opcode));
 	}
 
 	public CodeWriter type(int opcode, String type)
 	{
-		return this.element(new TypeInstruction(opcode, type));
+		return this.element(new Type(opcode, type));
 	}
 
 	public CodeWriter iinc(int indexbyte, int constbyte)
 	{
-		return this.element(new IincInstruction(indexbyte, constbyte));
+		return this.element(new Iinc(indexbyte, constbyte));
 	}
 
 	public CodeWriter exception(Marker start, Marker end, Marker caught, String type)
@@ -153,19 +152,19 @@ public class CodeWriter implements AttributeWriter
 
 		RandomAccessByteArray array = new RandomAccessByteArray();
 		boolean[] wide = {false};
-		Map<Integer, Marker> markerMap = new HashMap<>();
+		Map<int[], Marker> markerMap = new HashMap<>();
 
 		for (Element element : element)
 		{
 			element.consume(pool, array, wide, markerMap);
 		}
 
-		for (Map.Entry<Integer, Marker> entry : markerMap.entrySet())
+		for (Map.Entry<int[], Marker> entry : markerMap.entrySet())
 		{
-			int position = entry.getKey();
+			int position = entry.getKey()[0];
+			int opcode = entry.getKey()[1];
 			Marker marker = entry.getValue();
 			array.seek(position);
-			int opcode = array.read();
 			if (opcode == Opcodes.GOTO_W)
 			{
 				array.writeInt(marker.address - position);

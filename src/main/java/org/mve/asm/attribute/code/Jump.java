@@ -6,21 +6,21 @@ import org.mve.io.RandomAccessByteArray;
 
 import java.util.Map;
 
-public class JumpInstruction extends Instruction
+public class Jump extends Instruction
 {
 	public final Marker marker;
 
-	public JumpInstruction(int opcode, Marker marker)
+	public Jump(int opcode, Marker marker)
 	{
 		super(opcode);
 		this.marker = marker;
 	}
 
 	@Override
-	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
 		super.consume(pool, array, wide, marker);
-		marker.put(array.position() - 1, this.marker);
+		marker.put(new int[]{array.position(), this.opcode}, this.marker);
 		if (this.opcode == Opcodes.GOTO_W)
 		{
 			array.writeInt(0);

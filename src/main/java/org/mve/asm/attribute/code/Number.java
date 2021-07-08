@@ -6,18 +6,18 @@ import org.mve.io.RandomAccessByteArray;
 
 import java.util.Map;
 
-public class NumberInstruction extends Instruction
+public class Number extends Instruction
 {
 	public final int num;
 
-	public NumberInstruction(int opcode, int num)
+	public Number(int opcode, int num)
 	{
 		super(opcode);
 		this.num = num;
 	}
 
 	@Override
-	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
 		super.consume(pool, array, wide, marker);
 		if (this.opcode == Opcodes.BIPUSH) array.write(this.num);

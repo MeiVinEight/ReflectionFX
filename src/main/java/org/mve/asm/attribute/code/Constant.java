@@ -8,38 +8,38 @@ import org.mve.io.RandomAccessByteArray;
 
 import java.util.Map;
 
-public class ConstantInstruction extends Instruction
+public class Constant extends Instruction
 {
 	public final Object value;
 
-	public ConstantInstruction(Object value)
+	public Constant(Object value)
 	{
 		super(Opcodes.LDC);
 		this.value = value;
 	}
 
 	@Override
-	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<Integer, Marker> marker)
+	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
-		if (value instanceof Number)
+		if (value instanceof java.lang.Number)
 		{
 			if (value instanceof Long)
 			{
-				long val = ((Number) value).longValue();
+				long val = ((java.lang.Number) value).longValue();
 				int index = ConstantPoolFinder.findLong(pool, val);
 				array.write(Opcodes.LDC2_W);
 				array.writeShort(index);
 			}
 			else if (value instanceof Double)
 			{
-				double val = ((Number) value).doubleValue();
+				double val = ((java.lang.Number) value).doubleValue();
 				int index = ConstantPoolFinder.findDouble(pool, val);
 				array.write(Opcodes.LDC2_W);
 				array.writeShort(index);
 			}
 			else if (value instanceof Float)
 			{
-				float val = ((Number) value).floatValue();
+				float val = ((java.lang.Number) value).floatValue();
 				int index = ConstantPoolFinder.findFloat(pool, val);
 				if (index > 255)
 				{
@@ -54,7 +54,7 @@ public class ConstantInstruction extends Instruction
 			}
 			else
 			{
-				int val = ((Number) value).intValue();
+				int val = ((java.lang.Number) value).intValue();
 				int index = ConstantPoolFinder.findInteger(pool, val);
 				if (index > 255)
 				{
