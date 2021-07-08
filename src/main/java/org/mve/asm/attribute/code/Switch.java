@@ -24,13 +24,14 @@ public class Switch extends Instruction
 	@Override
 	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
+		int base = array.position();
 		super.consume(pool, array, wide, marker);
 
 		int pos = array.position();
 		int pad = (4 - (pos % 4)) % 4;
 		array.write(new byte[pad]);
 
-		marker.put(new int[]{array.position(), this.opcode}, this.defaults);
+		marker.put(new int[]{array.position(), this.opcode, base}, this.defaults);
 		array.writeInt(0);
 
 		switch (this.opcode)
@@ -43,7 +44,7 @@ public class Switch extends Instruction
 					int cas = this.cases[i];
 					Marker off = this.offset[i];
 					array.writeInt(cas);
-					marker.put(new int[]{array.position(), this.opcode}, off);
+					marker.put(new int[]{array.position(), this.opcode, base}, off);
 					array.writeInt(0);
 				}
 			}
@@ -83,11 +84,11 @@ public class Switch extends Instruction
 					int j = Arrays.binarySearch(this.cases, n);
 					if (j > -1)
 					{
-						marker.put(new int[]{array.position(), this.opcode}, this.offset[j]);
+						marker.put(new int[]{array.position(), this.opcode, base}, this.offset[j]);
 					}
 					else
 					{
-						marker.put(new int[]{array.position(), this.opcode}, this.defaults);
+						marker.put(new int[]{array.position(), this.opcode, base}, this.defaults);
 					}
 					array.writeInt(0);
 				}

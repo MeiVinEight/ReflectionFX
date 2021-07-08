@@ -174,15 +174,22 @@ public class CodeWriter implements AttributeWriter
 		{
 			int position = entry.getKey()[0];
 			int opcode = entry.getKey()[1];
+			int base = entry.getKey()[2];
 			Marker marker = entry.getValue();
 			array.seek(position);
-			if (opcode == Opcodes.GOTO_W)
+			switch (opcode)
 			{
-				array.writeInt(marker.address - position);
-			}
-			else
-			{
-				array.writeShort(marker.address - position);
+				case Opcodes.GOTO_W:
+				case Opcodes.TABLESWITCH:
+				case Opcodes.LOOKUPSWITCH:
+				{
+					array.writeInt(marker.address - base);
+					break;
+				}
+				default:
+				{
+					array.writeShort(marker.address - base);
+				}
 			}
 		}
 

@@ -19,8 +19,9 @@ public class Jump extends Instruction
 	@Override
 	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
+		int base = array.position();
 		super.consume(pool, array, wide, marker);
-		marker.put(new int[]{array.position(), this.opcode}, this.marker);
+		marker.put(new int[]{array.position(), this.opcode, base}, this.marker);
 		if (this.opcode == Opcodes.GOTO_W)
 		{
 			array.writeInt(0);
