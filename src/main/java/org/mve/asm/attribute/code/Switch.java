@@ -47,6 +47,7 @@ public class Switch extends Instruction
 					marker.put(new int[]{array.position(), this.opcode, base}, off);
 					array.writeInt(0);
 				}
+				break;
 			}
 			case Opcodes.TABLESWITCH:
 			{
@@ -92,6 +93,7 @@ public class Switch extends Instruction
 					}
 					array.writeInt(0);
 				}
+				break;
 			}
 		}
 	}
