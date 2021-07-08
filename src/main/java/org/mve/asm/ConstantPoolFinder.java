@@ -196,7 +196,7 @@ public class ConstantPoolFinder
 			{
 				if (element instanceof ConstantInterfaceMethodReference)
 				{
-					ConstantMethodReference methodReference = (ConstantMethodReference) element;
+					ConstantInterfaceMethodReference methodReference = (ConstantInterfaceMethodReference) element;
 					int methodClassIndex = (short) methodReference.clazz;
 					int nameAndTypeIndex = (short) methodReference.nameAndType;
 					ConstantClass methodClass = (ConstantClass) array.element[methodClassIndex];
@@ -214,7 +214,7 @@ public class ConstantPoolFinder
 			{
 				if (element instanceof ConstantMethodReference)
 				{
-					ConstantInterfaceMethodReference methodReference = (ConstantInterfaceMethodReference) element;
+					ConstantMethodReference methodReference = (ConstantMethodReference) element;
 					int methodClassIndex = (short) methodReference.clazz;
 					int nameAndTypeIndex = (short) methodReference.nameAndType;
 					ConstantClass methodClass = (ConstantClass) array.element[methodClassIndex];
