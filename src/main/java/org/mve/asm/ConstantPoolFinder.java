@@ -11,6 +11,7 @@ import org.mve.asm.file.constant.ConstantInvokeDynamic;
 import org.mve.asm.file.constant.ConstantLong;
 import org.mve.asm.file.constant.ConstantMethodHandle;
 import org.mve.asm.file.constant.ConstantMethodReference;
+import org.mve.asm.file.constant.ConstantMethodType;
 import org.mve.asm.file.constant.ConstantModule;
 import org.mve.asm.file.constant.ConstantNameAndType;
 import org.mve.asm.file.constant.ConstantNull;
@@ -275,6 +276,26 @@ public class ConstantPoolFinder
 		}
 		ConstantMethodHandle handle = new ConstantMethodHandle(kind, findMethod(array, type, name, sign, abstracted));
 		array.add(handle);
+		return array.element.length-1;
+	}
+
+	public static int findMethodType(ConstantArray array, String type)
+	{
+		byte[] typeValue = type.getBytes(StandardCharsets.UTF_8);
+		for (int i = 1; i < array.element.length; i++)
+		{
+			Constant constant = array.element[i];
+			if (constant instanceof ConstantMethodType)
+			{
+				ConstantMethodType methodType = (ConstantMethodType) constant;
+				if (Arrays.equals(((ConstantUTF8)array.element[methodType.type]).value, typeValue))
+				{
+					return i;
+				}
+			}
+		}
+		ConstantMethodType methodType = new ConstantMethodType(ConstantPoolFinder.findUTF8(array, type));
+		array.add(methodType);
 		return array.element.length-1;
 	}
 
