@@ -213,6 +213,7 @@ public class Opcodes
 	public static final int ARRAY_TYPE_INT		= 10;
 	public static final int ARRAY_TYPE_LONG		= 11;
 
+	// REF kind in MethodHandle
 	public static final byte
 	REFERENCE_KIND_GET_FIELD			= 1,
 	REFERENCE_KIND_GET_STATIC			= 2,

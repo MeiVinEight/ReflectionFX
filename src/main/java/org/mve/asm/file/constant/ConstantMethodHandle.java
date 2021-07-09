@@ -2,12 +2,12 @@ package org.mve.asm.file.constant;
 
 public class ConstantMethodHandle extends Constant
 {
-	public int referenceKind;
+	public int kind;
 	public int reference;
 
-	public ConstantMethodHandle(int referenceKind, int reference)
+	public ConstantMethodHandle(int kind, int reference)
 	{
-		this.referenceKind = referenceKind;
+		this.kind = kind;
 		this.reference = reference;
 	}
 
@@ -22,7 +22,7 @@ public class ConstantMethodHandle extends Constant
 	{
 		byte[] b = new byte[4];
 		b[0] = this.type().code();
-		b[1] = (byte) this.referenceKind;
+		b[1] = (byte) this.kind;
 		b[2] = (byte) ((this.reference >>> 8) & 0XFF);
 		b[3] = (byte) (this.reference & 0XFF);
 		return b;

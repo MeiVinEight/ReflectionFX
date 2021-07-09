@@ -2,11 +2,14 @@ package org.mve.asm;
 
 import org.mve.asm.file.constant.ConstantClass;
 import org.mve.asm.file.constant.ConstantDouble;
+import org.mve.asm.file.constant.ConstantDynamic;
 import org.mve.asm.file.constant.ConstantFieldReference;
 import org.mve.asm.file.constant.ConstantFloat;
 import org.mve.asm.file.constant.ConstantInteger;
 import org.mve.asm.file.constant.ConstantInterfaceMethodReference;
+import org.mve.asm.file.constant.ConstantInvokeDynamic;
 import org.mve.asm.file.constant.ConstantLong;
+import org.mve.asm.file.constant.ConstantMethodHandle;
 import org.mve.asm.file.constant.ConstantMethodReference;
 import org.mve.asm.file.constant.ConstantModule;
 import org.mve.asm.file.constant.ConstantNameAndType;
@@ -233,7 +236,102 @@ public class ConstantPoolFinder
 		int nameAndTypeIndex = findNameAndType(array, name, sign);
 		Constant element = isAbstract ? new ConstantInterfaceMethodReference((short) classIndex, (short) nameAndTypeIndex) : new ConstantMethodReference((short) classIndex, (short) nameAndTypeIndex);
 		array.add(element);
-		return (array.element.length & 0XFFFF) - 1;
+		return (array.element.length) - 1;
+	}
+
+	public static int findMethodHandle(ConstantArray array, int kind, String type, String name, String sign)
+	{
+		boolean abstracted = kind == Opcodes.REFERENCE_KIND_INVOKE_INTERFACE;
+		byte[] typeValue = type.getBytes(StandardCharsets.UTF_8);
+		byte[] nameValue = name.getBytes(StandardCharsets.UTF_8);
+		byte[] signValue = sign.getBytes(StandardCharsets.UTF_8);
+		FIND:
+		{
+			for (int i = 1; i < array.element.length; i++)
+			{
+				Constant constant = array.element[i];
+				if (constant instanceof ConstantMethodHandle)
+				{
+					ConstantMethodHandle handle = (ConstantMethodHandle) constant;
+					if (handle.kind == kind && array.element[handle.reference] instanceof ConstantMethodReference)
+					{
+						ConstantMethodReference reference = (ConstantMethodReference) array.element[handle.reference];
+						if (abstracted && !(reference instanceof ConstantInterfaceMethodReference))
+						{
+							break FIND;
+						}
+
+						if (
+							Arrays.equals(((ConstantUTF8) array.element[((ConstantClass) array.element[reference.clazz]).name]).value, typeValue)
+								&& Arrays.equals(((ConstantUTF8) array.element[((ConstantNameAndType) array.element[reference.nameAndType]).name]).value, nameValue)
+								&& Arrays.equals(((ConstantUTF8) array.element[((ConstantNameAndType) array.element[reference.nameAndType]).type]).value, signValue)
+						)
+						{
+							return i;
+						}
+					}
+				}
+			}
+		}
+		ConstantMethodHandle handle = new ConstantMethodHandle(kind, findMethod(array, type, name, sign, abstracted));
+		array.add(handle);
+		return array.element.length-1;
+	}
+
+	public static int findDynamic(ConstantArray array, int bootstrap, String name, String type)
+	{
+		byte[] nameValue = name.getBytes(StandardCharsets.UTF_8);
+		byte[] typeValue = type.getBytes(StandardCharsets.UTF_8);
+		for (int i = 0; i < array.element.length; i++)
+		{
+			Constant constant = array.element[i];
+			if (constant instanceof ConstantDynamic)
+			{
+				ConstantDynamic dynamic = (ConstantDynamic) constant;
+				if (dynamic.bootstrap == bootstrap && array.element[dynamic.nameAndType] instanceof ConstantNameAndType)
+				{
+					ConstantNameAndType nameAndType  = (ConstantNameAndType) array.element[dynamic.nameAndType];
+					if (
+						Arrays.equals(((ConstantUTF8)array.element[nameAndType.name]).value, nameValue)
+						&& Arrays.equals(((ConstantUTF8)array.element[nameAndType.type]).value, typeValue)
+					)
+					{
+						return i;
+					}
+				}
+			}
+		}
+		ConstantDynamic dynamic = new ConstantDynamic(bootstrap, findNameAndType(array, name, type));
+		array.add(dynamic);
+		return array.element.length-1;
+	}
+
+	public static int findInvokeDynamic(ConstantArray array, int bootstrap, String name, String type)
+	{
+		byte[] nameValue = name.getBytes(StandardCharsets.UTF_8);
+		byte[] typeValue = type.getBytes(StandardCharsets.UTF_8);
+		for (int i = 0; i < array.element.length; i++)
+		{
+			Constant constant = array.element[i];
+			if (constant instanceof ConstantInvokeDynamic)
+			{
+				ConstantInvokeDynamic dynamic = (ConstantInvokeDynamic) constant;
+				if (dynamic.bootstrap == bootstrap && array.element[dynamic.nameAndType] instanceof ConstantNameAndType)
+				{
+					ConstantNameAndType nameAndType  = (ConstantNameAndType) array.element[dynamic.nameAndType];
+					if (
+						Arrays.equals(((ConstantUTF8)array.element[nameAndType.name]).value, nameValue)
+							&& Arrays.equals(((ConstantUTF8)array.element[nameAndType.type]).value, typeValue)
+					)
+					{
+						return i;
+					}
+				}
+			}
+		}
+		ConstantInvokeDynamic dynamic = new ConstantInvokeDynamic(bootstrap, findNameAndType(array, name, type));
+		array.add(dynamic);
+		return array.element.length-1;
 	}
 
 	public static int findPackage(ConstantArray array, String name)
