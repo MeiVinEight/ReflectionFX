@@ -2,6 +2,8 @@ package org.mve.asm.attribute.code;
 
 import org.mve.asm.ConstantPoolFinder;
 import org.mve.asm.Opcodes;
+import org.mve.asm.constant.MethodHandle;
+import org.mve.asm.constant.MethodType;
 import org.mve.asm.constant.Type;
 import org.mve.asm.file.constant.ConstantArray;
 import org.mve.io.RandomAccessByteArray;
@@ -102,6 +104,37 @@ public class Constant extends Instruction
 		{
 			Class<?> clazz = (Class<?>) value;
 			int index = ConstantPoolFinder.findClass(pool, clazz.getTypeName().replace('.', '/'));
+			if (index > 255)
+			{
+				array.write(Opcodes.LDC_W);
+				array.writeShort(index);
+			}
+			else
+			{
+				array.write(Opcodes.LDC);
+				array.write(index);
+			}
+		}
+		else if (value instanceof MethodHandle)
+		{
+			MethodHandle handle = (MethodHandle) value;
+			int index = ConstantPoolFinder.findMethodHandle(pool, handle.kind, handle.type, handle.name, handle.sign);
+			if (index > 255)
+			{
+				array.write(Opcodes.LDC_W);
+				array.writeShort(index);
+			}
+			else
+			{
+				array.write(Opcodes.LDC);
+				array.write(index);
+			}
+
+		}
+		else if (value instanceof MethodType)
+		{
+			MethodType methodType = (MethodType) value;
+			int index = ConstantPoolFinder.findMethodType(pool, methodType.type);
 			if (index > 255)
 			{
 				array.write(Opcodes.LDC_W);
