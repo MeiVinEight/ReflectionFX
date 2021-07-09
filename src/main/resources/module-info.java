@@ -1,16 +1,17 @@
 open module org.mve.rfx {
-	requires java.base;
 	requires java.management;
 	requires jdk.unsupported;
 
 	exports org.mve.asm;
 	exports org.mve.asm.attribute;
+	exports org.mve.asm.attribute.bootstrap;
 	exports org.mve.asm.attribute.code;
 	exports org.mve.asm.attribute.code.exception;
 	exports org.mve.asm.attribute.code.local;
 	exports org.mve.asm.attribute.code.stack;
 	exports org.mve.asm.attribute.code.stack.verification;
 	exports org.mve.asm.attribute.module;
+	exports org.mve.asm.constant;
 	exports org.mve.asm.file;
 	exports org.mve.asm.file.attribute;
 	exports org.mve.asm.file.attribute.annotation;
