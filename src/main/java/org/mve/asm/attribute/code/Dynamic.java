@@ -12,42 +12,39 @@ public class Dynamic extends Instruction
 	public int bootstrap;
 	public String name;
 	public String type;
+	public boolean constant;
 
-	public Dynamic(int opcode, int bootstrap, String name, String type)
+	public Dynamic(int bootstrap, String name, String type, boolean constant)
 	{
-		super(opcode);
+		super(Opcodes.INVOKEDYNAMIC);
 		this.bootstrap = bootstrap;
 		this.name = name;
 		this.type = type;
+		this.constant = constant;
 	}
 
 	@Override
 	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
-		switch (this.opcode)
+		if (this.constant)
 		{
-			case Opcodes.LDC:
+			int dynamic = ConstantPoolFinder.findDynamic(pool, this.bootstrap, this.name, this.type);
+			if (dynamic > 255)
 			{
-				int dynamic = ConstantPoolFinder.findDynamic(pool, this.bootstrap, this.name, this.type);
-				if (dynamic > 255)
-				{
-					array.write(Opcodes.LDC_W);
-					array.writeShort(dynamic);
-				}
-				else
-				{
-					array.write(Opcodes.LDC);
-					array.write(dynamic);
-				}
-				break;
+				array.write(Opcodes.LDC_W);
+				array.writeShort(dynamic);
 			}
-			case Opcodes.INVOKEDYNAMIC:
+			else
 			{
-				array.write(this.opcode);
-				array.writeShort(ConstantPoolFinder.findInvokeDynamic(pool, this.bootstrap, this.name, this.type));
-				array.writeShort(0);
-				break;
+				array.write(Opcodes.LDC);
+				array.write(dynamic);
 			}
+		}
+		else
+		{
+			array.write(this.opcode);
+			array.writeShort(ConstantPoolFinder.findInvokeDynamic(pool, this.bootstrap, this.name, this.type));
+			array.writeShort(0);
 		}
 	}
 }

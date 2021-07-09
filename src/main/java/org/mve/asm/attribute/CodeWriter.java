@@ -3,6 +3,7 @@ package org.mve.asm.attribute;
 import org.mve.asm.ConstantPoolFinder;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.code.Constant;
+import org.mve.asm.attribute.code.Dynamic;
 import org.mve.asm.attribute.code.Element;
 import org.mve.asm.attribute.code.Field;
 import org.mve.asm.attribute.code.Iinc;
@@ -136,6 +137,11 @@ public class CodeWriter implements AttributeWriter
 			this.element(m);
 		}
 		return this;
+	}
+
+	public CodeWriter dynamic(int bootstrap, String name, String type, boolean constant)
+	{
+		return this.element(new Dynamic(bootstrap, name, type, constant));
 	}
 
 	public CodeWriter exception(Marker start, Marker end, Marker caught, String type)
