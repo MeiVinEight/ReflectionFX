@@ -2,7 +2,7 @@ package org.mve.asm.attribute.code;
 
 import org.mve.asm.ConstantPoolFinder;
 import org.mve.asm.Opcodes;
-import org.mve.asm.Type;
+import org.mve.asm.constant.Type;
 import org.mve.asm.file.constant.ConstantArray;
 import org.mve.io.RandomAccessByteArray;
 

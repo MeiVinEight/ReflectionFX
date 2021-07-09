@@ -5,7 +5,7 @@ import org.mve.asm.ClassWriter;
 import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
-import org.mve.asm.Type;
+import org.mve.asm.constant.Type;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.RuntimeVisibleAnnotationsWriter;
 import org.mve.asm.file.AccessFlag;

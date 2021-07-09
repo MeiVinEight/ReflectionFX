@@ -1,4 +1,4 @@
-package org.mve.asm;
+package org.mve.asm.constant;
 
 public class Type
 {

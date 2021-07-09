@@ -104,7 +104,7 @@ public class CodeWriter implements AttributeWriter
 
 	public CodeWriter method(int opcode, String type, String name, String desc, boolean isAbstract)
 	{
-		if (isAbstract) return this.element(new InterfaceMethod(opcode, type, name, desc, org.mve.asm.Type.getArgumentsAndReturnSizes(desc) >> 2));
+		if (isAbstract) return this.element(new InterfaceMethod(opcode, type, name, desc, org.mve.asm.constant.Type.getArgumentsAndReturnSizes(desc) >> 2));
 		else return this.element(new Method(opcode, type, name, desc, isAbstract));
 	}
 
