@@ -53,7 +53,8 @@ public class Opcodes
 	public static final int FALOAD			= 0x30;
 	public static final int DALOAD			= 0x31;
 	public static final int AALOAD			= 0x32;
-	public static final int CALOAD			= 0x33;
+	public static final int BALOAD			= 0x33;
+	public static final int CALOAD			= 0x34;
 	public static final int SALOAD			= 0x35;
 	public static final int ISTORE			= 0x36;
 	public static final int LSTORE			= 0x37;
