@@ -464,6 +464,8 @@ public class MagicAccessorBuilder
 		{
 			Marker m1 = new Marker();
 			Marker m2 = new Marker();
+			Marker m3 = new Marker();
+			Marker m4 = new Marker();
 			MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, "getMethods", MethodType.methodType(Method[].class, Class.class).toMethodDescriptorString());
 			cw.method(mw);
 			CodeWriter code = new CodeWriter();
@@ -500,7 +502,7 @@ public class MagicAccessorBuilder
 				.variable(Opcodes.ILOAD, 5)
 				.instruction(Opcodes.ALOAD_3)
 				.instruction(Opcodes.ARRAYLENGTH)
-				.jump(Opcodes.IF_ICMPEQ, m2)
+				.jump(Opcodes.IF_ICMPEQ, m4)
 				.variable(Opcodes.ALOAD, 4)
 				.instruction(Opcodes.ALOAD_2)
 				.instruction(Opcodes.ARRAYLENGTH)
@@ -514,7 +516,17 @@ public class MagicAccessorBuilder
 				.variable(Opcodes.ILOAD, 5)
 				.instruction(Opcodes.AALOAD)
 				.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Constructor.class), "getParameterTypes", MethodType.methodType(Class[].class).toMethodDescriptorString(), false)
+				.instruction(Opcodes.ALOAD_1)
+				.method(Opcodes.INVOKESTATIC, Generator.getType(MethodType.class), "methodType", MethodType.methodType(String.class, Class.class, Class[].class).toMethodDescriptorString(), false)
+				.method(Opcodes.INVOKEVIRTUAL, Generator.getType(String.class), "substring", MethodType.methodType(String.class, int.class).toMethodDescriptorString(), false)
+				.constant("Q")
+				.method(Opcodes.INVOKEVIRTUAL, Generator.getType(String.class), "startsWith", MethodType.methodType(boolean.class, String.class).toMethodDescriptorString(), false)
+				.jump(Opcodes.IFEQ, m2)
 				.field(Opcodes.GETSTATIC, Generator.getType(Void.class), "TYPE", Generator.getSignature(Class.class))
+				.jump(Opcodes.GOTO, m3)
+				.mark(m2)
+				.instruction(Opcodes.ALOAD_1)
+				.mark(m3)
 				.instruction(Opcodes.ALOAD_3)
 				.variable(Opcodes.ILOAD, 5)
 				.instruction(Opcodes.AALOAD)
@@ -562,7 +574,7 @@ public class MagicAccessorBuilder
 				).instruction(Opcodes.AASTORE)
 				.iinc(5, 1)
 				.jump(Opcodes.GOTO, m1)
-				.mark(m2)
+				.mark(m4)
 				.variable(Opcodes.ALOAD, 4)
 				.instruction(Opcodes.ARETURN);
 			code.max(15, 6);
