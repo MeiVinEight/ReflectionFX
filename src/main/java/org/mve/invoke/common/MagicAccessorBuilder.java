@@ -535,16 +535,11 @@ public class MagicAccessorBuilder
 				.variable(Opcodes.ILOAD, 5)
 				.instruction(Opcodes.AALOAD)
 				.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Constructor.class), "getAnnotationBytes", MethodType.methodType(byte[].class).toMethodDescriptorString(), false)
-				.method(Opcodes.INVOKEVIRTUAL, Generator.getType(byte[].class), "clone", MethodType.methodType(Object.class).toMethodDescriptorString(), false)
-				.type(Opcodes.CHECKCAST, Generator.getType(byte[].class))
 				.instruction(Opcodes.ALOAD_3)
 				.variable(Opcodes.ILOAD, 5)
 				.instruction(Opcodes.AALOAD)
 				.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Constructor.class), "getRawParameterAnnotations", MethodType.methodType(byte[].class).toMethodDescriptorString(), false)
-				.method(Opcodes.INVOKEVIRTUAL, Generator.getType(byte[].class), "clone", MethodType.methodType(Object.class).toMethodDescriptorString(), false)
-				.type(Opcodes.CHECKCAST, Generator.getType(byte[].class))
-				.instruction(Opcodes.ICONST_0)
-				.newarray(Opcodes.ARRAY_TYPE_BYTE)
+				.instruction(Opcodes.ACONST_NULL)
 				.method(
 					Opcodes.INVOKESPECIAL,
 					Generator.getType(Method.class),
