@@ -493,7 +493,7 @@ public class MagicAccessorBuilder
 				.instruction(Opcodes.ICONST_0)
 				.instruction(Opcodes.ALOAD_2)
 				.instruction(Opcodes.ARRAYLENGTH)
-				.method(Opcodes.INVOKESTATIC, Generator.getType(System.class), "arraycopy", MethodType.methodType(Object.class, int.class, Object.class, int.class, int.class).toMethodDescriptorString(), false)
+				.method(Opcodes.INVOKESTATIC, Generator.getType(System.class), "arraycopy", MethodType.methodType(void.class, Object.class, int.class, Object.class, int.class, int.class).toMethodDescriptorString(), false)
 				.instruction(Opcodes.ICONST_0)
 				.variable(Opcodes.ISTORE, 5)
 				.mark(m1)
