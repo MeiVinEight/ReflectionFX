@@ -8,6 +8,8 @@ import org.mve.asm.attribute.RuntimeVisibleAnnotationsWriter;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 
+import java.lang.invoke.MethodType;
+
 public abstract class Generator
 {
 	public static final String[] CONSTANT_POOL = new String[4];
@@ -41,46 +43,7 @@ public abstract class Generator
 
 	public static String getSignature(Class<?> clazz)
 	{
-		if (clazz == byte.class)
-		{
-			return "B";
-		}
-		else if (clazz == short.class)
-		{
-			return "S";
-		}
-		else if (clazz == int.class)
-		{
-			return "I";
-		}
-		else if (clazz == long.class)
-		{
-			return "J";
-		}
-		else if (clazz == float.class)
-		{
-			return "F";
-		}
-		else if (clazz == double.class)
-		{
-			return "D";
-		}
-		else if (clazz == boolean.class)
-		{
-			return "Z";
-		}
-		else if (clazz == char.class)
-		{
-			return "C";
-		}
-		else if (clazz.isArray())
-		{
-			return clazz.getName().replace('.', '/');
-		}
-		else
-		{
-			return "L".concat(clazz.getTypeName().replace('.', '/')).concat(";");
-		}
+		return MethodType.methodType(clazz).toMethodDescriptorString().substring(2);
 	}
 
 	public static void warp(Class<?> c, CodeWriter code)
