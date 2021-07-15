@@ -462,6 +462,8 @@ public class MagicAccessorBuilder
 		 * Method[] getMethods(Class<?>);
 		 */
 		{
+			Marker m1 = new Marker();
+			Marker m2 = new Marker();
 			MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, "getMethods", MethodType.methodType(Method[].class, Class.class).toMethodDescriptorString());
 			cw.method(mw);
 			CodeWriter code = new CodeWriter();
