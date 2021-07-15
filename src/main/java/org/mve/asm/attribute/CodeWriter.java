@@ -12,6 +12,8 @@ import org.mve.asm.attribute.code.Jump;
 import org.mve.asm.attribute.code.LocalVariable;
 import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.attribute.code.Method;
+import org.mve.asm.attribute.code.Multianewarray;
+import org.mve.asm.attribute.code.Newarray;
 import org.mve.asm.attribute.code.Number;
 import org.mve.asm.attribute.code.Simple;
 import org.mve.asm.attribute.code.Switch;
@@ -142,6 +144,22 @@ public class CodeWriter implements AttributeWriter
 	public CodeWriter dynamic(int bootstrap, String name, String type, boolean constant)
 	{
 		return this.element(new Dynamic(bootstrap, name, type, constant));
+	}
+
+	public CodeWriter newarray(int type)
+	{
+		return this.element(new Newarray(type));
+	}
+
+	public CodeWriter multianewarray(String type, int dimension)
+	{
+		return this.element(new Multianewarray(type, dimension));
+	}
+
+	public CodeWriter exception(Marker marker)
+	{
+		marker.address = this.exception.length;
+		return this;
 	}
 
 	public CodeWriter exception(Marker start, Marker end, Marker caught, String type)
