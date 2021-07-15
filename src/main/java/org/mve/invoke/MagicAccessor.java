@@ -46,8 +46,6 @@ public interface MagicAccessor
 
 	<T> T construct(Class<?> target, Class<?>[] paramTypes, Object[] params);
 
-	Object invokeMethodHandle(MethodHandle handle, Object... args);
-
 	Field getField(Class<?> target, String name);
 
 	Method getMethod(Class<?> clazz, String name, Class<?> returnType, Class<?>... parameterTypes);

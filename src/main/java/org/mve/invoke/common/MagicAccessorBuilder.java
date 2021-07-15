@@ -247,21 +247,6 @@ public class MagicAccessorBuilder
 		}
 
 		/*
-		 * Object invokeMethodHandle(MethodHandle handle, Object... args);
-		 */
-		{
-			MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC | AccessFlag.VARARGS, "invokeMethodHandle", MethodType.methodType(Object.class, MethodHandle.class, Object[].class).toMethodDescriptorString());
-			cw.method(mw);
-			CodeWriter code = new CodeWriter();
-			mw.attribute(code);
-			code.instruction(Opcodes.ALOAD_1);
-			code.instruction(Opcodes.ALOAD_2);
-			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(MethodHandle.class), "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false);
-			code.instruction(Opcodes.ARETURN);
-			code.max(2, 3);
-		}
-
-		/*
 		 *Field getField(Class<?> target, String name);
 		 */
 		{
