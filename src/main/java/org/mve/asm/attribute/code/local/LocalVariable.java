@@ -6,11 +6,11 @@ import org.mve.asm.file.constant.ConstantArray;
 
 public class LocalVariable
 {
-	private final Marker from;
-	private final Marker to;
-	private final int slot;
-	private final String name;
-	private final String type;
+	public Marker from;
+	public Marker to;
+	public int slot;
+	public String name;
+	public String type;
 
 	public LocalVariable(Marker from, Marker to, int slot, String name, String type)
 	{

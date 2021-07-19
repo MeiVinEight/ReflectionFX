@@ -141,7 +141,7 @@ public class CodeWriter implements AttributeWriter
 		return this;
 	}
 
-	public CodeWriter dynamic(int bootstrap, String name, String type, boolean constant)
+	public CodeWriter dynamic(Marker bootstrap, String name, String type, boolean constant)
 	{
 		return this.element(new Dynamic(bootstrap, name, type, constant));
 	}

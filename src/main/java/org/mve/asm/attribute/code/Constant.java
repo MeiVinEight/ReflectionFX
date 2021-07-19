@@ -1,10 +1,7 @@
 package org.mve.asm.attribute.code;
 
-import org.mve.asm.ConstantPoolFinder;
 import org.mve.asm.Opcodes;
-import org.mve.asm.constant.MethodHandle;
-import org.mve.asm.constant.MethodType;
-import org.mve.asm.constant.Type;
+import org.mve.asm.constant.ConstantValue;
 import org.mve.asm.file.constant.ConstantArray;
 import org.mve.io.RandomAccessByteArray;
 
@@ -23,128 +20,21 @@ public class Constant extends Instruction
 	@Override
 	public void consume(ConstantArray pool, RandomAccessByteArray array, boolean[] wide, Map<int[], Marker> marker)
 	{
-		if (value instanceof java.lang.Number)
+		int i = ConstantValue.constant(pool, this.value);
+		if (this.value instanceof Long || this.value instanceof Double)
 		{
-			if (value instanceof Long)
-			{
-				long val = ((java.lang.Number) value).longValue();
-				int index = ConstantPoolFinder.findLong(pool, val);
-				array.write(Opcodes.LDC2_W);
-				array.writeShort(index);
-			}
-			else if (value instanceof Double)
-			{
-				double val = ((java.lang.Number) value).doubleValue();
-				int index = ConstantPoolFinder.findDouble(pool, val);
-				array.write(Opcodes.LDC2_W);
-				array.writeShort(index);
-			}
-			else if (value instanceof Float)
-			{
-				float val = ((java.lang.Number) value).floatValue();
-				int index = ConstantPoolFinder.findFloat(pool, val);
-				if (index > 255)
-				{
-					array.write(Opcodes.LDC_W);
-					array.writeShort(index);
-				}
-				else
-				{
-					array.write(Opcodes.LDC);
-					array.write(index);
-				}
-			}
-			else
-			{
-				int val = ((java.lang.Number) value).intValue();
-				int index = ConstantPoolFinder.findInteger(pool, val);
-				if (index > 255)
-				{
-					array.write(Opcodes.LDC_W);
-					array.writeShort(index);
-				}
-				else
-				{
-					array.write(Opcodes.LDC);
-					array.write(index);
-				}
-			}
+			array.write(Opcodes.LDC2_W);
+			array.writeShort(i);
 		}
-		else if (value instanceof String)
+		else if (i > 255)
 		{
-			String str = value.toString();
-			int index = ConstantPoolFinder.findString(pool, str);
-			if (index > 255)
-			{
-				array.write(Opcodes.LDC_W);
-				array.writeShort(index);
-			}
-			else
-			{
-				array.write(Opcodes.LDC);
-				array.write(index);
-			}
+			array.write(Opcodes.LDC_W);
+			array.writeShort(i);
 		}
-		else if (value instanceof Type)
+		else
 		{
-			String type = ((Type) value).getType();
-			int index = ConstantPoolFinder.findClass(pool, type);
-			if (index > 255)
-			{
-				array.write(Opcodes.LDC_W);
-				array.writeShort(index);
-			}
-			else
-			{
-				array.write(Opcodes.LDC);
-				array.write(index);
-			}
-		}
-		else if (value instanceof Class)
-		{
-			Class<?> clazz = (Class<?>) value;
-			int index = ConstantPoolFinder.findClass(pool, clazz.getTypeName().replace('.', '/'));
-			if (index > 255)
-			{
-				array.write(Opcodes.LDC_W);
-				array.writeShort(index);
-			}
-			else
-			{
-				array.write(Opcodes.LDC);
-				array.write(index);
-			}
-		}
-		else if (value instanceof MethodHandle)
-		{
-			MethodHandle handle = (MethodHandle) value;
-			int index = ConstantPoolFinder.findMethodHandle(pool, handle.kind, handle.type, handle.name, handle.sign);
-			if (index > 255)
-			{
-				array.write(Opcodes.LDC_W);
-				array.writeShort(index);
-			}
-			else
-			{
-				array.write(Opcodes.LDC);
-				array.write(index);
-			}
-
-		}
-		else if (value instanceof MethodType)
-		{
-			MethodType methodType = (MethodType) value;
-			int index = ConstantPoolFinder.findMethodType(pool, methodType.type);
-			if (index > 255)
-			{
-				array.write(Opcodes.LDC_W);
-				array.writeShort(index);
-			}
-			else
-			{
-				array.write(Opcodes.LDC);
-				array.write(index);
-			}
+			array.write(Opcodes.LDC);
+			array.write(i);
 		}
 	}
 }

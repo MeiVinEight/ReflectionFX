@@ -1,6 +1,6 @@
 package org.mve.asm.file.attribute.annotation.type;
 
-public class TypeAnnotationTargetTypeParameter extends TypeAnnotationValue
+public class TypeAnnotationTypeParameterValue extends TypeAnnotationValue
 {
 	public int parameter;
 

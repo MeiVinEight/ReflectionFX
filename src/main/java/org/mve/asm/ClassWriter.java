@@ -1,7 +1,6 @@
 package org.mve.asm;
 
 import org.mve.asm.attribute.AttributeWriter;
-import org.mve.asm.file.AccessFlag;
 import org.mve.asm.file.Field;
 import org.mve.asm.file.Class;
 import org.mve.asm.file.Method;

@@ -5,7 +5,7 @@ import org.mve.asm.FieldWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.file.AccessFlag;
+import org.mve.asm.AccessFlag;
 import org.mve.invoke.common.DynamicBindEnumHelperGenerator;
 import org.mve.invoke.common.DynamicBindGenerator;
 import org.mve.invoke.common.Generator;

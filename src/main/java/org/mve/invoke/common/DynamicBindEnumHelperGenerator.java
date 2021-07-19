@@ -1,14 +1,14 @@
 package org.mve.invoke.common;
 
-import org.mve.asm.AnnotationWriter;
+import org.mve.asm.attribute.annotation.Annotation;
 import org.mve.asm.ClassWriter;
 import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.constant.Type;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.attribute.RuntimeVisibleAnnotationsWriter;
-import org.mve.asm.file.AccessFlag;
+import org.mve.asm.attribute.RuntimeVisibleAnnotationWriter;
+import org.mve.asm.AccessFlag;
 import org.mve.invoke.MagicAccessor;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
@@ -55,10 +55,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "construct", MethodType.methodType(Object.class, String.class).toMethodDescriptorString())
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.type(Opcodes.NEW, Generator.getType(target))
@@ -74,10 +74,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "construct", MethodType.methodType(this.target, String.class).toMethodDescriptorString())
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.type(Opcodes.NEW, Generator.getType(target))
@@ -93,10 +93,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "construct", MethodType.methodType(Object.class, String.class, int.class).toMethodDescriptorString())
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.type(Opcodes.NEW, Generator.getType(target))
@@ -111,10 +111,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "construct", MethodType.methodType(this.target, String.class, int.class).toMethodDescriptorString())
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.type(Opcodes.NEW, Generator.getType(target))
@@ -129,10 +129,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "values", MethodType.methodType(Object[].class).toMethodDescriptorString())
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.field(Opcodes.GETSTATIC, Generator.getType(target), values, "[".concat(Generator.getSignature(target)))
@@ -143,10 +143,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "values", "()[".concat(Generator.getSignature(target)))
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.field(Opcodes.GETSTATIC, Generator.getType(target), values, "[".concat(Generator.getSignature(target)))
@@ -157,10 +157,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "values", MethodType.methodType(void.class, Object[].class).toMethodDescriptorString())
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_0)
@@ -177,10 +177,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "values", "([".concat(Generator.getSignature(this.target)).concat(")V"))
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_0)
@@ -197,10 +197,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "add", MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_0)
@@ -233,10 +233,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "add", MethodType.methodType(void.class, target).toMethodDescriptorString())
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_0)
@@ -269,10 +269,10 @@ public class DynamicBindEnumHelperGenerator extends DynamicBindGenerator
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "remove", MethodType.methodType(void.class, int.class).toMethodDescriptorString())
 				.attribute(
-					new RuntimeVisibleAnnotationsWriter()
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-						.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+					new RuntimeVisibleAnnotationWriter()
+						.annotation(new Annotation().type(CONSTANT_POOL[1]))
+						.annotation(new Annotation().type(CONSTANT_POOL[2]))
+						.annotation(new Annotation().type(CONSTANT_POOL[3]))
 				)
 				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_0)

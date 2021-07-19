@@ -1,10 +1,10 @@
 package org.mve.invoke.common;
 
-import org.mve.asm.AnnotationWriter;
+import org.mve.asm.attribute.annotation.Annotation;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.attribute.RuntimeVisibleAnnotationsWriter;
+import org.mve.asm.attribute.RuntimeVisibleAnnotationWriter;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 
@@ -21,10 +21,10 @@ public abstract class Generator
 
 	public static void inline(MethodWriter mw)
 	{
-		mw.attribute(new RuntimeVisibleAnnotationsWriter()
-			.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[1]))
-			.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[2]))
-			.addAnnotation(new AnnotationWriter().set(CONSTANT_POOL[3]))
+		mw.attribute(new RuntimeVisibleAnnotationWriter()
+			.annotation(new Annotation().type(CONSTANT_POOL[1]))
+			.annotation(new Annotation().type(CONSTANT_POOL[2]))
+			.annotation(new Annotation().type(CONSTANT_POOL[3]))
 
 		);
 	}

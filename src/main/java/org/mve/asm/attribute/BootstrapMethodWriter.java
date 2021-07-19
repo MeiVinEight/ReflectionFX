@@ -2,6 +2,7 @@ package org.mve.asm.attribute;
 
 import org.mve.asm.ConstantPoolFinder;
 import org.mve.asm.attribute.bootstrap.BootstrapMethod;
+import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.constant.MethodHandle;
 import org.mve.asm.constant.MethodType;
 import org.mve.asm.constant.Type;
@@ -25,6 +26,12 @@ public class BootstrapMethodWriter implements AttributeWriter
 	{
 		this.method = Arrays.copyOf(this.method, this.method.length+1);
 		this.method[this.method.length-1] = method;
+		return this;
+	}
+
+	public BootstrapMethodWriter mark(Marker marker)
+	{
+		marker.address = this.method.length;
 		return this;
 	}
 

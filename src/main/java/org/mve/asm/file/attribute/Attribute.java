@@ -16,7 +16,6 @@ import org.mve.asm.file.attribute.element.ElementValue;
 import org.mve.asm.file.attribute.inner.InnerClass;
 import org.mve.asm.file.attribute.line.LineNumber;
 import org.mve.asm.file.attribute.local.LocalVariable;
-import org.mve.asm.file.attribute.local.LocalVariableType;
 import org.mve.asm.file.constant.Constant;
 import org.mve.asm.file.constant.ConstantType;
 import org.mve.asm.file.constant.ConstantUTF8;
@@ -187,7 +186,7 @@ public abstract class Attribute
 			int count = datain.readUnsignedShort() & 0XFFFF;
 			for (int i = 0; i < count; i++)
 			{
-				LocalVariableType struct = new LocalVariableType();
+				LocalVariable struct = new LocalVariable();
 				struct.start = datain.readUnsignedShort();
 				struct.length = datain.readUnsignedShort();
 				struct.name = datain.readUnsignedShort();

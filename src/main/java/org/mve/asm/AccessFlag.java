@@ -1,4 +1,4 @@
-package org.mve.asm.file;
+package org.mve.asm;
 
 public class AccessFlag
 {
@@ -15,6 +15,7 @@ public class AccessFlag
 	public static final int STATIC_PHASE	= 0x0040;
 	public static final int VARARGS			= 0x0080;
 	public static final int TRANSIENT 		= 0x0080;
+	public static final int PRIMITIVE		= 0x0100;
 	public static final int NATIVE 			= 0x0100;
 	public static final int INTERFACE		= 0x0200;
 	public static final int ABSTRACT		= 0x0400;

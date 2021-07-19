@@ -9,7 +9,7 @@ import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.SignatureWriter;
 import org.mve.asm.attribute.SourceWriter;
 import org.mve.asm.attribute.StackMapTableWriter;
-import org.mve.asm.file.AccessFlag;
+import org.mve.asm.AccessFlag;
 import org.mve.invoke.MagicAccessor;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;

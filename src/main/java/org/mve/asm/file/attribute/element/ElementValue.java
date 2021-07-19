@@ -17,22 +17,22 @@ public abstract class ElementValue
 		int tag = input.readUnsignedByte();
 		switch (tag)
 		{
-			case 'B':
-			case 'C':
-			case 'D':
-			case 'F':
-			case 'I':
-			case 'J':
-			case 'S':
-			case 'Z':
-			case 's':
+			case ElementValueType.BYTE:
+			case ElementValueType.CHAR:
+			case ElementValueType.DOUBLE:
+			case ElementValueType.FLOAT:
+			case ElementValueType.INT:
+			case ElementValueType.LONG:
+			case ElementValueType.SHORT:
+			case ElementValueType.BOOLEAN:
+			case ElementValueType.STRING:
 			{
 				ElementConstantValue value = new ElementConstantValue();
 				value.type = tag;
 				value.value = input.readUnsignedShort();
 				return value;
 			}
-			case 'e':
+			case ElementValueType.ENUM:
 			{
 				ElementEnumValue value = new ElementEnumValue();
 				value.type = tag;
@@ -40,21 +40,21 @@ public abstract class ElementValue
 				value.value = input.readUnsignedShort();
 				return value;
 			}
-			case 'c':
+			case ElementValueType.CLASS:
 			{
 				ElementClassValue value = new ElementClassValue();
 				value.type = tag;
 				value.clazz = input.readUnsignedShort();
 				return value;
 			}
-			case '@':
+			case ElementValueType.ANNOTATION:
 			{
 				ElementAnnotationValue value = new ElementAnnotationValue();
 				value.type = tag;
 				value.annotation = Annotation.read(file, input);
 				return value;
 			}
-			case '[':
+			case ElementValueType.ARRAY:
 			{
 				ElementArrayValue value = new ElementArrayValue();
 				value.type = tag;

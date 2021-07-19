@@ -2,7 +2,7 @@ package org.mve.asm.file.attribute.annotation.type;
 
 public class TypeAnnotationThrowsValue extends TypeAnnotationValue
 {
-	public int throwsType;
+	public int thrown;
 
 	@Override
 	public int length()
@@ -13,6 +13,6 @@ public class TypeAnnotationThrowsValue extends TypeAnnotationValue
 	@Override
 	public byte[] toByteArray()
 	{
-		return new byte[]{(byte) ((this.throwsType >>> 8) & 0XFF), (byte) (this.throwsType & 0XFF)};
+		return new byte[]{(byte) ((this.thrown >>> 8) & 0XFF), (byte) (this.thrown & 0XFF)};
 	}
 }

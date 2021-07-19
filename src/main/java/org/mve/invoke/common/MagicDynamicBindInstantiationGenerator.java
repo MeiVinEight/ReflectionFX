@@ -4,7 +4,7 @@ import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.file.AccessFlag;
+import org.mve.asm.AccessFlag;
 import org.mve.invoke.MethodKind;
 
 public class MagicDynamicBindInstantiationGenerator extends DynamicBindInstantiationGenerator

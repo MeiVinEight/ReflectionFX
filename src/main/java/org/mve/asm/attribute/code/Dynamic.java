@@ -9,12 +9,12 @@ import java.util.Map;
 
 public class Dynamic extends Instruction
 {
-	public int bootstrap;
+	public Marker bootstrap;
 	public String name;
 	public String type;
 	public boolean constant;
 
-	public Dynamic(int bootstrap, String name, String type, boolean constant)
+	public Dynamic(Marker bootstrap, String name, String type, boolean constant)
 	{
 		super(Opcodes.INVOKEDYNAMIC);
 		this.bootstrap = bootstrap;
@@ -28,7 +28,7 @@ public class Dynamic extends Instruction
 	{
 		if (this.constant)
 		{
-			int dynamic = ConstantPoolFinder.findDynamic(pool, this.bootstrap, this.name, this.type);
+			int dynamic = ConstantPoolFinder.findDynamic(pool, this.bootstrap.address, this.name, this.type);
 			if (dynamic > 255)
 			{
 				array.write(Opcodes.LDC_W);
@@ -43,7 +43,7 @@ public class Dynamic extends Instruction
 		else
 		{
 			array.write(this.opcode);
-			array.writeShort(ConstantPoolFinder.findInvokeDynamic(pool, this.bootstrap, this.name, this.type));
+			array.writeShort(ConstantPoolFinder.findInvokeDynamic(pool, this.bootstrap.address, this.name, this.type));
 			array.writeShort(0);
 		}
 	}
