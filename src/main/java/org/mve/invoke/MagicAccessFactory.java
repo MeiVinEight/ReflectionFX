@@ -1,9 +1,6 @@
 package org.mve.invoke;
 
 import org.mve.asm.ClassWriter;
-import org.mve.asm.MethodWriter;
-import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.AccessFlag;
 import org.mve.invoke.common.DynamicBindConstructGenerator;
 import org.mve.invoke.common.DynamicBindFieldGenerator;
 import org.mve.invoke.common.DynamicBindInstantiationGenerator;
@@ -18,7 +15,6 @@ import org.mve.invoke.common.NativeDynamicBindFieldGenerator;
 import org.mve.invoke.common.NativeDynamicBindInstantiationGenerator;
 import org.mve.invoke.common.NativeDynamicBindMethodGenerator;
 
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
@@ -40,10 +36,6 @@ public class MagicAccessFactory
 
 				Class<?>[] parameters = method.getParameterTypes();
 				Class<?> returnType = method.getReturnType();
-
-				MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, method.getName(), MethodType.methodType(returnType, parameters).toMethodDescriptorString());
-				CodeWriter cw = new CodeWriter();
-				mw.attribute(cw);
 
 				switch (accessType)
 				{
@@ -121,9 +113,6 @@ public class MagicAccessFactory
 						generator.generate(writer);
 					}
 				}
-
-				Generator.inline(mw);
-				writer.method(mw);
 			}
 		}
 
