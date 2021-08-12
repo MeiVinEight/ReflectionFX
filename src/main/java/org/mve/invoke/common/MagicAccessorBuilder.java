@@ -12,6 +12,7 @@ import org.mve.asm.attribute.StackMapTableWriter;
 import org.mve.asm.AccessFlag;
 import org.mve.invoke.MagicAccessor;
 import org.mve.invoke.ReflectionFactory;
+import org.mve.invoke.StackFrame;
 import org.mve.invoke.Unsafe;
 
 import java.lang.invoke.MethodHandle;
@@ -35,7 +36,12 @@ public class MagicAccessorBuilder
 		ClassWriter cw = new ClassWriter();
 		cw.set(0x34, AccessFlag.PUBLIC | AccessFlag.SUPER | AccessFlag.FINAL, className, constantPool[0], new String[]{Generator.getType(MagicAccessor.class)});
 		cw.attribute(new SourceWriter("MagicAccessor.java"));
-		cw.field(new FieldWriter().set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.FINAL, "0", Generator.getSignature(SecurityManager.class)));
+
+		if (vmVersion == 0x34)
+		{
+			// 0 SecurityManager
+			cw.field(new FieldWriter().set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.FINAL, "0", Generator.getSignature(SecurityManager.class)));
+		}
 
 		/*
 		 * <clinit>
@@ -162,6 +168,171 @@ public class MagicAccessorBuilder
 					.max(7, 3)
 				);
 			cw.method(mw);
+		}
+
+		// StackFrame[] frame();
+		{
+			CodeWriter code = new CodeWriter();
+			MethodWriter mw = new MethodWriter()
+				.set(AccessFlag.PUBLIC | AccessFlag.FINAL, "frame", MethodType.methodType(StackFrame[].class).toMethodDescriptorString())
+				.attribute(code);
+			cw.method(mw);
+			if (vmVersion == 0x34)
+			{
+				Marker m1 = new Marker();
+				Marker m2 = new Marker();
+				Marker m3 = new Marker();
+				Marker m4 = new Marker();
+				Marker m5 = new Marker();
+				code.field(Opcodes.GETSTATIC, className, "0", Generator.getSignature(SecurityManager.class))
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ASTORE_1)
+					.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ICONST_1)
+					.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.method(Opcodes.INVOKESTATIC, Generator.getType(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false)
+					.type(Opcodes.CHECKCAST, Generator.getType(Class[].class))
+					.instruction(Opcodes.ASTORE_1) // class[]
+					.type(Opcodes.NEW, Generator.getType(Throwable.class))
+					.instruction(Opcodes.DUP)
+					.method(Opcodes.INVOKESPECIAL, Generator.getType(Throwable.class), "<init>", "()V", false)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Throwable.class), "getStackTrace", MethodType.methodType(StackTraceElement[].class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ASTORE_2)
+					.instruction(Opcodes.ALOAD_2)
+					.instruction(Opcodes.ICONST_1)
+					.instruction(Opcodes.ALOAD_2)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.method(Opcodes.INVOKESTATIC, Generator.getType(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false)
+					.type(Opcodes.CHECKCAST, Generator.getType(StackTraceElement[].class))
+					.instruction(Opcodes.ASTORE_2) // element[]
+					.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.type(Opcodes.ANEWARRAY, Generator.getType(StackFrame.class))
+					.instruction(Opcodes.ASTORE_3) // frame
+					.instruction(Opcodes.ICONST_0)
+					.variable(Opcodes.ISTORE, 4) // i
+					.instruction(Opcodes.ICONST_0)
+					.variable(Opcodes.ISTORE, 5) // j
+					.mark(m1)
+					.variable(Opcodes.ILOAD, 5)
+					.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.jump(Opcodes.IF_ICMPLT, m5)
+					.instruction(Opcodes.ALOAD_1)
+					.variable(Opcodes.ILOAD, 5)
+					.instruction(Opcodes.AALOAD)
+					.variable(Opcodes.ASTORE, 6) // class
+					.instruction(Opcodes.ACONST_NULL)
+					.variable(Opcodes.ASTORE, 7) // method
+					.instruction(Opcodes.ICONST_M1)
+					.variable(Opcodes.ISTORE, 8) // line
+					.instruction(Opcodes.ACONST_NULL)
+					.variable(Opcodes.ASTORE, 9) // file
+					.instruction(Opcodes.ICONST_0)
+					.variable(Opcodes.ISTORE, 10) // native
+					.variable(Opcodes.ALOAD, 6)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getTypeName", "()Ljava/lang/String;", false)
+					.instruction(Opcodes.ALOAD_2)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.AALOAD)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StackTraceElement.class), "getClassName", "()Ljava/lang/String;", false)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(String.class), "equals", "(Ljava/lang/Object;)Z", false)
+					.jump(Opcodes.IFEQ, m2)
+					.instruction(Opcodes.ALOAD_2)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.AALOAD)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StackTraceElement.class), "getMethodName", "()Ljava/lang/String;", false)
+					.variable(Opcodes.ASTORE, 7)
+					.instruction(Opcodes.ALOAD_2)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.AALOAD)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StackTraceElement.class), "getLineNumber", "()I", false)
+					.variable(Opcodes.ISTORE, 8)
+					.instruction(Opcodes.ALOAD_2)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.AALOAD)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StackTraceElement.class), "getFileName", "()Ljava/lang/String;", false)
+					.variable(Opcodes.ASTORE, 9)
+					.instruction(Opcodes.ALOAD_2)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.AALOAD)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StackTraceElement.class), "isNativeMethod", "()Z", false)
+					.variable(Opcodes.ISTORE, 10)
+					.iinc(4, 1)
+					.jump(Opcodes.GOTO, m4)
+					.mark(m2)
+					.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.instruction(Opcodes.ALOAD_2)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.jump(Opcodes.IF_ICMPGT, m4)
+					.mark(m3)
+					.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.variable(Opcodes.ILOAD, 5)
+					.instruction(Opcodes.ISUB)
+					.instruction(Opcodes.ALOAD_2)
+					.instruction(Opcodes.ARRAYLENGTH)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.ISUB)
+					.jump(Opcodes.IF_ICMPGT, m4)
+					.iinc(4, 1)
+					.variable(Opcodes.ALOAD, 6)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(Class.class), "getTypeName", "()Ljava/lang/String;", false)
+					.instruction(Opcodes.ALOAD_2)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.AALOAD)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StackTraceElement.class), "getClassName", "()Ljava/lang/String;", false)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(String.class), "equals", "(Ljava/lang/Object;)Z", false)
+					.jump(Opcodes.IFEQ, m3)
+					.instruction(Opcodes.ALOAD_2)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.AALOAD)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StackTraceElement.class), "getMethodName", "()Ljava/lang/String;", false)
+					.variable(Opcodes.ASTORE, 7)
+					.instruction(Opcodes.ALOAD_2)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.AALOAD)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StackTraceElement.class), "getLineNumber", "()I", false)
+					.variable(Opcodes.ISTORE, 8)
+					.instruction(Opcodes.ALOAD_2)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.AALOAD)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StackTraceElement.class), "getFileName", "()Ljava/lang/String;", false)
+					.variable(Opcodes.ASTORE, 9)
+					.instruction(Opcodes.ALOAD_2)
+					.variable(Opcodes.ILOAD, 4)
+					.instruction(Opcodes.AALOAD)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.getType(StackTraceElement.class), "isNativeMethod", "()Z", false)
+					.variable(Opcodes.ISTORE, 10)
+					.iinc(4, 1)
+					.mark(m4)
+					.instruction(Opcodes.ALOAD_3)
+					.variable(Opcodes.ILOAD, 5)
+					.type(Opcodes.NEW, Generator.getType(StackFrame.class))
+					.instruction(Opcodes.DUP)
+					.variable(Opcodes.ALOAD, 6)
+					.variable(Opcodes.ALOAD, 7)
+					.instruction(Opcodes.ACONST_NULL)
+					.instruction(Opcodes.ICONST_M1)
+					.variable(Opcodes.ILOAD, 8)
+					.variable(Opcodes.ALOAD, 9)
+					.variable(Opcodes.ILOAD, 10)
+					.method(Opcodes.INVOKESPECIAL, Generator.getType(StackFrame.class), "<init>", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;IILjava/lang/String;Z)V", false)
+					.instruction(Opcodes.AASTORE)
+					.iinc(5, 1)
+					.jump(Opcodes.GOTO, m1)
+					.mark(m5)
+					.instruction(Opcodes.ALOAD_3)
+					.instruction(Opcodes.ARETURN)
+					.max(11, 11);
+
+			}
+			else
+			{
+				code.field(Opcodes.GETSTATIC, "java/lang/StackWalker$Option", "", "Ljava/lang/StackWalker$Option;");
+			}
 		}
 
 		/*

@@ -18,6 +18,8 @@ public interface MagicAccessor
 
 	Class<?> defineClass(ClassLoader loader, byte[] code);
 
+	StackFrame[] frame();
+
 	Class<?> getCallerClass();
 
 	Class<?>[] getClassContext();

@@ -5,5 +5,5 @@ import org.mve.asm.file.constant.ConstantArray;
 
 public interface AttributeWriter
 {
-	Attribute getAttribute(ConstantArray pool);
+	public abstract Attribute getAttribute(ConstantArray pool);
 }

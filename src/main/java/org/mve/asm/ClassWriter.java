@@ -1,8 +1,8 @@
 package org.mve.asm;
 
 import org.mve.asm.attribute.AttributeWriter;
-import org.mve.asm.file.Field;
 import org.mve.asm.file.Class;
+import org.mve.asm.file.Field;
 import org.mve.asm.file.Method;
 import org.mve.asm.file.constant.ConstantArray;
 
@@ -10,8 +10,8 @@ import java.util.Arrays;
 
 public class ClassWriter
 {
-	public int access;
 	public int major;
+	public int access;
 	public String name;
 	public String supers;
 	public String[] interfaces = new String[0];
