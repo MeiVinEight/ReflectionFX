@@ -1,6 +1,7 @@
 package org.mve.asm.attribute.code;
 
 import org.mve.asm.ConstantPoolFinder;
+import org.mve.asm.Opcodes;
 import org.mve.asm.file.constant.ConstantArray;
 import org.mve.io.RandomAccessByteArray;
 
@@ -27,7 +28,7 @@ public class Method extends Instruction
 	{
 		super.consume(pool, array, wide, marker);
 		array.writeShort(ConstantPoolFinder.findMethod(pool, this.type, this.name, this.desc, this.isAbstract));
-		if (this instanceof InterfaceMethod)
+		if (this.opcode == Opcodes.INVOKEINTERFACE)
 		{
 			array.write(((InterfaceMethod)this).count);
 			array.write(0);

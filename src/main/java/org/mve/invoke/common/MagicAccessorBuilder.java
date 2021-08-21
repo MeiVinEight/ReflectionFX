@@ -2,6 +2,7 @@ package org.mve.invoke.common;
 
 import org.mve.asm.ClassWriter;
 import org.mve.asm.FieldWriter;
+import org.mve.asm.attribute.BootstrapMethodWriter;
 import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
@@ -15,6 +16,7 @@ import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.StackFrame;
 import org.mve.invoke.Unsafe;
 
+import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -25,8 +27,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 
 public class MagicAccessorBuilder
 {
@@ -331,7 +335,92 @@ public class MagicAccessorBuilder
 			}
 			else
 			{
-				code.field(Opcodes.GETSTATIC, "java/lang/StackWalker$Option", "", "Ljava/lang/StackWalker$Option;");
+				Marker marker = new Marker();
+				cw.attribute(new BootstrapMethodWriter()
+					.mark(marker)
+					.bootstrap(
+						new org.mve.asm.constant.MethodHandle(
+							Opcodes.REFERENCE_KIND_INVOKE_STATIC,
+							"java/lang/invoke/LambdaMetafactory",
+							"metafactory",
+							MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, MethodType.class, MethodHandle.class, MethodType.class).toMethodDescriptorString()
+						),
+						new org.mve.asm.constant.MethodType("(Ljava/lang/Object;)V"),
+						new org.mve.asm.constant.MethodHandle(
+							Opcodes.REFERENCE_KIND_INVOKE_STATIC,
+							className,
+							"frame$lambda$0",
+							"(Ljava/util/ArrayList;Ljava/lang/StackWalker$StackFrame;)V"
+						),
+						new org.mve.asm.constant.MethodType("(Ljava/lang/StackWalker$StackFrame;)V")
+					)
+				);
+				cw.method(new MethodWriter()
+					.set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.SYNTHETIC, "frame$lambda$0", "(Ljava/util/ArrayList;Ljava/lang/StackWalker$StackFrame;)V")
+					.attribute(new CodeWriter()
+						.instruction(Opcodes.ALOAD_0)
+						.instruction(Opcodes.ALOAD_1)
+						.type(Opcodes.CHECKCAST, "java/lang/StackFrameInfo")
+						.instruction(Opcodes.ASTORE_1)
+						.type(Opcodes.NEW, Generator.getType(StackFrame.class))
+						.instruction(Opcodes.DUP)
+						.instruction(Opcodes.ALOAD_1)
+						.field(Opcodes.GETFIELD, "java/lang/StackFrameInfo", "memberName", "Ljava/lang/Object;")
+						.type(Opcodes.CHECKCAST, "java/lang/invoke/MemberName")
+						.field(Opcodes.GETFIELD, "java/lang/invoke/MemberName", "clazz", "Ljava/lang/Class;")
+						.instruction(Opcodes.ALOAD_1)
+						.field(Opcodes.GETFIELD, "java/lang/StackFrameInfo", "memberName", "Ljava/lang/Object;")
+						.type(Opcodes.CHECKCAST, "java/lang/invoke/MemberName")
+						.method(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MemberName", "getName", "()Ljava/lang/String;", false)
+						.instruction(Opcodes.ALOAD_1)
+						.field(Opcodes.GETFIELD, "java/lang/StackFrameInfo", "memberName", "Ljava/lang/Object;")
+						.type(Opcodes.CHECKCAST, "java/lang/invoke/MemberName")
+						.method(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MemberName", "getMethodType", "()Ljava/lang/invoke/MethodType;", false)
+						.instruction(Opcodes.ALOAD_1)
+						.method(Opcodes.INVOKEINTERFACE, "java/lang/StackWalker$StackFrame", "getByteCodeIndex", "()I", true)
+						.instruction(Opcodes.ALOAD_1)
+						.method(Opcodes.INVOKEINTERFACE, "java/lang/StackWalker$StackFrame", "getLineNumber", "()I", true)
+						.instruction(Opcodes.ALOAD_1)
+						.method(Opcodes.INVOKEINTERFACE, "java/lang/StackWalker$StackFrame", "getFileName", "()Ljava/lang/String;", true)
+						.instruction(Opcodes.ALOAD_1)
+						.method(Opcodes.INVOKEINTERFACE, "java/lang/StackWalker$StackFrame", "isNativeMethod", "()Z", true)
+						.method(Opcodes.INVOKESPECIAL, Generator.getType(StackFrame.class), "<init>", MethodType.methodType(void.class, Class.class, String.class, MethodType.class, int.class, int.class, String.class, boolean.class).toMethodDescriptorString(), false)
+						.method(Opcodes.INVOKEVIRTUAL, "java/util/ArrayList", "add", "(Ljava/lang/Object;)Z", false)
+						.instruction(Opcodes.POP)
+						.instruction(Opcodes.RETURN)
+						.max(10, 2)
+					)
+				);
+				code.type(Opcodes.NEW, Generator.getType(ArrayList.class))
+					.instruction(Opcodes.DUP)
+					.method(Opcodes.INVOKESPECIAL, Generator.getType(ArrayList.class), "<init>", "()V", false)
+					.instruction(Opcodes.ASTORE_1)
+					.instruction(Opcodes.ICONST_3)
+					.type(Opcodes.ANEWARRAY, Generator.getType(Object.class))
+					.instruction(Opcodes.DUP)
+					.instruction(Opcodes.ICONST_0)
+					.field(Opcodes.GETSTATIC, "java/lang/StackWalker$Option", "RETAIN_CLASS_REFERENCE", "Ljava/lang/StackWalker$Option;")
+					.instruction(Opcodes.AASTORE)
+					.instruction(Opcodes.DUP)
+					.instruction(Opcodes.ICONST_1)
+					.field(Opcodes.GETSTATIC, "java/lang/StackWalker$Option", "SHOW_HIDDEN_FRAMES", "Ljava/lang/StackWalker$Option;")
+					.instruction(Opcodes.AASTORE)
+					.instruction(Opcodes.DUP)
+					.instruction(Opcodes.ICONST_2)
+					.field(Opcodes.GETSTATIC, "java/lang/StackWalker$Option", "SHOW_REFLECT_FRAMES", "Ljava/lang/StackWalker$Option;")
+					.instruction(Opcodes.AASTORE)
+					.method(Opcodes.INVOKESTATIC, Generator.getType(Set.class), "of", MethodType.methodType(Set.class, Object[].class).toMethodDescriptorString(), true)
+					.method(Opcodes.INVOKESTATIC, "java/lang/StackWalker", "getInstance", "(Ljava/util/Set;)Ljava/lang/StackWalker;", false)
+					.dynamic(marker, "accept", "(Ljava/util/ArrayList;)Ljava/util/function/Consumer;", false)
+					.method(Opcodes.INVOKEVIRTUAL, "java/lang/StackWalker", "forEach", "(Ljava/util/function/Consumer;)V", false)
+					.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ALOAD_1)
+					.method(Opcodes.INVOKEVIRTUAL, "java/util/ArrayList", "size", "()I", false)
+					.type(Opcodes.ANEWARRAY, Generator.getType(StackFrame.class))
+					.method(Opcodes.INVOKEVIRTUAL, "java/util/ArrayList", "toArray", "([Ljava/lang/Object;)[Ljava/lang/Object;", false)
+					.type(Opcodes.CHECKCAST, Generator.getType(StackFrame[].class))
+					.instruction(Opcodes.ARETURN)
+					.max(4, 2);
 			}
 		}
 
