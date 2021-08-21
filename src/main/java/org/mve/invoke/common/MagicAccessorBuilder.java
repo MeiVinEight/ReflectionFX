@@ -38,7 +38,7 @@ public class MagicAccessorBuilder
 	{
 		String className = "org/mve/invoke/ReflectionMagicAccessor";
 		ClassWriter cw = new ClassWriter();
-		cw.set(0x34, AccessFlag.PUBLIC | AccessFlag.SUPER | AccessFlag.FINAL, className, constantPool[0], new String[]{Generator.getType(MagicAccessor.class)});
+		cw.set(vmVersion, AccessFlag.PUBLIC | AccessFlag.SUPER | AccessFlag.FINAL, className, constantPool[0], new String[]{Generator.getType(MagicAccessor.class)});
 		cw.attribute(new SourceWriter("MagicAccessor.java"));
 
 		if (vmVersion == 0x34)
