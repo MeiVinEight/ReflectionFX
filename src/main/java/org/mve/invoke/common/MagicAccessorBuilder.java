@@ -450,16 +450,33 @@ public class MagicAccessorBuilder
 			cw.method(mw);
 			CodeWriter code = new CodeWriter();
 			mw.attribute(code);
-			code.field(Opcodes.GETSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
-			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
-			code.instruction(Opcodes.DUP);
-			code.instruction(Opcodes.ARRAYLENGTH);
-			code.instruction(Opcodes.ICONST_1);
-			code.instruction(Opcodes.SWAP);
-			code.method(Opcodes.INVOKESTATIC, Generator.getType(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false);
-			code.type(Opcodes.CHECKCAST, Generator.getType(Class[].class));
-			code.instruction(Opcodes.ARETURN);
-			code.max(3, 1);
+			Marker m1 = new Marker();
+			Marker m2 = new Marker();
+			code.method(Opcodes.INVOKEVIRTUAL, className, "frame", MethodType.methodType(StackFrame[].class).toMethodDescriptorString(), false)
+				.instruction(Opcodes.ASTORE_1)
+				.instruction(Opcodes.ALOAD_1)
+				.instruction(Opcodes.ARRAYLENGTH)
+				.type(Opcodes.ANEWARRAY, Generator.getType(Class.class))
+				.instruction(Opcodes.ASTORE_2)
+				.instruction(Opcodes.ICONST_0)
+				.instruction(Opcodes.ISTORE_3)
+				.mark(m1)
+				.instruction(Opcodes.ALOAD_3)
+				.instruction(Opcodes.ALOAD_2)
+				.jump(Opcodes.IF_ICMPGE, m2)
+				.instruction(Opcodes.ALOAD_2)
+				.instruction(Opcodes.ILOAD_3)
+				.instruction(Opcodes.ALOAD_1)
+				.instruction(Opcodes.ILOAD_3)
+				.instruction(Opcodes.AALOAD)
+				.field(Opcodes.GETFIELD, Generator.getType(StackFrame.class), "clazz", "Ljava/lang/Class;")
+				.instruction(Opcodes.AASTORE)
+				.iinc(3, 1)
+				.jump(Opcodes.GOTO, m1)
+				.mark(m2)
+				.instruction(Opcodes.ALOAD_2)
+				.instruction(Opcodes.ARETURN)
+				.max(4, 4);
 		}
 
 		/*
