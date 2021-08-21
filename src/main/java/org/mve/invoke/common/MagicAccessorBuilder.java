@@ -469,6 +469,7 @@ public class MagicAccessorBuilder
 				.mark(m1)
 				.instruction(Opcodes.ALOAD_3)
 				.instruction(Opcodes.ALOAD_2)
+				.instruction(Opcodes.ARRAYLENGTH)
 				.jump(Opcodes.IF_ICMPGE, m2)
 				.instruction(Opcodes.ALOAD_2)
 				.instruction(Opcodes.ILOAD_3)
