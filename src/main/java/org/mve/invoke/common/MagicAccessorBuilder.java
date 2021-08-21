@@ -432,12 +432,12 @@ public class MagicAccessorBuilder
 			cw.method(mw);
 			CodeWriter code = new CodeWriter();
 			mw.attribute(code);
-			code.field(Opcodes.GETSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
-			code.method(Opcodes.INVOKEVIRTUAL, Generator.getType(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false);
-			code.instruction(Opcodes.ICONST_2);
-			code.instruction(Opcodes.AALOAD);
-			code.instruction(Opcodes.ARETURN);
-			code.max(2, 1);
+			code.instruction(Opcodes.ALOAD_0)
+				.method(Opcodes.INVOKEVIRTUAL, className, "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false)
+				.instruction(Opcodes.ICONST_1)
+				.instruction(Opcodes.AALOAD)
+				.instruction(Opcodes.ARETURN)
+				.max(2, 1);
 		}
 
 		/*
@@ -452,7 +452,8 @@ public class MagicAccessorBuilder
 			mw.attribute(code);
 			Marker m1 = new Marker();
 			Marker m2 = new Marker();
-			code.method(Opcodes.INVOKEVIRTUAL, className, "frame", MethodType.methodType(StackFrame[].class).toMethodDescriptorString(), false)
+			code.instruction(Opcodes.ALOAD_0)
+				.method(Opcodes.INVOKEVIRTUAL, className, "frame", MethodType.methodType(StackFrame[].class).toMethodDescriptorString(), false)
 				.instruction(Opcodes.ASTORE_1)
 				.instruction(Opcodes.ALOAD_1)
 				.instruction(Opcodes.ARRAYLENGTH)
