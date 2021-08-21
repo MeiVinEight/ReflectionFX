@@ -50,18 +50,18 @@ public class MagicAccessorBuilder
 		/*
 		 * <clinit>
 		 */
+		if (vmVersion == 0x34)
 		{
 			MethodWriter mw = new MethodWriter().set(AccessFlag.STATIC, "<clinit>", "()V");
 			cw.method(mw);
 			CodeWriter code = new CodeWriter();
 			mw.attribute(code);
-			code.type(Opcodes.NEW, Generator.getType(SecurityManager.class));
-			code.instruction(Opcodes.DUP);
-			code.method(Opcodes.INVOKESPECIAL, Generator.getType(SecurityManager.class), "<init>", "()V", false);
-			code.field(Opcodes.PUTSTATIC, className, "0", Generator.getSignature(SecurityManager.class));
-
-			code.instruction(Opcodes.RETURN);
-			code.max(2, 0);
+			code.type(Opcodes.NEW, Generator.getType(SecurityManager.class))
+				.instruction(Opcodes.DUP)
+				.method(Opcodes.INVOKESPECIAL, Generator.getType(SecurityManager.class), "<init>", "()V", false)
+				.field(Opcodes.PUTSTATIC, className, "0", Generator.getSignature(SecurityManager.class))
+				.instruction(Opcodes.RETURN)
+				.max(2, 0);
 		}
 
 		/*
