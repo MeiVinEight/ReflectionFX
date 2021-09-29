@@ -20,6 +20,7 @@ public enum AttributeType
 	NEST_HOST("NestHost"),
 	NEST_MEMBERS("NestMembers"),
 	PERMITTED_SUBCLASSES("PermittedSubclasses"),
+	RECORD("Record"),
 	RUNTIME_INVISIBLE_ANNOTATIONS("RuntimeInvisibleAnnotations"),
 	RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS("RuntimeInvisibleParameterAnnotations"),
 	RUNTIME_INVISIBLE_TYPE_ANNOTATIONS("RuntimeInvisibleTypeAnnotations"),
@@ -66,6 +67,7 @@ public enum AttributeType
 		else if (name.equals("NestHost")) return NEST_HOST;
 		else if (name.equals("NestMembers")) return NEST_MEMBERS;
 		else if (name.equals("PermittedSubclasses")) return PERMITTED_SUBCLASSES;
+		else if (name.equals("Record")) return RECORD;
 		else if (name.equals("RuntimeInvisibleAnnotations")) return RUNTIME_INVISIBLE_ANNOTATIONS;
 		else if (name.equals("RuntimeInvisibleParameterAnnotations")) return RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS;
 		else if (name.equals("RuntimeInvisibleTypeAnnotations")) return RUNTIME_INVISIBLE_TYPE_ANNOTATIONS;

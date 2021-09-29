@@ -44,8 +44,8 @@ public class AttributeCode extends Attribute
 		int len = this.length();
 		int index = 0;
 		byte[] b = new byte[len];
-		b[index++] = (byte) ((name >>> 8) & 0XFF);
-		b[index++] = (byte) (name & 0XFF);
+		b[index++] = (byte) ((this.name >>> 8) & 0XFF);
+		b[index++] = (byte) (this.name & 0XFF);
 		len -= 6;
 		b[index++] = (byte) ((len >>> 24) & 0XFF);
 		b[index++] = (byte) ((len >>> 16) & 0XFF);

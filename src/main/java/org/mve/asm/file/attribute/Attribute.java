@@ -1,6 +1,7 @@
 package org.mve.asm.file.attribute;
 
 import org.mve.asm.file.Class;
+import org.mve.asm.file.attribute.record.RecordComponent;
 import org.mve.asm.file.attribute.stack.StackMapFrame;
 import org.mve.asm.file.attribute.annotation.Annotation;
 import org.mve.asm.file.attribute.method.Argument;
@@ -201,6 +202,17 @@ public abstract class Attribute
 			AttributeDeprecated attribute = new AttributeDeprecated();
 			attribute.name = nameIndex;
 			return attribute;
+		}
+		else if (type == AttributeType.RECORD)
+		{
+			AttributeRecord record = new AttributeRecord();
+			record.name = nameIndex;
+			int count = datain.readUnsignedShort();
+			for (int i = 0; i < count; i++)
+			{
+				record.component(RecordComponent.read(file, datain));
+			}
+			return record;
 		}
 		else if (type == AttributeType.RUNTIME_VISIBLE_ANNOTATIONS)
 		{
