@@ -1,12 +1,12 @@
 package org.mve.invoke;
 
+import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
 import org.mve.asm.FieldWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.SourceWriter;
-import org.mve.asm.AccessFlag;
 import org.mve.invoke.common.AllocatorGenerator;
 import org.mve.invoke.common.ConstructorAccessorGenerator;
 import org.mve.invoke.common.FieldAccessorGenerator;
@@ -23,8 +23,6 @@ import org.mve.invoke.common.UninitializedException;
 import org.mve.invoke.common.UnsafeBuilder;
 
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -59,9 +57,6 @@ public class ReflectionFactory
 	 */
 	public static final ReflectionAccessor<Object> METHOD_HANDLE_INVOKER;
 
-	/**
-	 * Some useful methods
-	 */
 	public static final MagicAccessor ACCESSOR;
 	public static final int
 		KIND_INVOKE_VIRTUAL		= 0,
@@ -71,8 +66,6 @@ public class ReflectionFactory
 		KIND_GET				= 4,
 		KIND_PUT				= 5;
 
-	public static boolean save = false;
-
 	private static final String[] CONSTANT_POOL = new String[4];
 	private static final Map<Field, FieldAccessor<?>> GENERATED_FIELD_ACCESSOR = new ConcurrentHashMap<>();
 	private static final Map<String, MethodAccessor<?>> GENERATED_METHOD_ACCESSOR = new ConcurrentHashMap<>();
@@ -80,34 +73,34 @@ public class ReflectionFactory
 	private static final Map<Class<?>, ReflectionAccessor<?>> GENERATED_ALLOCATOR = new ConcurrentHashMap<>();
 	private static final Map<Class<?>, EnumHelper<?>> GENERATED_ENUM_HELPER = new ConcurrentHashMap<>();
 
-	public static <T> MethodAccessor<T> access(Class<?> target, String name, MethodType type, int kind)
+	public static <T> MethodAccessor<T> access(Class<?> target, String name, MethodType type, int kind, Object... argument)
 	{
-		return generic(ACCESSOR.getMethod(target, name, type.returnType(), type.parameterArray()), kind);
+		return generic(ACCESSOR.getMethod(target, name, type.returnType(), type.parameterArray()), kind, argument);
 	}
 
-	public static <T> MethodAccessor<T> access(Method method, int kind)
+	public static <T> MethodAccessor<T> access(Method method, int kind, Object... argument)
 	{
-		return generic(method, kind);
+		return generic(method, kind, argument);
 	}
 
-	public static <T> FieldAccessor<T> access(Class<?> target, String name)
+	public static <T> FieldAccessor<T> access(Class<?> target, String name, Object... argument)
 	{
-		return generic(ACCESSOR.getField(target, name));
+		return generic(ACCESSOR.getField(target, name), argument);
 	}
 
-	public static <T> FieldAccessor<T> access(Field field)
+	public static <T> FieldAccessor<T> access(Field field, Object... argument)
 	{
-		return generic(field);
+		return generic(field, argument);
 	}
 
-	public static <T> ConstructorAccessor<T> access(Class<?> target, MethodType type)
+	public static <T> ConstructorAccessor<T> access(Class<?> target, MethodType type, Object... argument)
 	{
-		return generic(ACCESSOR.getConstructor(target, type.parameterArray()));
+		return generic(ACCESSOR.getConstructor(target, type.parameterArray()), argument);
 	}
 
-	public static <T> ConstructorAccessor<T> access(Constructor<?> constructor)
+	public static <T> ConstructorAccessor<T> access(Constructor<?> constructor, Object... argument)
 	{
-		return generic(constructor);
+		return generic(constructor, argument);
 	}
 
 	public static <T> ReflectionAccessor<T> access(Class<?> target)
@@ -119,7 +112,7 @@ public class ReflectionFactory
 	{
 		String className = "org/mve/invoke/Thrower";
 		ClassWriter cw = new ClassWriter()
-			.set(0x34, 0x21, className, "java/lang/Object", new String[]{Generator.getType(ReflectionAccessor.class)})
+			.set(0x34, 0x21, className, "java/lang/Object", new String[]{Generator.type(ReflectionAccessor.class)})
 			.attribute(new SourceWriter("Thrower.java"))
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
@@ -139,7 +132,7 @@ public class ReflectionFactory
 	{
 		String className = "org/mve/invoke/ConstantValue";
 		ClassWriter cw = new ClassWriter()
-			.set(0x34, AccessFlag.PUBLIC | AccessFlag.FINAL | AccessFlag.SUPER, className, "java/lang/Object", new String[]{Generator.getType(ReflectionAccessor.class)})
+			.set(0x34, AccessFlag.PUBLIC | AccessFlag.FINAL | AccessFlag.SUPER, className, "java/lang/Object", new String[]{Generator.type(ReflectionAccessor.class)})
 			.attribute(new SourceWriter("ConstantValue.java"))
 			.field(new FieldWriter()
 				.set(AccessFlag.PRIVATE | AccessFlag.FINAL, "0", "Ljava/lang/Object;")
@@ -177,28 +170,12 @@ public class ReflectionFactory
 	{
 		byte[] code = bytecode.toByteArray();
 
-		if (save)
-		{
-			try
-			{
-				File file = new File(bytecode.name.concat(".class"));
-				FileOutputStream out = new FileOutputStream(file);
-				out.write(code);
-				out.flush();
-				out.close();
-			}
-			catch (Throwable t)
-			{
-				t.printStackTrace();
-			}
-		}
-
 		return UNSAFE.defineAnonymousClass(host, code, null);
 	}
 
-	private static <T> MethodAccessor<T> generic(Method target, int kind)
+	private static <T> MethodAccessor<T> generic(Method target, int kind, Object[] argument)
 	{
-		String handle = Generator.getType(target.getDeclaringClass()) +
+		String handle = Generator.type(target.getDeclaringClass()) +
 			"." +
 			target.getName() +
 			":" +
@@ -213,13 +190,13 @@ public class ReflectionFactory
 		}
 
 		MethodAccessorGenerator generator;
-		if (Generator.isVMAnonymousClass(target.getDeclaringClass()))
+		if (Generator.anonymous(target.getDeclaringClass()))
 		{
-			generator = new NativeMethodAccessorGenerator(target, kind);
+			generator = new NativeMethodAccessorGenerator(target, kind, argument);
 		}
 		else
 		{
-			generator = new MagicMethodAccessorGenerator(target, kind);
+			generator = new MagicMethodAccessorGenerator(target, kind, argument);
 		}
 		generator.generate();
 
@@ -235,7 +212,7 @@ public class ReflectionFactory
 		return generated;
 	}
 
-	private static <T> FieldAccessor<T> generic(Field target)
+	private static <T> FieldAccessor<T> generic(Field target, Object[] argument)
 	{
 		UNSAFE.ensureClassInitialized(target.getDeclaringClass());
 		FieldAccessor<T> generated = (FieldAccessor<T>) GENERATED_FIELD_ACCESSOR.get(target);
@@ -246,7 +223,7 @@ public class ReflectionFactory
 		Class<?> clazz = target.getDeclaringClass();
 		boolean acc = Generator.checkAccessible(clazz.getClassLoader());
 
-		FieldAccessorGenerator generator = new FieldAccessorGenerator(target);
+		FieldAccessorGenerator generator = new FieldAccessorGenerator(target, argument);
 		generator.generate();
 
 		ClassWriter bytecode = generator.bytecode();
@@ -257,7 +234,7 @@ public class ReflectionFactory
 		return generated;
 	}
 
-	private static <T> ConstructorAccessor<T> generic(Constructor<?> target)
+	private static <T> ConstructorAccessor<T> generic(Constructor<?> target, Object[] argument)
 	{
 		ConstructorAccessor<T> generated = (ConstructorAccessor<T>) GENERATED_CONSTRUCTOR_ACCESSOR.get(target);
 		if (generated != null)
@@ -268,13 +245,13 @@ public class ReflectionFactory
 		boolean access = Generator.checkAccessible(clazz.getClassLoader());
 		
 		ConstructorAccessorGenerator generator;
-		if (Generator.isVMAnonymousClass(clazz))
+		if (Generator.anonymous(clazz))
 		{
-			generator = new NativeConstructorAccessorGenerator(target);
+			generator = new NativeConstructorAccessorGenerator(target, argument);
 		}
 		else
 		{
-			generator = new MagicConstructorAccessorGenerator(target);
+			generator = new MagicConstructorAccessorGenerator(target, argument);
 		}
 		generator.generate();
 		
@@ -297,13 +274,13 @@ public class ReflectionFactory
 		boolean access = Generator.checkAccessible(target.getClassLoader());
 		
 		AllocatorGenerator generator;
-		if (Generator.isVMAnonymousClass(target))
+		if (Generator.anonymous(target))
 		{
-			generator = new NativeAllocatorGenerator(target);
+			generator = new NativeAllocatorGenerator(target, new Object[0]);
 		}
 		else
 		{
-			generator = new MagicAllocatorGenerator(target);
+			generator = new MagicAllocatorGenerator(target, new Object[0]);
 		}
 		generator.generate();
 		

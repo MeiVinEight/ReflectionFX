@@ -1,12 +1,13 @@
 package org.mve.invoke.common;
 
+import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
-import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.AccessFlag;
+import org.mve.asm.attribute.code.Marker;
 import org.mve.invoke.FieldAccessor;
+import org.mve.invoke.ReflectionAccessor;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
@@ -15,24 +16,28 @@ import java.lang.reflect.Modifier;
 
 public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 {
+	private static final String GET = "0";
+	private static final String SET = "1";
 	private final ClassWriter bytecode = this.bytecode();
 	private final Field field;
+	private final int argument;
 
-	public FieldAccessorGenerator(Field field)
+	public FieldAccessorGenerator(Field field, Object[] argument)
 	{
-		super(field, field.getDeclaringClass());
+		super(field, field.getDeclaringClass(), argument);
 		this.field = field;
-		this.bytecode.interfaces = new String[]{Generator.getType(FieldAccessor.class)};
+		this.bytecode.interfaces = new String[]{Generator.type(FieldAccessor.class)};
+		this.argument = argument.length;
 	}
 
 	public void pregenerate(ClassWriter bytecode)
 	{
 		super.pregenerate(bytecode);
 		bytecode.method(new MethodWriter()
-			.set(AccessFlag.PUBLIC, "getField", MethodType.methodType(Field.class).toMethodDescriptorString())
+			.set(AccessFlag.PUBLIC, FieldAccessor.FIELD, MethodType.methodType(Field.class).toMethodDescriptorString())
 			.attribute(new CodeWriter()
-				.field(Opcodes.GETSTATIC, bytecode.name, "1", Generator.getSignature(AccessibleObject.class))
-				.type(Opcodes.CHECKCAST, Generator.getType(Field.class))
+				.field(Opcodes.GETSTATIC, bytecode.name, Generator.CONSTANT_POOL[5], Generator.signature(AccessibleObject.class))
+				.type(Opcodes.CHECKCAST, Generator.type(Field.class))
 				.instruction(Opcodes.ARETURN)
 				.max(1, 1)
 			)
@@ -42,18 +47,20 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 	@Override
 	public void generate()
 	{
+		Generator.with(this.bytecode, FieldAccessor.class, Field.class, this.argument);
+
 		Class<?> type = this.field.getType();
 		int modifiers = this.field.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
-		MethodWriter getter = new MethodWriter().set(AccessFlag.PRIVATE, "0", MethodType.methodType(field.getType(), statics ? new Class[]{} : new Class[]{field.getDeclaringClass()}).toMethodDescriptorString());
+		MethodWriter getter = new MethodWriter().set(AccessFlag.PRIVATE, GET, MethodType.methodType(field.getType(), statics ? new Class[]{} : new Class[]{field.getDeclaringClass()}).toMethodDescriptorString());
 		this.bytecode.method(getter);
 		Generator.inline(getter);
-		MethodWriter setter = new MethodWriter().set(AccessFlag.PRIVATE, "1", MethodType.methodType(void.class, statics ? new Class[]{field.getType()} : new Class[]{field.getDeclaringClass(), field.getType()}).toMethodDescriptorString());
+		MethodWriter setter = new MethodWriter().set(AccessFlag.PRIVATE, SET, MethodType.methodType(void.class, statics ? new Class[]{field.getType()} : new Class[]{field.getDeclaringClass(), field.getType()}).toMethodDescriptorString());
 		this.bytecode.method(setter);
 		Generator.inline(setter);
 		FieldGetterGenerator getterGenerator;
 		FieldSetterGenerator setterGenerator;
-		if (Generator.isVMAnonymousClass(field.getDeclaringClass()))
+		if (Generator.anonymous(field.getDeclaringClass()))
 		{
 			getterGenerator = new UnsafeFieldGetterGenerator(field);
 			setterGenerator = new UnsafeFieldSetterGenerator(field);
@@ -72,11 +79,12 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 		}
 		getterGenerator.generate(getter, this.bytecode);
 		setterGenerator.generate(setter, this.bytecode);
-		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
 		this.bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
 		mw.attribute(code);
+		Generator.merge(code, this.bytecode.name, this.argument);
 		Marker marker = new Marker();
 		code.instruction(Opcodes.ALOAD_1)
 			.jump(Opcodes.IFNULL, marker)
@@ -120,10 +128,10 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 		code.method(Opcodes.INVOKEVIRTUAL, this.bytecode.name, getter.name, getter.type, false);
 		Generator.warp(type, code);
 		code.instruction(Opcodes.ARETURN)
-			.max(statics ? 3 : 4, 2);
+			.max(5, 3);
 		if (statics)
 		{
-			mw = new MethodWriter().set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString());
+			mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class).toMethodDescriptorString());
 			bytecode.method(mw);
 			Generator.inline(mw);
 			code = new CodeWriter();
@@ -137,7 +145,7 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 
 		if (statics)
 		{
-			mw = new MethodWriter().set(AccessFlag.PUBLIC, "get", MethodType.methodType(Object.class).toMethodDescriptorString());
+			mw = new MethodWriter().set(AccessFlag.PUBLIC, FieldAccessor.GET, MethodType.methodType(Object.class).toMethodDescriptorString());
 			this.bytecode.method(mw);
 			code = new CodeWriter();
 			mw.attribute(code);
@@ -147,7 +155,7 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 			code.instruction(Opcodes.ARETURN)
 				.max(Generator.typeSize(type), 1);
 
-			mw = new MethodWriter().set(AccessFlag.PUBLIC, "set", MethodType.methodType(void.class, Object.class).toMethodDescriptorString());
+			mw = new MethodWriter().set(AccessFlag.PUBLIC, FieldAccessor.SET, MethodType.methodType(void.class, Object.class).toMethodDescriptorString());
 			this.bytecode.method(mw);
 			code = new CodeWriter();
 			mw.attribute(code);
@@ -160,7 +168,7 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 		}
 		else
 		{
-			mw = new MethodWriter().set(AccessFlag.PUBLIC, "get", MethodType.methodType(Object.class, Object.class).toMethodDescriptorString());
+			mw = new MethodWriter().set(AccessFlag.PUBLIC, FieldAccessor.GET, MethodType.methodType(Object.class, Object.class).toMethodDescriptorString());
 			this.bytecode.method(mw);
 			code = new CodeWriter();
 			mw.attribute(code);
@@ -171,7 +179,7 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 			code.instruction(Opcodes.ARETURN)
 				.max(2, 2);
 
-			mw = new MethodWriter().set(AccessFlag.PUBLIC, "set", MethodType.methodType(void.class, Object.class, Object.class).toMethodDescriptorString());
+			mw = new MethodWriter().set(AccessFlag.PUBLIC, FieldAccessor.SET, MethodType.methodType(void.class, Object.class, Object.class).toMethodDescriptorString());
 			this.bytecode.method(mw);
 			code = new CodeWriter();
 			mw.attribute(code);

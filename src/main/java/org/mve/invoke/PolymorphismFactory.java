@@ -48,7 +48,7 @@ public class PolymorphismFactory<T>
 		String name = hex(generators.size());
 		MethodKind bridge = new MethodKind(name, implementation.type());
 		this.kinds.computeIfAbsent(objective, obj -> new LinkedList<>()).add(bridge);
-		if (Generator.isVMAnonymousClass(objective))
+		if (Generator.anonymous(objective))
 		{
 			generator = new NativeDynamicBindMethodGenerator(objective, bridge, invocation, kind);
 		}
@@ -71,7 +71,7 @@ public class PolymorphismFactory<T>
 		String name = hex(generators.size());
 		MethodKind bridge = new MethodKind(name, implementation.type());
 		this.kinds.computeIfAbsent(objective, obj -> new LinkedList<>()).add(bridge);
-		if (Generator.isVMAnonymousClass(objective))
+		if (Generator.anonymous(objective))
 		{
 			generator = new NativeDynamicBindFieldGenerator(objective, bridge, operation, kind);
 		}
@@ -94,7 +94,7 @@ public class PolymorphismFactory<T>
 		String name = hex(generators.size());
 		MethodKind bridge = new MethodKind(name, implementation.type());
 		this.kinds.computeIfAbsent(objective, obj -> new LinkedList<>()).add(bridge);
-		if (Generator.isVMAnonymousClass(objective))
+		if (Generator.anonymous(objective))
 		{
 			generator = new NativeDynamicBindInstantiationGenerator(objective, bridge);
 		}
@@ -117,7 +117,7 @@ public class PolymorphismFactory<T>
 		String name = hex(generators.size());
 		MethodKind bridge = new MethodKind(name, implementation.type());
 		this.kinds.computeIfAbsent(objective, obj -> new LinkedList<>()).add(bridge);
-		if (Generator.isVMAnonymousClass(objective))
+		if (Generator.anonymous(objective))
 		{
 			generator = new NativeDynamicBindConstructGenerator(objective, bridge, invocation);
 		}
@@ -143,9 +143,9 @@ public class PolymorphismFactory<T>
 		this.check(kinds, objective, "construct", Object.class, String.class, int.class);
 		this.check(kinds, objective, "construct", objective, String.class, int.class);
 		this.check(kinds, objective, "values", Object[].class);
-		this.check(kinds, objective, "values", ACCESSOR.forName("[" + Generator.getSignature(objective).replace('/', '.')));
+		this.check(kinds, objective, "values", ACCESSOR.forName("[" + Generator.signature(objective).replace('/', '.')));
 		this.check(kinds, objective, "values", void.class, Object[].class);
-		this.check(kinds, objective, "values", void.class, ACCESSOR.forName("[" + Generator.getSignature(objective).replace('/', '.')));
+		this.check(kinds, objective, "values", void.class, ACCESSOR.forName("[" + Generator.signature(objective).replace('/', '.')));
 		this.check(kinds, objective, "add", void.class, Object.class);
 		this.check(kinds, objective, "add", void.class, objective);
 		this.check(kinds, objective, "remove", void.class, int.class);
@@ -160,8 +160,8 @@ public class PolymorphismFactory<T>
 				0x34,
 				0x21,
 				UUID.randomUUID().toString().toUpperCase(),
-				this.accessor.isInterface() ? "java/lang/Object" : Generator.getType(this.accessor),
-				this.accessor.isInterface() ? new String[]{Generator.getType(this.accessor)} : null
+				this.accessor.isInterface() ? "java/lang/Object" : Generator.type(this.accessor),
+				this.accessor.isInterface() ? new String[]{Generator.type(this.accessor)} : null
 			);
 
 		int cid = 0;
@@ -222,7 +222,7 @@ public class PolymorphismFactory<T>
 
 		for (Class<?> accessor : cidList)
 		{
-			cw.field(new FieldWriter().set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.FINAL, cids.get(accessor), Generator.getSignature(accessor)));
+			cw.field(new FieldWriter().set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.FINAL, cids.get(accessor), Generator.signature(accessor)));
 		}
 
 		for (Map.Entry<MethodKind, Class<?>> entry : this.objectives.entrySet())
@@ -237,7 +237,7 @@ public class PolymorphismFactory<T>
 			cw.method(method = new MethodWriter()
 				.set(AccessFlag.PUBLIC, implementation.name(), implementation.type().toMethodDescriptorString())
 				.attribute(code = new CodeWriter()
-					.field(Opcodes.GETSTATIC, cw.name, name, Generator.getSignature(accessor))
+					.field(Opcodes.GETSTATIC, cw.name, name, Generator.signature(accessor))
 				)
 			);
 			Class<?>[] parameters = implementation.type().parameterArray();
@@ -247,7 +247,7 @@ public class PolymorphismFactory<T>
 				Generator.load(param, code, local);
 				local += Generator.typeSize(param);
 			}
-			code.method(Opcodes.INVOKEINTERFACE, Generator.getType(accessor), invoke, implementation.type().toMethodDescriptorString(), true);
+			code.method(Opcodes.INVOKEINTERFACE, Generator.type(accessor), invoke, implementation.type().toMethodDescriptorString(), true);
 			Generator.returner(implementation.type().returnType(), code);
 			code.max(local, local);
 			Generator.inline(method);

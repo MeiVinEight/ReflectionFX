@@ -1,20 +1,24 @@
 package org.mve.invoke.common;
 
-import org.mve.asm.attribute.annotation.Annotation;
+import org.mve.asm.AccessFlag;
+import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.RuntimeVisibleAnnotationWriter;
+import org.mve.asm.attribute.annotation.Annotation;
+import org.mve.invoke.ReflectionAccessor;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 
 import java.lang.invoke.MethodType;
+import java.lang.reflect.AccessibleObject;
 
 public abstract class Generator
 {
-	public static final String[] CONSTANT_POOL = new String[4];
+	public static final String[] CONSTANT_POOL = new String[8];
 
-	public static boolean isVMAnonymousClass(Class<?> cls)
+	public static boolean anonymous(Class<?> cls)
 	{
 		return cls.getName().contains("/");
 	}
@@ -29,11 +33,11 @@ public abstract class Generator
 		);
 	}
 
-	public static String getType(Class<?> clazz)
+	public static String type(Class<?> clazz)
 	{
 		if (clazz.isArray())
 		{
-			return getSignature(clazz);
+			return signature(clazz);
 		}
 		else
 		{
@@ -41,7 +45,7 @@ public abstract class Generator
 		}
 	}
 
-	public static String getSignature(Class<?> clazz)
+	public static String signature(Class<?> clazz)
 	{
 		return MethodType.methodType(clazz).toMethodDescriptorString().substring(2);
 	}
@@ -169,28 +173,28 @@ public abstract class Generator
 
 	public static void unsafeput(Class<?> type, CodeWriter code)
 	{
-		if (type == byte.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", true);
-		else if (type == short.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", true);
-		else if (type == int.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", true);
-		else if (type == long.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", true);
-		else if (type == float.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", true);
-		else if (type == double.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", true);
-		else if (type == boolean.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", true);
-		else if (type == char.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", true);
-		else code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
+		if (type == byte.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putByteVolatile", "(Ljava/lang/Object;JB)V", true);
+		else if (type == short.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putShortVolatile", "(Ljava/lang/Object;JS)V", true);
+		else if (type == int.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putIntVolatile", "(Ljava/lang/Object;JI)V", true);
+		else if (type == long.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putLongVolatile", "(Ljava/lang/Object;JJ)V", true);
+		else if (type == float.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putFloatVolatile", "(Ljava/lang/Object;JF)V", true);
+		else if (type == double.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putDoubleVolatile", "(Ljava/lang/Object;JD)V", true);
+		else if (type == boolean.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putBooleanVolatile", "(Ljava/lang/Object;JZ)V", true);
+		else if (type == char.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putCharVolatile", "(Ljava/lang/Object;JC)V", true);
+		else code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putObjectVolatile", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
 	}
 
 	public static void unsafeget(Class<?> type, CodeWriter code)
 	{
-		if (type == byte.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getByteVolatile", "(Ljava/lang/Object;J)B", true);
-		else if (type == short.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getShortVolatile", "(Ljava/lang/Object;J)S", true);
-		else if (type == int.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getIntVolatile", "(Ljava/lang/Object;J)I", true);
-		else if (type == long.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getLongVolatile", "(Ljava/lang/Object;J)J", true);
-		else if (type == float.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getFloatVolatile", "(Ljava/lang/Object;J)F", true);
-		else if (type == double.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getDoubleVolatile", "(Ljava/lang/Object;J)D", true);
-		else if (type == boolean.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getBooleanVolatile", "(Ljava/lang/Object;J)Z", true);
-		else if (type == char.class) code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getCharVolatile", "(Ljava/lang/Object;J)C", true);
-		else code.method(Opcodes.INVOKEINTERFACE, getType(Unsafe.class), "getObjectVolatile", "(Ljava/lang/Object;J)Ljava/lang/Object;", true);
+		if (type == byte.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getByteVolatile", "(Ljava/lang/Object;J)B", true);
+		else if (type == short.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getShortVolatile", "(Ljava/lang/Object;J)S", true);
+		else if (type == int.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getIntVolatile", "(Ljava/lang/Object;J)I", true);
+		else if (type == long.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getLongVolatile", "(Ljava/lang/Object;J)J", true);
+		else if (type == float.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getFloatVolatile", "(Ljava/lang/Object;J)F", true);
+		else if (type == double.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getDoubleVolatile", "(Ljava/lang/Object;J)D", true);
+		else if (type == boolean.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getBooleanVolatile", "(Ljava/lang/Object;J)Z", true);
+		else if (type == char.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getCharVolatile", "(Ljava/lang/Object;J)C", true);
+		else code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getObjectVolatile", "(Ljava/lang/Object;J)Ljava/lang/Object;", true);
 	}
 
 	public static boolean integer(Class<?> type)
@@ -256,6 +260,54 @@ public abstract class Generator
 		}
 	}
 
+	public static void merge(CodeWriter code, String name, int argument)
+	{
+		code.number(Opcodes.SIPUSH, argument)
+			.type(Opcodes.ANEWARRAY, Generator.type(Object.class))
+			.instruction(Opcodes.ASTORE_2)
+			.field(Opcodes.GETSTATIC, name, Generator.CONSTANT_POOL[6], Generator.signature(Object[].class))
+			.instruction(Opcodes.ICONST_0)
+			.instruction(Opcodes.ALOAD_2)
+			.instruction(Opcodes.ICONST_0)
+			.number(Opcodes.SIPUSH, argument)
+			.method(Opcodes.INVOKESTATIC, Generator.type(System.class), "arraycopy", MethodType.methodType(void.class, Object.class, int.class, Object.class, int.class, int.class).toMethodDescriptorString(), false)
+			.instruction(Opcodes.ALOAD_1)
+			.instruction(Opcodes.ICONST_0)
+			.instruction(Opcodes.ALOAD_2)
+			.number(Opcodes.SIPUSH, argument)
+			.instruction(Opcodes.ALOAD_1)
+			.instruction(Opcodes.ARRAYLENGTH)
+			.method(Opcodes.INVOKESTATIC, Generator.type(System.class), "arraycopy", MethodType.methodType(void.class, Object.class, int.class, Object.class, int.class, int.class).toMethodDescriptorString(), false)
+			.instruction(Opcodes.ALOAD_2)
+			.instruction(Opcodes.ASTORE_1);
+	}
+
+	public static void with(ClassWriter bytecode, Class<?> type, Class<?> cast, int argument)
+	{
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.WITH, MethodType.methodType(type, Object[].class).toMethodDescriptorString());
+		CodeWriter code = new CodeWriter();
+		Generator.merge(code, bytecode.name, argument);
+		code.field(Opcodes.GETSTATIC, bytecode.name, Generator.CONSTANT_POOL[5], Generator.signature(AccessibleObject.class))
+			.type(Opcodes.CHECKCAST, Generator.type(cast))
+			.instruction(Opcodes.ALOAD_1)
+			.method(Opcodes.INVOKESTATIC, Generator.type(ReflectionFactory.class), Generator.CONSTANT_POOL[7], MethodType.methodType(type, cast, Object[].class).toMethodDescriptorString(), false)
+			.instruction(Opcodes.ARETURN)
+			.max(5, 3);
+		mw.attribute(code);
+		bytecode.method(mw);
+
+		bytecode.method(new MethodWriter()
+			.set(AccessFlag.PUBLIC, ReflectionAccessor.WITH, MethodType.methodType(ReflectionAccessor.class, Object[].class).toMethodDescriptorString())
+			.attribute(new CodeWriter()
+				.instruction(Opcodes.ALOAD_0)
+				.instruction(Opcodes.ALOAD_1)
+				.method(Opcodes.INVOKEVIRTUAL, bytecode.name, ReflectionAccessor.WITH, MethodType.methodType(type, Object[].class).toMethodDescriptorString(), false)
+				.instruction(Opcodes.ARETURN)
+				.max(2, 2)
+			)
+		);
+	}
+
 	static
 	{
 		Unsafe unsafe = ReflectionFactory.UNSAFE;
@@ -263,5 +315,9 @@ public abstract class Generator
 		CONSTANT_POOL[1] = unsafe.getJavaVMVersion() < 57 ? "Ljava/lang/invoke/LambdaForm$Hidden;" : "Ljdk/internal/vm/annotation/Hidden;";
 		CONSTANT_POOL[2] = unsafe.getJavaVMVersion() == 0x34 ? "Ljava/lang/invoke/ForceInline;" : "Ljdk/internal/vm/annotation/ForceInline;";
 		CONSTANT_POOL[3] = "Ljava/lang/invoke/LambdaForm$Compiled;";
+		CONSTANT_POOL[4] = "0";
+		CONSTANT_POOL[5] = "1";
+		CONSTANT_POOL[6] = "00";
+		CONSTANT_POOL[7] = "access";
 	}
 }

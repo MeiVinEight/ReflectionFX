@@ -1,10 +1,10 @@
 package org.mve.invoke.common;
 
+import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.AccessFlag;
 import org.mve.invoke.MethodKind;
 import org.mve.invoke.ReflectionFactory;
 
@@ -38,7 +38,7 @@ public class MagicDynamicBindMethodGenerator extends DynamicBindMethodGenerator
 			else code.variable(Opcodes.ALOAD, local);
 			local += Generator.typeSize(c);
 		}
-		code.method(0xB6 + kind, Generator.getType(target), invocation.name(), invocation.type().toMethodDescriptorString(), kind == ReflectionFactory.KIND_INVOKE_INTERFACE);
+		code.method(0xB6 + kind, Generator.type(target), invocation.name(), invocation.type().toMethodDescriptorString(), kind == ReflectionFactory.KIND_INVOKE_INTERFACE);
 		Class<?> c = implementation.type().returnType();
 		if (c == void.class)
 		{

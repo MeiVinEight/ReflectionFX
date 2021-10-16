@@ -1,10 +1,11 @@
 package org.mve.invoke.common;
 
+import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.AccessFlag;
+import org.mve.invoke.ReflectionAccessor;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
@@ -13,22 +14,26 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 {
 	private final ClassWriter bytecode = this.bytecode();
 	private final Constructor<?> constructor;
+	private final int argument;
 
-	public MagicConstructorAccessorGenerator(Constructor<?> ctr)
+	public MagicConstructorAccessorGenerator(Constructor<?> ctr, Object[] argument)
 	{
-		super(ctr);
+		super(ctr, argument);
 		this.constructor = ctr;
+		this.argument = argument.length;
 	}
 
 	@Override
 	public void generate()
 	{
-		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
+		super.generate();
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
 		this.bytecode.method(mw);
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
 		mw.attribute(code);
-		code.type(Opcodes.NEW, Generator.getType(constructor.getDeclaringClass()))
+		Generator.merge(code, this.bytecode.name, this.argument);
+		code.type(Opcodes.NEW, Generator.type(constructor.getDeclaringClass()))
 			.instruction(Opcodes.DUP);
 		Class<?>[] parameters = this.constructor.getParameterTypes();
 		for (int i=0; i<parameters.length; i++)
@@ -41,16 +46,16 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 				Generator.unwarp(parameters[i], code);
 			}
 		}
-		code.method(Opcodes.INVOKESPECIAL, Generator.getType(constructor.getDeclaringClass()), "<init>", MethodType.methodType(void.class, parameters).toMethodDescriptorString(), false)
+		code.method(Opcodes.INVOKESPECIAL, Generator.type(constructor.getDeclaringClass()), "<init>", MethodType.methodType(void.class, parameters).toMethodDescriptorString(), false)
 			.instruction(Opcodes.ARETURN)
-			.max(2 + (parameters.length == 0 ? 0 : parameters.length + 1), 2);
+			.max(2 + (parameters.length == 0 ? 0 : parameters.length + 1), 3);
 		if (parameters.length == 0)
 		{
-			mw = new MethodWriter().set(AccessFlag.PUBLIC, "invoke", MethodType.methodType(Object.class).toMethodDescriptorString())
+			mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class).toMethodDescriptorString())
 				.attribute(new CodeWriter()
-					.type(Opcodes.NEW, Generator.getType(this.constructor.getDeclaringClass()))
+					.type(Opcodes.NEW, Generator.type(this.constructor.getDeclaringClass()))
 					.instruction(Opcodes.DUP)
-					.method(Opcodes.INVOKESPECIAL, Generator.getType(this.constructor.getDeclaringClass()), "<init>", "()V", false)
+					.method(Opcodes.INVOKESPECIAL, Generator.type(this.constructor.getDeclaringClass()), "<init>", "()V", false)
 					.instruction(Opcodes.ARETURN)
 					.max(2, 1)
 				);

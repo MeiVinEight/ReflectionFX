@@ -1,10 +1,10 @@
 package org.mve.invoke.common;
 
+import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.AccessFlag;
 import org.mve.invoke.MethodKind;
 
 public class MagicDynamicBindConstructGenerator extends DynamicBindConstructGenerator
@@ -25,7 +25,7 @@ public class MagicDynamicBindConstructGenerator extends DynamicBindConstructGene
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
 		mw.attribute(code);
-		code.type(Opcodes.NEW, Generator.getType(target))
+		code.type(Opcodes.NEW, Generator.type(target))
 			.instruction(Opcodes.DUP)
 			.max(2 + Generator.parameterSize(implementation.type().parameterArray()), 1 + Generator.parameterSize(implementation.type().parameterArray()));
 		int local = 1;
@@ -40,7 +40,7 @@ public class MagicDynamicBindConstructGenerator extends DynamicBindConstructGene
 			local += Generator.typeSize(c);
 		}
 		code
-			.method(Opcodes.INVOKESPECIAL, Generator.getType(target), "<init>", invocation.type().toMethodDescriptorString(), false)
+			.method(Opcodes.INVOKESPECIAL, Generator.type(target), "<init>", invocation.type().toMethodDescriptorString(), false)
 			.instruction(Opcodes.ARETURN);
 	}
 }

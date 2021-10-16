@@ -1,13 +1,13 @@
 package org.mve.invoke.common;
 
+import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
 import org.mve.asm.FieldWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
-import org.mve.asm.constant.Type;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.SignatureWriter;
-import org.mve.asm.AccessFlag;
+import org.mve.asm.constant.Type;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;

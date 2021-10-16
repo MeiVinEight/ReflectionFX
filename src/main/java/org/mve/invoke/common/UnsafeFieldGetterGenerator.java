@@ -26,10 +26,10 @@ public class UnsafeFieldGetterGenerator extends FieldGetterGenerator
 		long off = statics ? ReflectionFactory.UNSAFE.staticFieldOffset(field) : ReflectionFactory.UNSAFE.objectFieldOffset(field);
 		CodeWriter code = new CodeWriter();
 		method.attribute(code);
-		code.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class));
+		code.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class));
 		if (statics)
 		{
-			code.field(Opcodes.GETSTATIC, classWriter.name, "0", Generator.getSignature(Class.class));
+			code.field(Opcodes.GETSTATIC, classWriter.name, Generator.CONSTANT_POOL[4], Generator.signature(Class.class));
 		}
 		else
 		{

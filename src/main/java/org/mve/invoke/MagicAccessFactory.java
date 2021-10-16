@@ -26,7 +26,7 @@ public class MagicAccessFactory
 	public static <T> T access(Class<T> accessor)
 	{
 		Method[] methods = ACCESSOR.getMethods(accessor);
-		ClassWriter writer = new ClassWriter().set(0x34, 0x21, UUID.randomUUID().toString().toUpperCase(), Generator.CONSTANT_POOL[0], new String[]{Generator.getType(accessor)});
+		ClassWriter writer = new ClassWriter().set(0x34, 0x21, UUID.randomUUID().toString().toUpperCase(), Generator.CONSTANT_POOL[0], new String[]{Generator.type(accessor)});
 		for (Method method : methods)
 		{
 			MagicAccess access = method.getDeclaredAnnotation(MagicAccess.class);
@@ -48,7 +48,7 @@ public class MagicAccessFactory
 						int kind = access.kind();
 
 						DynamicBindMethodGenerator generator;
-						if (Generator.isVMAnonymousClass(c))
+						if (Generator.anonymous(c))
 						{
 							generator = new NativeDynamicBindMethodGenerator(c, new MethodKind(method.getName(), returnType, parameters), new MethodKind(name, value, type), kind);
 						}
@@ -68,7 +68,7 @@ public class MagicAccessFactory
 						int kind = access.kind();
 
 						DynamicBindFieldGenerator generator;
-						if(Generator.isVMAnonymousClass(objective))
+						if(Generator.anonymous(objective))
 						{
 							generator = new NativeDynamicBindFieldGenerator(objective, new MethodKind(method.getName(), method.getReturnType(), method.getParameterTypes()), name, kind);
 						}
@@ -86,7 +86,7 @@ public class MagicAccessFactory
 						Class<?>[] type = access.type();
 
 						DynamicBindConstructGenerator generator;
-						if (Generator.isVMAnonymousClass(objective))
+						if (Generator.anonymous(objective))
 						{
 							generator = new NativeDynamicBindConstructGenerator(objective, new MethodKind(method.getName(), method.getReturnType(), method.getParameterTypes()), new MethodKind("<init>", void.class, type));
 						}
@@ -102,7 +102,7 @@ public class MagicAccessFactory
 						Class<?> objective = access.objective();
 
 						DynamicBindInstantiationGenerator generator;
-						if (Generator.isVMAnonymousClass(objective))
+						if (Generator.anonymous(objective))
 						{
 							generator = new NativeDynamicBindInstantiationGenerator(objective, new MethodKind(method.getName(), method.getReturnType(), method.getParameterTypes()));
 						}

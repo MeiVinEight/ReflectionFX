@@ -1,10 +1,10 @@
 package org.mve.invoke.common;
 
+import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.AccessFlag;
 import org.mve.invoke.MethodKind;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
@@ -27,10 +27,10 @@ public class NativeDynamicBindConstructGenerator extends DynamicBindConstructGen
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
 		mw.attribute(code);
-		code.field(Opcodes.GETSTATIC, Generator.getType(ReflectionFactory.class), "UNSAFE", Generator.getSignature(Unsafe.class))
-			.field(Opcodes.GETSTATIC, bytecode.name, "<init>".concat(MethodType.methodType(void.class, invocation().type().parameterArray()).toMethodDescriptorString()), Generator.getSignature(Constructor.class))
+		code.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
+			.field(Opcodes.GETSTATIC, bytecode.name, "<init>".concat(MethodType.methodType(void.class, invocation().type().parameterArray()).toMethodDescriptorString()), Generator.signature(Constructor.class))
 			.number(Opcodes.BIPUSH, invocation().type().parameterArray().length)
-			.type(Opcodes.ANEWARRAY, Generator.getType(Class.class));
+			.type(Opcodes.ANEWARRAY, Generator.type(Class.class));
 		int args = 0;
 		int local = 1;
 		Class<?>[] parameters = invocation().type().parameterArray();
@@ -47,7 +47,7 @@ public class NativeDynamicBindConstructGenerator extends DynamicBindConstructGen
 			Generator.warp(parameterType, code);
 			code.instruction(Opcodes.AASTORE);
 		}
-		code.method(Opcodes.INVOKEINTERFACE, Generator.getType(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), true)
+		code.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), true)
 			.instruction(Opcodes.ARETURN)
 			.max(parameters.length == 0 ? 3 : 7, local);
 	}

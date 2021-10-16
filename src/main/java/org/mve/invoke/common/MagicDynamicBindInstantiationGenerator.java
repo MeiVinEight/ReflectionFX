@@ -1,10 +1,10 @@
 package org.mve.invoke.common;
 
+import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.asm.AccessFlag;
 import org.mve.invoke.MethodKind;
 
 public class MagicDynamicBindInstantiationGenerator extends DynamicBindInstantiationGenerator
@@ -20,7 +20,7 @@ public class MagicDynamicBindInstantiationGenerator extends DynamicBindInstantia
 		MethodWriter mw = new MethodWriter()
 			.set(AccessFlag.PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString())
 			.attribute(new CodeWriter()
-				.type(Opcodes.NEW, Generator.getType(getTarget()))
+				.type(Opcodes.NEW, Generator.type(getTarget()))
 				.instruction(Opcodes.ARETURN)
 				.max(1, 1 + Generator.parameterSize(implementation().type().parameterArray()))
 			);

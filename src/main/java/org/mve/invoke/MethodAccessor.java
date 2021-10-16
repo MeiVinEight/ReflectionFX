@@ -4,5 +4,9 @@ import java.lang.reflect.Method;
 
 public interface MethodAccessor<T> extends ReflectionAccessor<T>
 {
-	Method getMethod();
+	public static final String METHOD = "method";
+
+	Method method();
+
+	MethodAccessor<T> with(Object... argument);
 }

@@ -4,5 +4,9 @@ import java.lang.reflect.Constructor;
 
 public interface ConstructorAccessor<T> extends ReflectionAccessor<T>
 {
-	Constructor<T> getConstructor();
+	public static final String CONSTRUCTOR = "constructor";
+
+	Constructor<T> constructor();
+
+	ConstructorAccessor<T> with(Object... argument);
 }
