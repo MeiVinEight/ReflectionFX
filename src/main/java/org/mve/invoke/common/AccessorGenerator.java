@@ -64,5 +64,20 @@ public abstract class AccessorGenerator extends Generator
 		return this.bytecode;
 	}
 
-	public abstract void generate();
+	public void generate()
+	{
+		MethodWriter mw;
+		bytecode.method(mw = new MethodWriter()
+			.set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class).toMethodDescriptorString())
+			.attribute(new CodeWriter()
+				.instruction(Opcodes.ALOAD_0)
+				.instruction(Opcodes.ICONST_0)
+				.type(Opcodes.ANEWARRAY, Generator.type(Object.class))
+				.method(Opcodes.INVOKEVIRTUAL, this.bytecode.name, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false)
+				.instruction(Opcodes.ARETURN)
+				.max(2, 1)
+			)
+		);
+		Generator.inline(mw);
+	}
 }

@@ -49,18 +49,5 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 		code.method(Opcodes.INVOKESPECIAL, Generator.type(constructor.getDeclaringClass()), "<init>", MethodType.methodType(void.class, parameters).toMethodDescriptorString(), false)
 			.instruction(Opcodes.ARETURN)
 			.max(2 + (parameters.length == 0 ? 0 : parameters.length + 1), 3);
-		if (parameters.length == 0)
-		{
-			mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class).toMethodDescriptorString())
-				.attribute(new CodeWriter()
-					.type(Opcodes.NEW, Generator.type(this.constructor.getDeclaringClass()))
-					.instruction(Opcodes.DUP)
-					.method(Opcodes.INVOKESPECIAL, Generator.type(this.constructor.getDeclaringClass()), "<init>", "()V", false)
-					.instruction(Opcodes.ARETURN)
-					.max(2, 1)
-				);
-			Generator.inline(mw);
-			this.bytecode.method(mw);
-		}
 	}
 }

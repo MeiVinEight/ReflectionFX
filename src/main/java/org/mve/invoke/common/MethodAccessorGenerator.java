@@ -53,6 +53,7 @@ public abstract class MethodAccessorGenerator extends AccessibleObjectAccessorGe
 	@Override
 	public void generate()
 	{
+		super.generate();
 		Generator.with(this.bytecode(), MethodAccessor.class, Method.class, this.argument);
 	}
 }

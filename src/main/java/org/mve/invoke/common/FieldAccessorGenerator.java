@@ -47,8 +47,8 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 	@Override
 	public void generate()
 	{
+		super.generate();
 		Generator.with(this.bytecode, FieldAccessor.class, Field.class, this.argument);
-
 		Class<?> type = this.field.getType();
 		int modifiers = this.field.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
@@ -129,19 +129,6 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 		Generator.warp(type, code);
 		code.instruction(Opcodes.ARETURN)
 			.max(5, 3);
-		if (statics)
-		{
-			mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class).toMethodDescriptorString());
-			bytecode.method(mw);
-			Generator.inline(mw);
-			code = new CodeWriter();
-			mw.attribute(code);
-			code.instruction(Opcodes.ALOAD_0)
-				.method(Opcodes.INVOKEVIRTUAL, this.bytecode.name, getter.name, getter.type, false);
-			Generator.warp(type, code);
-			code.instruction(Opcodes.ARETURN)
-				.max(Generator.typeSize(type), 1);
-		}
 
 		if (statics)
 		{

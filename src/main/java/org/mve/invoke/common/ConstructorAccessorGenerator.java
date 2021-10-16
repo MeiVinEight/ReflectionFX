@@ -46,6 +46,7 @@ public abstract class ConstructorAccessorGenerator extends AccessibleObjectAcces
 	@Override
 	public void generate()
 	{
+		super.generate();
 		Generator.with(this.bytecode(), ConstructorAccessor.class, Constructor.class, this.argument);
 	}
 }

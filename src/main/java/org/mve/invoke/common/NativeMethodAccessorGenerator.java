@@ -60,23 +60,5 @@ public class NativeMethodAccessorGenerator extends MethodAccessorGenerator
 			.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString(), true)
 			.instruction(Opcodes.ARETURN)
 			.max(6, 3);
-		if (statics && this.method.getParameterTypes().length == 0)
-		{
-			mw = new MethodWriter()
-				.set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class).toMethodDescriptorString())
-				.attribute(new CodeWriter()
-					.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
-					.field(Opcodes.GETSTATIC, this.bytecode.name, Generator.CONSTANT_POOL[5], Generator.signature(AccessibleObject.class))
-					.type(Opcodes.CHECKCAST, Generator.type(Method.class))
-					.field(Opcodes.GETSTATIC, this.bytecode.name, Generator.CONSTANT_POOL[4], Generator.signature(Class.class))
-					.instruction(Opcodes.ICONST_0)
-					.type(Opcodes.ANEWARRAY, Generator.type(Object.class))
-					.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString(), true)
-					.instruction(Opcodes.ARETURN)
-					.max(4, 1)
-				);
-			Generator.inline(mw);
-			this.bytecode.method(mw);
-		}
 	}
 }

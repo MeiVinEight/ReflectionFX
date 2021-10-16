@@ -42,22 +42,5 @@ public class NativeConstructorAccessorGenerator extends ConstructorAccessorGener
 			.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), true)
 			.instruction(Opcodes.ARETURN)
 			.max(3, 3);
-
-		if (constructor.getParameterTypes().length == 0)
-		{
-			mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class).toMethodDescriptorString());
-			this.bytecode.method(mw);
-			Generator.inline(mw);
-			mw.attribute(new CodeWriter()
-				.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
-				.field(Opcodes.GETSTATIC, this.bytecode.name, Generator.CONSTANT_POOL[5], Generator.signature(AccessibleObject.class))
-				.type(Opcodes.CHECKCAST, Generator.type(Constructor.class))
-				.instruction(Opcodes.ICONST_0)
-				.type(Opcodes.ANEWARRAY, Generator.type(Object.class))
-				.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), true)
-				.instruction(Opcodes.ARETURN)
-				.max(3, 1)
-			);
-		}
 	}
 }
