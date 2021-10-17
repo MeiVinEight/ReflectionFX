@@ -8,17 +8,10 @@ import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.SourceWriter;
 import org.mve.invoke.common.AllocatorGenerator;
-import org.mve.invoke.common.ConstructorAccessorGenerator;
-import org.mve.invoke.common.FieldAccessorGenerator;
 import org.mve.invoke.common.Generator;
 import org.mve.invoke.common.MagicAccessorBuilder;
 import org.mve.invoke.common.MagicAllocatorGenerator;
-import org.mve.invoke.common.MagicConstructorAccessorGenerator;
-import org.mve.invoke.common.MagicMethodAccessorGenerator;
-import org.mve.invoke.common.MethodAccessorGenerator;
 import org.mve.invoke.common.NativeAllocatorGenerator;
-import org.mve.invoke.common.NativeConstructorAccessorGenerator;
-import org.mve.invoke.common.NativeMethodAccessorGenerator;
 import org.mve.invoke.common.UninitializedException;
 import org.mve.invoke.common.UnsafeBuilder;
 
@@ -68,39 +61,39 @@ public class ReflectionFactory
 
 	private static final String[] CONSTANT_POOL = new String[4];
 	private static final Map<Field, FieldAccessor<?>> GENERATED_FIELD_ACCESSOR = new ConcurrentHashMap<>();
-	private static final Map<String, MethodAccessor<?>> GENERATED_METHOD_ACCESSOR = new ConcurrentHashMap<>();
+	private static final Map<Method, MethodAccessor<?>> GENERATED_METHOD_ACCESSOR = new ConcurrentHashMap<>();
 	private static final Map<Constructor<?>, ConstructorAccessor<?>> GENERATED_CONSTRUCTOR_ACCESSOR = new ConcurrentHashMap<>();
 	private static final Map<Class<?>, ReflectionAccessor<?>> GENERATED_ALLOCATOR = new ConcurrentHashMap<>();
 	private static final Map<Class<?>, EnumHelper<?>> GENERATED_ENUM_HELPER = new ConcurrentHashMap<>();
 
-	public static <T> MethodAccessor<T> access(Class<?> target, String name, MethodType type, int kind, Object... argument)
+	public static <T> MethodAccessor<T> access(Class<?> target, String name, MethodType type, int kind)
 	{
-		return generic(ACCESSOR.getMethod(target, name, type.returnType(), type.parameterArray()), kind, argument);
+		return generic(ACCESSOR.getMethod(target, name, type.returnType(), type.parameterArray()), kind);
 	}
 
-	public static <T> MethodAccessor<T> access(Method method, int kind, Object... argument)
+	public static <T> MethodAccessor<T> access(Method method, int kind)
 	{
-		return generic(method, kind, argument);
+		return generic(method, kind);
 	}
 
-	public static <T> FieldAccessor<T> access(Class<?> target, String name, Object... argument)
+	public static <T> FieldAccessor<T> access(Class<?> target, String name)
 	{
-		return generic(ACCESSOR.getField(target, name), argument);
+		return generic(ACCESSOR.getField(target, name));
 	}
 
-	public static <T> FieldAccessor<T> access(Field field, Object... argument)
+	public static <T> FieldAccessor<T> access(Field field)
 	{
-		return generic(field, argument);
+		return generic(field);
 	}
 
-	public static <T> ConstructorAccessor<T> access(Class<?> target, MethodType type, Object... argument)
+	public static <T> ConstructorAccessor<T> access(Class<?> target, MethodType type)
 	{
-		return generic(ACCESSOR.getConstructor(target, type.parameterArray()), argument);
+		return generic(ACCESSOR.getConstructor(target, type.parameterArray()));
 	}
 
-	public static <T> ConstructorAccessor<T> access(Constructor<?> constructor, Object... argument)
+	public static <T> ConstructorAccessor<T> access(Constructor<?> constructor)
 	{
-		return generic(constructor, argument);
+		return generic(constructor);
 	}
 
 	public static <T> ReflectionAccessor<T> access(Class<?> target)
@@ -125,7 +118,7 @@ public class ReflectionFactory
 					.max(2, 2)
 				)
 			);
-		return (ReflectionAccessor<Void>) UNSAFE.allocateInstance(defineAnonymous(ReflectionFactory.class, cw));
+		return (ReflectionAccessor<Void>) UNSAFE.allocateInstance(Generator.defineAnonymous(ReflectionFactory.class, cw.toByteArray()));
 	}
 
 	public static <T> ReflectionAccessor<T> constant(T value)
@@ -158,7 +151,7 @@ public class ReflectionFactory
 					.max(1, 2)
 				)
 			);
-		return ACCESSOR.construct(defineAnonymous(ReflectionFactory.class, cw), new Class[]{Object.class}, new Object[]{value});
+		return ACCESSOR.construct(Generator.defineAnonymous(ReflectionFactory.class, cw.toByteArray()), new Class[]{Object.class}, new Object[]{value});
 	}
 
 	public static <T> EnumHelper<T> enumHelper(Class<?> target)
@@ -166,53 +159,20 @@ public class ReflectionFactory
 		return (EnumHelper<T>) GENERATED_ENUM_HELPER.computeIfAbsent(target, (k) -> new PolymorphismFactory<>(EnumHelper.class).enumHelper(k).allocate());
 	}
 
-	private static Class<?> defineAnonymous(Class<?> host, ClassWriter bytecode)
+	private static <T> MethodAccessor<T> generic(Method target, int kind)
 	{
-		byte[] code = bytecode.toByteArray();
-
-		return UNSAFE.defineAnonymousClass(host, code, null);
-	}
-
-	private static <T> MethodAccessor<T> generic(Method target, int kind, Object[] argument)
-	{
-		String handle = Generator.type(target.getDeclaringClass()) +
-			"." +
-			target.getName() +
-			":" +
-			MethodType.methodType(target.getReturnType(), target.getParameterTypes()).toMethodDescriptorString() +
-			"-" +
-			Generator.kind(kind);
-
-		MethodAccessor<T> generated = (MethodAccessor<T>) GENERATED_METHOD_ACCESSOR.get(handle);
+		MethodAccessor<T> generated = (MethodAccessor<T>) GENERATED_METHOD_ACCESSOR.get(target);
 		if (generated != null)
 		{
 			return generated;
 		}
 
-		MethodAccessorGenerator generator;
-		if (Generator.anonymous(target.getDeclaringClass()))
-		{
-			generator = new NativeMethodAccessorGenerator(target, kind, argument);
-		}
-		else
-		{
-			generator = new MagicMethodAccessorGenerator(target, kind, argument);
-		}
-		generator.generate();
-
-		ClassWriter bytecode = generator.bytecode();
-		Class<?> clazz = target.getDeclaringClass();
-		boolean access = Generator.checkAccessible(clazz.getClassLoader());
-		Class<?> c = defineAnonymous(access ? clazz : ReflectionFactory.class, bytecode);
-		generator.postgenerate(c);
-
-		generated = (MethodAccessor<T>) UNSAFE.allocateInstance(c);
-		GENERATED_METHOD_ACCESSOR.put(handle, generated);
-
+		generated = Generator.generate(target, kind, new Object[0]);
+		GENERATED_METHOD_ACCESSOR.put(target, generated);
 		return generated;
 	}
 
-	private static <T> FieldAccessor<T> generic(Field target, Object[] argument)
+	private static <T> FieldAccessor<T> generic(Field target)
 	{
 		UNSAFE.ensureClassInitialized(target.getDeclaringClass());
 		FieldAccessor<T> generated = (FieldAccessor<T>) GENERATED_FIELD_ACCESSOR.get(target);
@@ -220,45 +180,20 @@ public class ReflectionFactory
 		{
 			return generated;
 		}
-		Class<?> clazz = target.getDeclaringClass();
-		boolean acc = Generator.checkAccessible(clazz.getClassLoader());
-
-		FieldAccessorGenerator generator = new FieldAccessorGenerator(target, argument);
-		generator.generate();
-
-		ClassWriter bytecode = generator.bytecode();
-		Class<?> c = defineAnonymous(acc ? clazz : ReflectionFactory.class, bytecode);
-		generator.postgenerate(c);
-		generated = (FieldAccessor<T>) UNSAFE.allocateInstance(c);
+		generated = Generator.generate(target, new Object[0]);
 		GENERATED_FIELD_ACCESSOR.put(target, generated);
 		return generated;
 	}
 
-	private static <T> ConstructorAccessor<T> generic(Constructor<?> target, Object[] argument)
+	private static <T> ConstructorAccessor<T> generic(Constructor<?> target)
 	{
 		ConstructorAccessor<T> generated = (ConstructorAccessor<T>) GENERATED_CONSTRUCTOR_ACCESSOR.get(target);
 		if (generated != null)
 		{
 			return generated;
 		}
-		Class<?> clazz = target.getDeclaringClass();
-		boolean access = Generator.checkAccessible(clazz.getClassLoader());
-		
-		ConstructorAccessorGenerator generator;
-		if (Generator.anonymous(clazz))
-		{
-			generator = new NativeConstructorAccessorGenerator(target, argument);
-		}
-		else
-		{
-			generator = new MagicConstructorAccessorGenerator(target, argument);
-		}
-		generator.generate();
-		
-		ClassWriter bytecode = generator.bytecode();
-		Class<?> c = defineAnonymous(access ? clazz : ReflectionFactory.class, bytecode);
-		generator.postgenerate(c);
-		generated = (ConstructorAccessor<T>) UNSAFE.allocateInstance(c);
+
+		generated = Generator.generate(target, new Object[0]);
 		GENERATED_CONSTRUCTOR_ACCESSOR.put(target, generated);
 		return generated;
 	}
@@ -285,7 +220,7 @@ public class ReflectionFactory
 		generator.generate();
 		
 		ClassWriter bytecode = generator.bytecode();
-		Class<?> c = defineAnonymous(access ? target : ReflectionFactory.class, bytecode);
+		Class<?> c = Generator.defineAnonymous(access ? target : ReflectionFactory.class, bytecode.toByteArray());
 		generator.postgenerate(c);
 		generated = (ReflectionAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_ALLOCATOR.put(target, generated);

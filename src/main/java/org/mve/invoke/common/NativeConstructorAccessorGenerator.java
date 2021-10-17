@@ -28,7 +28,6 @@ public class NativeConstructorAccessorGenerator extends ConstructorAccessorGener
 	public void generate()
 	{
 		super.generate();
-		Constructor<?> constructor = this.getConstructor();
 		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
 		this.bytecode.method(mw);
 		Generator.inline(mw);

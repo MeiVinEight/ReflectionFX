@@ -7,20 +7,32 @@ import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.RuntimeVisibleAnnotationWriter;
 import org.mve.asm.attribute.annotation.Annotation;
+import org.mve.invoke.ConstructorAccessor;
+import org.mve.invoke.FieldAccessor;
+import org.mve.invoke.MethodAccessor;
 import org.mve.invoke.ReflectionAccessor;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public abstract class Generator
 {
+	public static Unsafe UNSAFE = ReflectionFactory.UNSAFE;
 	public static final String[] CONSTANT_POOL = new String[8];
 
 	public static boolean anonymous(Class<?> cls)
 	{
 		return cls.getName().contains("/");
+	}
+
+	public static Class<?> defineAnonymous(Class<?> host, byte[] code)
+	{
+		return UNSAFE.defineAnonymousClass(host, code, null);
 	}
 
 	public static void inline(MethodWriter mw)
@@ -290,7 +302,7 @@ public abstract class Generator
 		code.field(Opcodes.GETSTATIC, bytecode.name, Generator.CONSTANT_POOL[5], Generator.signature(AccessibleObject.class))
 			.type(Opcodes.CHECKCAST, Generator.type(cast))
 			.instruction(Opcodes.ALOAD_1)
-			.method(Opcodes.INVOKESTATIC, Generator.type(ReflectionFactory.class), Generator.CONSTANT_POOL[7], MethodType.methodType(type, cast, Object[].class).toMethodDescriptorString(), false)
+			.method(Opcodes.INVOKESTATIC, Generator.type(Generator.class), Generator.CONSTANT_POOL[7], MethodType.methodType(type, cast, Object[].class).toMethodDescriptorString(), false)
 			.instruction(Opcodes.ARETURN)
 			.max(5, 3);
 		mw.attribute(code);
@@ -308,6 +320,67 @@ public abstract class Generator
 		);
 	}
 
+	@SuppressWarnings("unchecked")
+	public static <T> MethodAccessor<T> generate(Method method, int kind, Object[] argument)
+	{
+		MethodAccessorGenerator generator;
+		if (Generator.anonymous(method.getDeclaringClass()))
+		{
+			generator = new NativeMethodAccessorGenerator(method, kind, argument);
+		}
+		else
+		{
+			generator = new MagicMethodAccessorGenerator(method, kind, argument);
+		}
+		generator.generate();
+
+		ClassWriter bytecode = generator.bytecode();
+		Class<?> clazz = method.getDeclaringClass();
+		boolean access = Generator.checkAccessible(clazz.getClassLoader());
+		Class<?> c = defineAnonymous(access ? clazz : ReflectionFactory.class, bytecode.toByteArray());
+		generator.postgenerate(c);
+
+		return (MethodAccessor<T>) UNSAFE.allocateInstance(c);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> FieldAccessor<T> generate(Field field, Object[] argument)
+	{
+		Class<?> clazz = field.getDeclaringClass();
+		boolean acc = Generator.checkAccessible(clazz.getClassLoader());
+
+		FieldAccessorGenerator generator = new FieldAccessorGenerator(field, argument);
+		generator.generate();
+
+		ClassWriter bytecode = generator.bytecode();
+		Class<?> c = defineAnonymous(acc ? clazz : ReflectionFactory.class, bytecode.toByteArray());
+		generator.postgenerate(c);
+		return  (FieldAccessor<T>) UNSAFE.allocateInstance(c);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> ConstructorAccessor<T> generate(Constructor<?> constructor, Object[] argument)
+	{
+		Class<?> clazz = constructor.getDeclaringClass();
+		boolean access = Generator.checkAccessible(clazz.getClassLoader());
+
+		ConstructorAccessorGenerator generator;
+		if (Generator.anonymous(clazz))
+		{
+			generator = new NativeConstructorAccessorGenerator(constructor, argument);
+		}
+		else
+		{
+			generator = new MagicConstructorAccessorGenerator(constructor, argument);
+		}
+		generator.generate();
+
+		ClassWriter bytecode = generator.bytecode();
+		Class<?> c = defineAnonymous(access ? clazz : ReflectionFactory.class, bytecode.toByteArray());
+		generator.postgenerate(c);
+		return  (ConstructorAccessor<T>) UNSAFE.allocateInstance(c);
+	}
+
 	static
 	{
 		Unsafe unsafe = ReflectionFactory.UNSAFE;
@@ -318,6 +391,6 @@ public abstract class Generator
 		CONSTANT_POOL[4] = "0";
 		CONSTANT_POOL[5] = "1";
 		CONSTANT_POOL[6] = "00";
-		CONSTANT_POOL[7] = "access";
+		CONSTANT_POOL[7] = "generate";
 	}
 }
