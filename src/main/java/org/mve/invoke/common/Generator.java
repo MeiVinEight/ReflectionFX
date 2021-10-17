@@ -275,6 +275,9 @@ public abstract class Generator
 	public static void merge(CodeWriter code, String name, int argument)
 	{
 		code.number(Opcodes.SIPUSH, argument)
+			.instruction(Opcodes.ALOAD_1)
+			.instruction(Opcodes.ARRAYLENGTH)
+			.instruction(Opcodes.IADD)
 			.type(Opcodes.ANEWARRAY, Generator.type(Object.class))
 			.instruction(Opcodes.ASTORE_2)
 			.field(Opcodes.GETSTATIC, name, Generator.CONSTANT_POOL[6], Generator.signature(Object[].class))
