@@ -47,8 +47,20 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 	@Override
 	public void generate()
 	{
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.WITH, MethodType.methodType(FieldAccessor.class, Object[].class).toMethodDescriptorString());
+		CodeWriter code = new CodeWriter();
+		Generator.merge(code, this.bytecode.name, argument);
+		code.field(Opcodes.GETSTATIC, this.bytecode.name, Generator.CONSTANT_POOL[5], Generator.signature(AccessibleObject.class))
+			.type(Opcodes.CHECKCAST, Generator.type(Field.class))
+			.instruction(Opcodes.ALOAD_1)
+			.method(Opcodes.INVOKESTATIC, Generator.type(Generator.class), Generator.CONSTANT_POOL[7], MethodType.methodType(FieldAccessor.class, org.mve.asm.attribute.code.Field.class, Object[].class).toMethodDescriptorString(), false)
+			.instruction(Opcodes.ARETURN)
+			.max(5, 3);
+		mw.attribute(code);
+		this.bytecode.method(mw);
+
 		super.generate();
-		Generator.with(this.bytecode, FieldAccessor.class, Field.class, this.argument);
+		Generator.with(this.bytecode, FieldAccessor.class);
 		Class<?> type = this.field.getType();
 		int modifiers = this.field.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
@@ -79,10 +91,10 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 		}
 		getterGenerator.generate(getter, this.bytecode);
 		setterGenerator.generate(setter, this.bytecode);
-		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
+		mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
 		this.bytecode.method(mw);
 		Generator.inline(mw);
-		CodeWriter code = new CodeWriter();
+		code = new CodeWriter();
 		mw.attribute(code);
 		Generator.merge(code, this.bytecode.name, this.argument);
 		Marker marker = new Marker();

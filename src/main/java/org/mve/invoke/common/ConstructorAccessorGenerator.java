@@ -6,6 +6,7 @@ import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.invoke.ConstructorAccessor;
+import org.mve.invoke.ReflectionAccessor;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
@@ -46,7 +47,19 @@ public abstract class ConstructorAccessorGenerator extends AccessibleObjectAcces
 	@Override
 	public void generate()
 	{
+		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.WITH, MethodType.methodType(ConstructorAccessor.class, Object[].class).toMethodDescriptorString());
+		CodeWriter code = new CodeWriter();
+		Generator.merge(code, this.bytecode().name, argument);
+		code.field(Opcodes.GETSTATIC, this.bytecode().name, Generator.CONSTANT_POOL[5], Generator.signature(AccessibleObject.class))
+			.type(Opcodes.CHECKCAST, Generator.type(Constructor.class))
+			.instruction(Opcodes.ALOAD_1)
+			.method(Opcodes.INVOKESTATIC, Generator.type(Generator.class), Generator.CONSTANT_POOL[7], MethodType.methodType(ConstructorAccessor.class, Constructor.class, Object[].class).toMethodDescriptorString(), false)
+			.instruction(Opcodes.ARETURN)
+			.max(5, 3);
+		mw.attribute(code);
+		this.bytecode().method(mw);
+
 		super.generate();
-		Generator.with(this.bytecode(), ConstructorAccessor.class, Constructor.class, this.argument);
+		Generator.with(this.bytecode(), ConstructorAccessor.class);
 	}
 }

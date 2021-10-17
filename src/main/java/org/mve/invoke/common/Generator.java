@@ -297,20 +297,8 @@ public abstract class Generator
 			.instruction(Opcodes.ASTORE_1);
 	}
 
-	public static void with(ClassWriter bytecode, Class<?> type, Class<?> cast, int argument)
+	public static void with(ClassWriter bytecode, Class<?> type)
 	{
-		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.WITH, MethodType.methodType(type, Object[].class).toMethodDescriptorString());
-		CodeWriter code = new CodeWriter();
-		Generator.merge(code, bytecode.name, argument);
-		code.field(Opcodes.GETSTATIC, bytecode.name, Generator.CONSTANT_POOL[5], Generator.signature(AccessibleObject.class))
-			.type(Opcodes.CHECKCAST, Generator.type(cast))
-			.instruction(Opcodes.ALOAD_1)
-			.method(Opcodes.INVOKESTATIC, Generator.type(Generator.class), Generator.CONSTANT_POOL[7], MethodType.methodType(type, cast, Object[].class).toMethodDescriptorString(), false)
-			.instruction(Opcodes.ARETURN)
-			.max(5, 3);
-		mw.attribute(code);
-		bytecode.method(mw);
-
 		bytecode.method(new MethodWriter()
 			.set(AccessFlag.PUBLIC, ReflectionAccessor.WITH, MethodType.methodType(ReflectionAccessor.class, Object[].class).toMethodDescriptorString())
 			.attribute(new CodeWriter()
