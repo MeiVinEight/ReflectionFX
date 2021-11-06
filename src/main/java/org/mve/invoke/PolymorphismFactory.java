@@ -6,17 +6,18 @@ import org.mve.asm.FieldWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.invoke.common.DynamicBindEnumHelperGenerator;
-import org.mve.invoke.common.DynamicBindGenerator;
+import org.mve.invoke.common.JavaVM;
+import org.mve.invoke.common.polymorphism.PolymorphismEnumHelperGenerator;
+import org.mve.invoke.common.polymorphism.PolymorphismGenerator;
 import org.mve.invoke.common.Generator;
-import org.mve.invoke.common.MagicDynamicBindConstructGenerator;
-import org.mve.invoke.common.MagicDynamicBindFieldGenerator;
-import org.mve.invoke.common.MagicDynamicBindInstantiationGenerator;
-import org.mve.invoke.common.MagicDynamicBindMethodGenerator;
-import org.mve.invoke.common.NativeDynamicBindConstructGenerator;
-import org.mve.invoke.common.NativeDynamicBindFieldGenerator;
-import org.mve.invoke.common.NativeDynamicBindInstantiationGenerator;
-import org.mve.invoke.common.NativeDynamicBindMethodGenerator;
+import org.mve.invoke.common.polymorphism.MagicPolymorphismConstructGenerator;
+import org.mve.invoke.common.polymorphism.MagicPolymorphismFieldGenerator;
+import org.mve.invoke.common.polymorphism.MagicPolymorphismInstantiationGenerator;
+import org.mve.invoke.common.polymorphism.MagicPolymorphismMethodGenerator;
+import org.mve.invoke.common.polymorphism.NativePolymorphismConstructGenerator;
+import org.mve.invoke.common.polymorphism.NativePolymorphismFieldGenerator;
+import org.mve.invoke.common.polymorphism.NativePolymorphismInstantiationGenerator;
+import org.mve.invoke.common.polymorphism.NativePolymorphismMethodGenerator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +33,7 @@ public class PolymorphismFactory<T>
 	private final Class<T> accessor;
 	private final Map<MethodKind, String> names = new HashMap<>();
 	private final Map<MethodKind, Class<?>> objectives = new HashMap<>();
-	private final Map<Class<?>, List<DynamicBindGenerator>> generators = new HashMap<>();
+	private final Map<Class<?>, List<PolymorphismGenerator>> generators = new HashMap<>();
 	private final Map<Class<?>, List<MethodKind>> kinds = new HashMap<>();
 
 	public PolymorphismFactory(Class<T> accessor)
@@ -42,19 +43,19 @@ public class PolymorphismFactory<T>
 
 	public PolymorphismFactory<T> method(Class<?> objective, MethodKind implementation, MethodKind invocation, int kind)
 	{
-		List<DynamicBindGenerator> generators = this.generators.computeIfAbsent(objective, obj -> new LinkedList<>());
+		List<PolymorphismGenerator> generators = this.generators.computeIfAbsent(objective, obj -> new LinkedList<>());
 
-		DynamicBindGenerator generator;
+		PolymorphismGenerator generator;
 		String name = hex(generators.size());
 		MethodKind bridge = new MethodKind(name, implementation.type());
 		this.kinds.computeIfAbsent(objective, obj -> new LinkedList<>()).add(bridge);
 		if (Generator.anonymous(objective))
 		{
-			generator = new NativeDynamicBindMethodGenerator(objective, bridge, invocation, kind);
+			generator = new NativePolymorphismMethodGenerator(objective, bridge, invocation, kind);
 		}
 		else
 		{
-			generator = new MagicDynamicBindMethodGenerator(objective, new MethodKind(hex(generators.size()), implementation.type()), invocation, kind);
+			generator = new MagicPolymorphismMethodGenerator(objective, new MethodKind(hex(generators.size()), implementation.type()), invocation, kind);
 		}
 		generators.add(generator);
 		this.names.put(implementation, name);
@@ -65,19 +66,19 @@ public class PolymorphismFactory<T>
 
 	public PolymorphismFactory<T> field(Class<?> objective, MethodKind implementation, String operation, int kind)
 	{
-		List<DynamicBindGenerator> generators = this.generators.computeIfAbsent(objective, obj -> new LinkedList<>());
+		List<PolymorphismGenerator> generators = this.generators.computeIfAbsent(objective, obj -> new LinkedList<>());
 
-		DynamicBindGenerator generator;
+		PolymorphismGenerator generator;
 		String name = hex(generators.size());
 		MethodKind bridge = new MethodKind(name, implementation.type());
 		this.kinds.computeIfAbsent(objective, obj -> new LinkedList<>()).add(bridge);
 		if (Generator.anonymous(objective))
 		{
-			generator = new NativeDynamicBindFieldGenerator(objective, bridge, operation, kind);
+			generator = new NativePolymorphismFieldGenerator(objective, bridge, operation, kind);
 		}
 		else
 		{
-			generator = new MagicDynamicBindFieldGenerator(objective, new MethodKind(hex(generators.size()), implementation.type()), operation, kind);
+			generator = new MagicPolymorphismFieldGenerator(objective, new MethodKind(hex(generators.size()), implementation.type()), operation, kind);
 		}
 		generators.add(generator);
 		this.names.put(implementation, name);
@@ -88,19 +89,19 @@ public class PolymorphismFactory<T>
 
 	public PolymorphismFactory<T> instantiate(Class<?> objective, MethodKind implementation)
 	{
-		List<DynamicBindGenerator> generators = this.generators.computeIfAbsent(objective, obj -> new LinkedList<>());
+		List<PolymorphismGenerator> generators = this.generators.computeIfAbsent(objective, obj -> new LinkedList<>());
 
-		DynamicBindGenerator generator;
+		PolymorphismGenerator generator;
 		String name = hex(generators.size());
 		MethodKind bridge = new MethodKind(name, implementation.type());
 		this.kinds.computeIfAbsent(objective, obj -> new LinkedList<>()).add(bridge);
 		if (Generator.anonymous(objective))
 		{
-			generator = new NativeDynamicBindInstantiationGenerator(objective, bridge);
+			generator = new NativePolymorphismInstantiationGenerator(objective, bridge);
 		}
 		else
 		{
-			generator = new MagicDynamicBindInstantiationGenerator(objective, new MethodKind(hex(generators.size()), implementation.type()));
+			generator = new MagicPolymorphismInstantiationGenerator(objective, new MethodKind(hex(generators.size()), implementation.type()));
 		}
 		generators.add(generator);
 		this.names.put(implementation, name);
@@ -111,19 +112,19 @@ public class PolymorphismFactory<T>
 
 	public PolymorphismFactory<T> construct(Class<?> objective, MethodKind implementation, MethodKind invocation)
 	{
-		List<DynamicBindGenerator> generators = this.generators.computeIfAbsent(objective, obj -> new LinkedList<>());
+		List<PolymorphismGenerator> generators = this.generators.computeIfAbsent(objective, obj -> new LinkedList<>());
 
-		DynamicBindGenerator generator;
+		PolymorphismGenerator generator;
 		String name = hex(generators.size());
 		MethodKind bridge = new MethodKind(name, implementation.type());
 		this.kinds.computeIfAbsent(objective, obj -> new LinkedList<>()).add(bridge);
 		if (Generator.anonymous(objective))
 		{
-			generator = new NativeDynamicBindConstructGenerator(objective, bridge, invocation);
+			generator = new NativePolymorphismConstructGenerator(objective, bridge, invocation);
 		}
 		else
 		{
-			generator = new MagicDynamicBindConstructGenerator(objective, new MethodKind(hex(generators.size()), implementation.type()), invocation);
+			generator = new MagicPolymorphismConstructGenerator(objective, new MethodKind(hex(generators.size()), implementation.type()), invocation);
 		}
 		generators.add(generator);
 		this.names.put(implementation, name);
@@ -134,9 +135,9 @@ public class PolymorphismFactory<T>
 
 	public PolymorphismFactory<T> enumHelper(Class<?> objective)
 	{
-		List<DynamicBindGenerator> generators = this.generators.computeIfAbsent(objective, obj -> new LinkedList<>());
+		List<PolymorphismGenerator> generators = this.generators.computeIfAbsent(objective, obj -> new LinkedList<>());
 		List<MethodKind> kinds = this.kinds.computeIfAbsent(objective, obj -> new LinkedList<>());
-		generators.add(new DynamicBindEnumHelperGenerator(objective));
+		generators.add(new PolymorphismEnumHelperGenerator(objective));
 
 		this.check(kinds, objective, "construct", Object.class, String.class);
 		this.check(kinds, objective, "construct", objective, String.class);
@@ -171,10 +172,10 @@ public class PolymorphismFactory<T>
 		List<Class<?>> cidList = new ArrayList<>(this.generators.entrySet().size());
 		Map<String, Object> implement = new HashMap<>();
 
-		for (Map.Entry<Class<?>, List<DynamicBindGenerator>> entry : this.generators.entrySet())
+		for (Map.Entry<Class<?>, List<PolymorphismGenerator>> entry : this.generators.entrySet())
 		{
 			Class<?> objective = entry.getKey();
-			List<DynamicBindGenerator> generators = entry.getValue();
+			List<PolymorphismGenerator> generators = entry.getValue();
 
 			String name = UUID.randomUUID().toString().toUpperCase();
 			Class<?> accessor;
@@ -203,10 +204,10 @@ public class PolymorphismFactory<T>
 						0x34,
 						AccessFlag.PUBLIC | AccessFlag.SUPER,
 						UUID.randomUUID().toString().toUpperCase(),
-						Generator.CONSTANT_POOL[0],
+						JavaVM.CONSTANT[0],
 						new String[]{name}
 					);
-				for (DynamicBindGenerator generator : generators)
+				for (PolymorphismGenerator generator : generators)
 				{
 					generator.generate(invoke);
 				}

@@ -7,25 +7,21 @@ import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.SourceWriter;
-import org.mve.invoke.common.AllocatorGenerator;
 import org.mve.invoke.common.Generator;
+import org.mve.invoke.common.JavaVM;
 import org.mve.invoke.common.MagicAccessorBuilder;
-import org.mve.invoke.common.MagicAllocatorGenerator;
-import org.mve.invoke.common.NativeAllocatorGenerator;
 import org.mve.invoke.common.UninitializedException;
 import org.mve.invoke.common.UnsafeBuilder;
+import org.mve.invoke.common.standard.AllocatorGenerator;
+import org.mve.invoke.common.standard.MagicAllocatorGenerator;
+import org.mve.invoke.common.standard.NativeAllocatorGenerator;
 
-import java.io.DataInputStream;
-import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,7 +55,6 @@ public class ReflectionFactory
 		KIND_GET				= 4,
 		KIND_PUT				= 5;
 
-	private static final String[] CONSTANT_POOL = new String[4];
 	private static final Map<Field, FieldAccessor<?>> GENERATED_FIELD_ACCESSOR = new ConcurrentHashMap<>();
 	private static final Map<Method, MethodAccessor<?>> GENERATED_METHOD_ACCESSOR = new ConcurrentHashMap<>();
 	private static final Map<Constructor<?>, ConstructorAccessor<?>> GENERATED_CONSTRUCTOR_ACCESSOR = new ConcurrentHashMap<>();
@@ -231,33 +226,15 @@ public class ReflectionFactory
 	{
 		try
 		{
-			RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
-			String vm = bean.getVmVendor();
-			boolean openJ9VM = vm.equals("Eclipse OpenJ9");
-			URL url = ClassLoader.getSystemClassLoader().getResource("java/lang/Object.class");
-			if (url == null) throw new NullPointerException();
-			InputStream in = url.openStream();
-			if (6 != in.skip(6)) throw new UnknownError();
-			int majorVersion = new DataInputStream(in).readUnsignedShort();
-			in.close();
+			boolean openJ9VM = JavaVM.VENDOR.equals("Eclipse OpenJ9");
 
 			/*
 			 * MagicAccessorImpl
 			 */
 			String mai;
 			{
-				if (majorVersion <= 0X34) mai = "sun/reflect/MagicAccessorImpl";
+				if (JavaVM.VERSION <= 0X34) mai = "sun/reflect/MagicAccessorImpl";
 				else mai = "jdk/internal/reflect/MagicAccessorImpl";
-				CONSTANT_POOL[0] = "java/lang/MagicAccessorFactory";
-			}
-
-			/*
-			 * Hidden stack
-			 */
-			{
-				CONSTANT_POOL[1] = majorVersion < 57 ? "Ljava/lang/invoke/LambdaForm$Hidden;" : "Ljdk/internal/vm/annotation/Hidden;";
-				CONSTANT_POOL[2] = majorVersion == 0x34 ? "Ljava/lang/invoke/ForceInline;" : "Ljdk/internal/vm/annotation/ForceInline;";
-				CONSTANT_POOL[3] = "Ljava/lang/invoke/LambdaForm$Compiled;";
 			}
 
 			final MethodHandle DEFINE;
@@ -295,15 +272,15 @@ public class ReflectionFactory
 			{
 				try
 				{
-					Class.forName(CONSTANT_POOL[0].replace('/', '.'));
+					Class.forName(JavaVM.CONSTANT[0].replace('/', '.'));
 				}
 				catch (Throwable t)
 				{
-					Class<?> usfClass = Class.forName(majorVersion > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
+					Class<?> usfClass = Class.forName(JavaVM.VERSION > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
 					MethodHandle usfDefineClass = TRUSTED_LOOKUP.findVirtual(usfClass, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class));
 					MethodHandle theUnsafe = TRUSTED_LOOKUP.findStaticGetter(usfClass, "theUnsafe", usfClass);
 					byte[] code = new ClassWriter()
-						.set(0x34, 0x21, CONSTANT_POOL[0], mai, null)
+						.set(0x34, 0x21, JavaVM.CONSTANT[0], mai, null)
 						.method(new MethodWriter()
 							.set(AccessFlag.PUBLIC, "<init>", "()V")
 							.attribute(new CodeWriter()
@@ -385,11 +362,14 @@ public class ReflectionFactory
 				}
 				catch (Throwable t)
 				{
-					byte[] code = UnsafeBuilder.build(majorVersion, CONSTANT_POOL, vm).toByteArray();
+					UnsafeBuilder builder = new UnsafeBuilder(TRUSTED_LOOKUP);
+					byte[] code = builder.build();
 					clazz = (Class<?>) DEFINE.invoke(ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
+					builder.post(clazz);
 				}
 
 				UNSAFE = (Unsafe) usf.allocateInstance(clazz);
+				UNSAFE.putObject(Generator.class, UNSAFE.staticFieldOffset(Generator.class.getDeclaredField("UNSAFE")), UNSAFE);
 			}
 
 			/*
@@ -403,7 +383,7 @@ public class ReflectionFactory
 				}
 				catch (Throwable t)
 				{
-					byte[] code = MagicAccessorBuilder.build(CONSTANT_POOL, majorVersion, openJ9VM).toByteArray();
+					byte[] code = MagicAccessorBuilder.build(JavaVM.CONSTANT, JavaVM.VERSION, openJ9VM).toByteArray();
 					c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 				}
 				ACCESSOR = (MagicAccessor) UNSAFE.allocateInstance(c);
