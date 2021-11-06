@@ -160,7 +160,7 @@ public class PolymorphismFactory<T>
 			.set(
 				0x34,
 				0x21,
-				UUID.randomUUID().toString().toUpperCase(),
+				Generator.name(),
 				this.accessor.isInterface() ? "java/lang/Object" : Generator.type(this.accessor),
 				this.accessor.isInterface() ? new String[]{Generator.type(this.accessor)} : null
 			);
@@ -177,7 +177,7 @@ public class PolymorphismFactory<T>
 			Class<?> objective = entry.getKey();
 			List<PolymorphismGenerator> generators = entry.getValue();
 
-			String name = UUID.randomUUID().toString().toUpperCase();
+			String name = Generator.name();
 			Class<?> accessor;
 
 			{
@@ -203,7 +203,7 @@ public class PolymorphismFactory<T>
 					.set(
 						0x34,
 						AccessFlag.PUBLIC | AccessFlag.SUPER,
-						UUID.randomUUID().toString().toUpperCase(),
+						Generator.name(),
 						JavaVM.CONSTANT[0],
 						new String[]{name}
 					);

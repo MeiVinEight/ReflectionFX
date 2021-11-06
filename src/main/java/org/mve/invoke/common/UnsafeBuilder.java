@@ -60,11 +60,11 @@ public class UnsafeBuilder
 			{
 				Class<?> finall = Class.forName(JavaVM.VERSION == 0x34 ? "sun.reflect.NativeMethodAccessorImpl" : "jdk.internal.reflect.NativeMethodAccessorImpl");
 				ClassWriter abstractAccessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, UUID.randomUUID().toString().toUpperCase(), Generator.type(Object.class), null);
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, Generator.name(), Generator.type(Object.class), null);
 				ClassWriter accessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, UUID.randomUUID().toString().toUpperCase(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, Generator.name(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
 				FieldWriter bridge = new FieldWriter()
-					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, UUID.randomUUID().toString().toUpperCase(), abstractAccessWriter.name);
+					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), abstractAccessWriter.name);
 				this.bytecode.field(bridge);
 
 				this.bridge(
@@ -89,11 +89,11 @@ public class UnsafeBuilder
 			{
 				Class<?> finall = Class.forName(JavaVM.VERSION <= 0x34 ? "sun.reflect.NativeConstructorAccessorImpl" : "jdk.internal.reflect.NativeConstructorAccessorImpl");
 				ClassWriter abstractAccessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, UUID.randomUUID().toString().toUpperCase(), Generator.type(Object.class), null);
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, Generator.name(), Generator.type(Object.class), null);
 				ClassWriter accessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, UUID.randomUUID().toString().toUpperCase(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, Generator.name(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
 				FieldWriter bridge = new FieldWriter()
-					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, UUID.randomUUID().toString().toUpperCase(), abstractAccessWriter.name);
+					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), abstractAccessWriter.name);
 				this.bytecode.field(bridge);
 
 				this.bridge(
@@ -119,13 +119,13 @@ public class UnsafeBuilder
 				Class<?> finall = Class.forName(JavaVM.VERSION > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
 				String unsafeType = Generator.type(finall);
 				ClassWriter abstractAccessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, UUID.randomUUID().toString().toUpperCase(), Generator.type(Object.class), null);
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, Generator.name(), Generator.type(Object.class), null);
 				ClassWriter accessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, UUID.randomUUID().toString().toUpperCase(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, Generator.name(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
 				FieldWriter bridge = new FieldWriter()
-					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, UUID.randomUUID().toString().toUpperCase(), abstractAccessWriter.name);
+					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), abstractAccessWriter.name);
 				FieldWriter access = new FieldWriter()
-					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, UUID.randomUUID().toString().toUpperCase(), Generator.signature(finall));
+					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), Generator.signature(finall));
 				this.bytecode.field(bridge);
 				accessWriter.field(access);
 
@@ -219,11 +219,11 @@ public class UnsafeBuilder
 			{
 				Class<?> finall = ClassLoader.class;
 				ClassWriter abstractAccessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, UUID.randomUUID().toString().toUpperCase(), Generator.type(Object.class), null);
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, Generator.name(), Generator.type(Object.class), null);
 				ClassWriter accessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, UUID.randomUUID().toString().toUpperCase(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, Generator.name(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
 				FieldWriter bridge = new FieldWriter()
-					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, UUID.randomUUID().toString().toUpperCase(), abstractAccessWriter.name);
+					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), abstractAccessWriter.name);
 				this.bytecode.field(bridge);
 
 				accessWriter.method(new MethodWriter()

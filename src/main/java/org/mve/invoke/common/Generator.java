@@ -25,10 +25,16 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.UUID;
 
 public abstract class Generator
 {
 	public static Unsafe UNSAFE = ReflectionFactory.UNSAFE;
+
+	public static String name()
+	{
+		return UUID.randomUUID().toString().toUpperCase().replaceAll("-", "");
+	}
 
 	public static boolean anonymous(Class<?> cls)
 	{

@@ -27,7 +27,7 @@ public class MagicAccessFactory
 	public static <T> T access(Class<T> accessor)
 	{
 		Method[] methods = ACCESSOR.getMethods(accessor);
-		ClassWriter writer = new ClassWriter().set(0x34, 0x21, UUID.randomUUID().toString().toUpperCase(), JavaVM.CONSTANT[0], new String[]{Generator.type(accessor)});
+		ClassWriter writer = new ClassWriter().set(0x34, 0x21, Generator.name(), JavaVM.CONSTANT[0], new String[]{Generator.type(accessor)});
 		for (Method method : methods)
 		{
 			MagicAccess access = method.getDeclaredAnnotation(MagicAccess.class);
