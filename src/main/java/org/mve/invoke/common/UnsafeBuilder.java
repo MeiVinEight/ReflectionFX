@@ -205,6 +205,7 @@ public class UnsafeBuilder
 					.attribute(new CodeWriter()
 						.field(Opcodes.GETSTATIC, unsafeType, "theUnsafe", Generator.signature(finall))
 						.field(Opcodes.PUTSTATIC, accessWriter.name, access.name, Generator.signature(finall))
+						.instruction(Opcodes.RETURN)
 						.max(1, 0)
 					)
 				);
