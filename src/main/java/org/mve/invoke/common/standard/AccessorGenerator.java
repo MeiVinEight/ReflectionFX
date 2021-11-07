@@ -14,7 +14,6 @@ import org.mve.invoke.common.Generator;
 import org.mve.invoke.common.JavaVM;
 
 import java.lang.invoke.MethodType;
-import java.util.UUID;
 
 public abstract class AccessorGenerator extends Generator
 {
