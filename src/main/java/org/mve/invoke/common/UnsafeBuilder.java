@@ -309,10 +309,12 @@ public class UnsafeBuilder
 			cw.field(Opcodes.GETSTATIC, bytecode.name, objective.name, objective.type);
 			stack++;
 		}
+		int local = 1;
 		for (int i = 1; i < argument.length; i++)
 		{
-			Generator.load(argument[i], cw, i);
+			Generator.load(argument[i], cw, local);
 			stack += Generator.typeSize(argument[i]);
+			local += Generator.typeSize(argument[i]);
 		}
 		cw.method(nonstatic ? (abstracts ? Opcodes.INVOKEINTERFACE :Opcodes.INVOKEVIRTUAL) : Opcodes.INVOKESTATIC, finall, into, MethodType.methodType(argument[0], Arrays.copyOfRange(argument, 1, argument.length)).toMethodDescriptorString(), abstracts);
 		Generator.returner(argument[0], cw);
