@@ -25,15 +25,30 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.security.SecureRandom;
 import java.util.UUID;
 
 public abstract class Generator
 {
+	private static final SecureRandom R = new SecureRandom();
 	public static Unsafe UNSAFE = ReflectionFactory.UNSAFE;
 
 	public static String name()
 	{
-		return UUID.randomUUID().toString().toUpperCase().replaceAll("-", "");
+		byte[] random = new byte[16];
+		R.nextBytes(random);
+		random[0] |= 0xA0;
+		long m = 0;
+		long l = 0;
+		for (int i=0; i<8; i++)
+		{
+			m = (m << 8) | (random[i] & 0xff);
+		}
+		for (int i=8; i<16; i++)
+		{
+			l = (l << 8) | (random[i] & 0xff);
+		}
+		return new UUID(m, l).toString().toUpperCase().replaceAll("-", "");
 	}
 
 	public static boolean anonymous(Class<?> cls)
