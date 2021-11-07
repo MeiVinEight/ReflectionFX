@@ -200,7 +200,7 @@ public class UnsafeBuilder
 				unsafe.accept(new Object[]{"fullFence", "fullFence", new Class[]{void.class}});
 
 				// static constructor
-				this.bytecode.method(new MethodWriter()
+				accessWriter.method(new MethodWriter()
 					.set(AccessFlag.STATIC, "<clinit>", "()V")
 					.attribute(new CodeWriter()
 						.field(Opcodes.GETSTATIC, unsafeType, "theUnsafe", Generator.signature(finall))
