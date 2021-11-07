@@ -227,6 +227,10 @@ public class UnsafeBuilder
 					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), "L" + abstractAccessWriter.name + ";");
 				this.bytecode.field(bridge);
 
+				abstractAccessWriter.method(new MethodWriter()
+					.set(AccessFlag.PUBLIC, "defineAnonymousClass", MethodType.methodType(Class.class, Class.class, byte[].class, Object[].class).toMethodDescriptorString())
+				);
+
 				accessWriter.method(new MethodWriter()
 					.set(AccessFlag.PUBLIC, "defineAnonymousClass", MethodType.methodType(Class.class, Class.class, byte[].class, Object[].class).toMethodDescriptorString())
 					.attribute(new CodeWriter()
