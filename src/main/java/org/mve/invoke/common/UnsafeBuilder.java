@@ -64,7 +64,7 @@ public class UnsafeBuilder
 				ClassWriter accessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, Generator.name(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
 				FieldWriter bridge = new FieldWriter()
-					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), abstractAccessWriter.name);
+					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), "L" + abstractAccessWriter.name + ";");
 				this.bytecode.field(bridge);
 
 				this.bridge(
@@ -93,7 +93,7 @@ public class UnsafeBuilder
 				ClassWriter accessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, Generator.name(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
 				FieldWriter bridge = new FieldWriter()
-					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), abstractAccessWriter.name);
+					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), "L" + abstractAccessWriter.name + ";");
 				this.bytecode.field(bridge);
 
 				this.bridge(
@@ -123,7 +123,7 @@ public class UnsafeBuilder
 				ClassWriter accessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, Generator.name(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
 				FieldWriter bridge = new FieldWriter()
-					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), abstractAccessWriter.name);
+					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), "L" + abstractAccessWriter.name + ";");
 				FieldWriter access = new FieldWriter()
 					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), Generator.signature(finall));
 				this.bytecode.field(bridge);
@@ -223,7 +223,7 @@ public class UnsafeBuilder
 				ClassWriter accessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, Generator.name(), JavaVM.CONSTANT[0], new String[]{abstractAccessWriter.name});
 				FieldWriter bridge = new FieldWriter()
-					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), abstractAccessWriter.name);
+					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, Generator.name(), "L" + abstractAccessWriter.name + ";");
 				this.bytecode.field(bridge);
 
 				accessWriter.method(new MethodWriter()
