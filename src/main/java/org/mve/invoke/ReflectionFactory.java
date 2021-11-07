@@ -10,7 +10,6 @@ import org.mve.asm.attribute.SourceWriter;
 import org.mve.invoke.common.Generator;
 import org.mve.invoke.common.JavaVM;
 import org.mve.invoke.common.MagicAccessorBuilder;
-import org.mve.invoke.common.UninitializedException;
 import org.mve.invoke.common.UnsafeBuilder;
 import org.mve.invoke.common.standard.AllocatorGenerator;
 import org.mve.invoke.common.standard.MagicAllocatorGenerator;
@@ -391,7 +390,8 @@ public class ReflectionFactory
 		}
 		catch (Throwable t)
 		{
-			throw new UninitializedException(t);
+			JavaVM.exception(t);
+			throw new RuntimeException();
 		}
 	}
 }
