@@ -166,7 +166,7 @@ public class MagicAccessorBuilder
 					.instruction(Opcodes.ALOAD_3)
 					.instruction(Opcodes.ALOAD_0)
 					.method(Opcodes.INVOKEVIRTUAL, this.bytecode.name, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
-					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) access[1]).name, name, MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), false)
+					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) access[1]).name, name, MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), true)
 					.instruction(Opcodes.ARETURN)
 					.max(5, 4)
 				)
