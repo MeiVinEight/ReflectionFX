@@ -17,7 +17,6 @@ import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 public class UnsafeBuilder
@@ -246,7 +245,23 @@ public class UnsafeBuilder
 						.instruction(Opcodes.ICONST_1)
 						.number(Opcodes.BIPUSH, 11)
 						.instruction(Opcodes.ALOAD_3)
-						.method(Opcodes.INVOKESTATIC, Generator.type(ClassLoader.class), "defineClass0", MethodType.methodType(Class.class, ClassLoader.class, Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class, boolean.class, int.class, Object.class).toMethodDescriptorString(), false)
+						.method(
+							Opcodes.INVOKESTATIC,
+							Generator.type(ClassLoader.class),
+							"defineClass0",
+							MethodType.methodType(
+								Class.class,
+								ClassLoader.class,
+								Class.class,
+								String.class,
+								byte[].class,
+								int.class,
+								int.class,
+								ProtectionDomain.class,
+								boolean.class, int.class,
+								Object.class
+							).toMethodDescriptorString(),
+							false)
 						.instruction(Opcodes.ARETURN)
 						.max(10, 4)
 					)
