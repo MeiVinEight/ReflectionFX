@@ -12,8 +12,13 @@ public class JavaVM
 	public static final int VERSION;
 	public static final String VENDOR;
 
+	public static void exception(Throwable t)
+	{
+		JavaVM.thrown(t);
+	}
+
 	@SuppressWarnings("unchecked")
-	public static <T extends RuntimeException> void exception(Throwable t)
+	public static <T extends Throwable> void thrown(Throwable t) throws T
 	{
 		throw (T) t;
 	}

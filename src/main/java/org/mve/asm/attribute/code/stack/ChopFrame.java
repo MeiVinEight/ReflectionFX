@@ -20,7 +20,7 @@ public class ChopFrame extends StackMapFrame
 	 */
 	public ChopFrame chop(int i)
 	{
-		this.chop = 251 - i;
+		this.chop = (StackMapFrameType.STACK_MAP_CHOP_FRAME.high() - i) + 1;
 		return this;
 	}
 
@@ -34,8 +34,8 @@ public class ChopFrame extends StackMapFrame
 	public org.mve.asm.file.attribute.stack.StackMapFrame transform(int previous, ConstantArray pool)
 	{
 		StackMapChopFrame frame = new StackMapChopFrame();
-		frame.type = (StackMapFrameType.STACK_MAP_CHOP_FRAME.high() - this.chop) + 1;
-		frame.offset =this.marker.address - previous;
+		frame.type = this.chop;
+		frame.offset = this.marker.address - previous;
 		return frame;
 	}
 }

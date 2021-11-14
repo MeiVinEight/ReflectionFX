@@ -9,6 +9,7 @@ import org.mve.asm.attribute.BootstrapMethodWriter;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.StackMapTableWriter;
 import org.mve.asm.attribute.code.Marker;
+import org.mve.asm.attribute.code.stack.verification.Verification;
 import org.mve.invoke.MagicAccessor;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.StackFrame;
@@ -42,7 +43,7 @@ public class MagicAccessorBuilder
 			.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, "org/mve/invoke/ReflectionMagicAccessor", JavaVM.CONSTANT[0], new String[]{Generator.type(MagicAccessor.class)});
 	}
 
-	public byte[] build(boolean openJ9VM) throws Throwable
+	public byte[] build(Unsafe unsafe, boolean openJ9VM) throws Throwable
 	{
 		/*
 		 * int version()
@@ -109,7 +110,7 @@ public class MagicAccessorBuilder
 					.instruction(Opcodes.ALOAD_0)
 					.method(Opcodes.INVOKEVIRTUAL, this.bytecode.name, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
 					.instruction(Opcodes.ALOAD_1)
-					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) access[1]).name, "forName", MethodType.methodType(Class.class, Class.class, String.class).toMethodDescriptorString(), true)
+					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) access[1]).name, name, MethodType.methodType(Class.class, Class.class, String.class).toMethodDescriptorString(), true)
 					.instruction(Opcodes.ARETURN)
 					.max(3, 2)
 				)
@@ -228,183 +229,334 @@ public class MagicAccessorBuilder
 				this.prepare(SecurityManager.class);
 				Object[] access = this.access.get(SecurityManager.class);
 
+				String frameAccess = Generator.name();
+				String f1 = Generator.name();
+				String f2 = Generator.name();
+				String f3 = Generator.name();
+				String f4 = Generator.name();
+				String f5 = Generator.name();
+				String f6 = Generator.name();
+				String f7 = Generator.name();
+
+				{
+					ClassWriter frame = new ClassWriter()
+						.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, frameAccess, Generator.type(Object.class), null)
+						.field(new FieldWriter()
+							.set(AccessFlag.PUBLIC, f1, Generator.signature(Class.class))
+						)
+						.field(new FieldWriter()
+							.set(AccessFlag.PUBLIC, f2, Generator.signature(String.class))
+						)
+						.field(new FieldWriter()
+							.set(AccessFlag.PUBLIC, f3, Generator.signature(MethodType.class))
+						)
+						.field(new FieldWriter()
+							.set(AccessFlag.PUBLIC, f4, Generator.signature(int.class))
+						)
+						.field(new FieldWriter()
+							.set(AccessFlag.PUBLIC, f5, Generator.signature(int.class))
+						)
+						.field(new FieldWriter()
+							.set(AccessFlag.PUBLIC, f6, Generator.signature(String.class))
+						)
+						.field(new FieldWriter()
+							.set(AccessFlag.PUBLIC, f7, Generator.signature(boolean.class))
+						)
+						.method(new MethodWriter()
+							.set(
+								AccessFlag.PUBLIC,
+								"<init>",
+								MethodType.methodType(
+									void.class,
+									Class.class,
+									String.class,
+									MethodType.class,
+									int.class,
+									int.class,
+									String.class,
+									boolean.class
+								).toMethodDescriptorString()
+							)
+							.attribute(new CodeWriter()
+								.instruction(Opcodes.ALOAD_0)
+								.method(Opcodes.INVOKESPECIAL, Generator.type(Object.class), "<init>", "()V", false)
+								.instruction(Opcodes.ALOAD_0)
+								.instruction(Opcodes.ALOAD_1)
+								.field(Opcodes.PUTFIELD, frameAccess, f1, Generator.signature(Class.class))
+								.instruction(Opcodes.ALOAD_0)
+								.instruction(Opcodes.ALOAD_2)
+								.field(Opcodes.PUTFIELD, frameAccess, f2, Generator.signature(String.class))
+								.instruction(Opcodes.ALOAD_0)
+								.instruction(Opcodes.ALOAD_3)
+								.field(Opcodes.PUTFIELD, frameAccess, f3, Generator.signature(MethodType.class))
+								.instruction(Opcodes.ALOAD_0)
+								.variable(Opcodes.ILOAD, 4)
+								.field(Opcodes.PUTFIELD, frameAccess, f4, Generator.signature(int.class))
+								.instruction(Opcodes.ALOAD_0)
+								.variable(Opcodes.ILOAD, 5)
+								.field(Opcodes.PUTFIELD, frameAccess, f5, Generator.signature(int.class))
+								.instruction(Opcodes.ALOAD_0)
+								.variable(Opcodes.ALOAD, 6)
+								.field(Opcodes.PUTFIELD, frameAccess, f6, Generator.signature(String.class))
+								.instruction(Opcodes.ALOAD_0)
+								.variable(Opcodes.ILOAD, 7)
+								.field(Opcodes.PUTFIELD, frameAccess, f7, Generator.signature(boolean.class))
+								.instruction(Opcodes.RETURN)
+								.max(3, 8)
+							)
+						);
+
+					byte[] classcode = frame.toByteArray();
+					unsafe.defineClass(null, classcode, 0, classcode.length, null, null);
+				}
 
 				String name = Generator.name();
-				Marker m1 = new Marker();
-				Marker m2 = new Marker();
-				Marker m3 = new Marker();
-				Marker m4 = new Marker();
-				Marker m5 = new Marker();
+				{
+					Marker m1 = new Marker();
+					Marker m2 = new Marker();
+					Marker m3 = new Marker();
+					Marker m4 = new Marker();
+					Marker m5 = new Marker();
 
-				((ClassWriter) access[1]).method(new MethodWriter()
-					.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, MethodType.methodType(StackFrame[].class).toMethodDescriptorString())
-				);
+					((ClassWriter) access[1]).method(new MethodWriter()
+						.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, "()[L" + frameAccess + ";")
+					);
 
-				((ClassWriter) access[2]).field(new FieldWriter()
-					.set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.FINAL, (String) access[3], Generator.signature(SecurityManager.class))
-				).method(new MethodWriter()
-					.set(AccessFlag.STATIC, "<clinit>", "()V")
-					.attribute(new CodeWriter()
-						.type(Opcodes.NEW, Generator.type(SecurityManager.class))
-						.instruction(Opcodes.DUP)
-						.method(Opcodes.INVOKESPECIAL, Generator.type(SecurityManager.class), "<init>", "()V", false)
-						.field(Opcodes.PUTSTATIC, ((ClassWriter) access[2]).name, (String) access[3], Generator.signature(SecurityManager.class))
-						.instruction(Opcodes.RETURN)
-						.max(2, 0)
-					)
-				).method(new MethodWriter()
-					.set(AccessFlag.PUBLIC, name, MethodType.methodType(StackFrame[].class).toMethodDescriptorString())
-					.attribute(new CodeWriter()
-						.field(Opcodes.GETSTATIC, ((ClassWriter) access[2]).name, (String) access[3], Generator.signature(SecurityManager.class))
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false)
+					((ClassWriter) access[2])
+						.field(new FieldWriter()
+							.set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.FINAL, (String) access[3], Generator.signature(SecurityManager.class))
+						)
+						.method(new MethodWriter()
+							.set(AccessFlag.STATIC, "<clinit>", "()V")
+							.attribute(new CodeWriter()
+								.type(Opcodes.NEW, Generator.type(SecurityManager.class))
+								.instruction(Opcodes.DUP)
+								.method(Opcodes.INVOKESPECIAL, Generator.type(SecurityManager.class), "<init>", "()V", false)
+								.field(Opcodes.PUTSTATIC, ((ClassWriter) access[2]).name, (String) access[3], Generator.signature(SecurityManager.class))
+								.instruction(Opcodes.RETURN)
+								.max(2, 0)
+							)
+						).method(new MethodWriter()
+							.set(AccessFlag.PUBLIC, name, "()[L" + frameAccess + ";")
+							.attribute(new CodeWriter()
+								.field(Opcodes.GETSTATIC, ((ClassWriter) access[2]).name, (String) access[3], Generator.signature(SecurityManager.class))
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(SecurityManager.class), "getClassContext", MethodType.methodType(Class[].class).toMethodDescriptorString(), false)
+								.instruction(Opcodes.ASTORE_1)
+								.instruction(Opcodes.ALOAD_1)
+								.instruction(Opcodes.ICONST_2)
+								.instruction(Opcodes.ALOAD_1)
+								.instruction(Opcodes.ARRAYLENGTH)
+								.method(Opcodes.INVOKESTATIC, Generator.type(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false)
+								.type(Opcodes.CHECKCAST, Generator.type(Class[].class))
+								.instruction(Opcodes.ASTORE_1) // class[]
+								.type(Opcodes.NEW, Generator.type(Throwable.class))
+								.instruction(Opcodes.DUP)
+								.method(Opcodes.INVOKESPECIAL, Generator.type(Throwable.class), "<init>", "()V", false)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(Throwable.class), "getStackTrace", MethodType.methodType(StackTraceElement[].class).toMethodDescriptorString(), false)
+								.instruction(Opcodes.ASTORE_2)
+								.instruction(Opcodes.ALOAD_2)
+								.instruction(Opcodes.ICONST_2)
+								.instruction(Opcodes.ALOAD_2)
+								.instruction(Opcodes.ARRAYLENGTH)
+								.method(Opcodes.INVOKESTATIC, Generator.type(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false)
+								.type(Opcodes.CHECKCAST, Generator.type(StackTraceElement[].class))
+								.instruction(Opcodes.ASTORE_2) // element[]
+								.instruction(Opcodes.ALOAD_1)
+								.instruction(Opcodes.ARRAYLENGTH)
+								.type(Opcodes.ANEWARRAY, frameAccess)
+								.instruction(Opcodes.ASTORE_3) // frame
+								.instruction(Opcodes.ICONST_0)
+								.variable(Opcodes.ISTORE, 4) // i
+								.instruction(Opcodes.ICONST_0)
+								.variable(Opcodes.ISTORE, 5) // j
+								.mark(m1)
+								.variable(Opcodes.ILOAD, 5)
+								.instruction(Opcodes.ALOAD_1)
+								.instruction(Opcodes.ARRAYLENGTH)
+								.jump(Opcodes.IF_ICMPGE, m5)
+								.instruction(Opcodes.ALOAD_1)
+								.variable(Opcodes.ILOAD, 5)
+								.instruction(Opcodes.AALOAD)
+								.variable(Opcodes.ASTORE, 6) // class
+								.instruction(Opcodes.ACONST_NULL)
+								.variable(Opcodes.ASTORE, 7) // method
+								.instruction(Opcodes.ICONST_M1)
+								.variable(Opcodes.ISTORE, 8) // line
+								.instruction(Opcodes.ACONST_NULL)
+								.variable(Opcodes.ASTORE, 9) // file
+								.instruction(Opcodes.ICONST_0)
+								.variable(Opcodes.ISTORE, 10) // native
+								.variable(Opcodes.ALOAD, 6)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(Class.class), "getTypeName", "()Ljava/lang/String;", false)
+								.instruction(Opcodes.ALOAD_2)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.AALOAD)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getClassName", "()Ljava/lang/String;", false)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(String.class), "equals", "(Ljava/lang/Object;)Z", false)
+								.jump(Opcodes.IFEQ, m2)
+								.instruction(Opcodes.ALOAD_2)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.AALOAD)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getMethodName", "()Ljava/lang/String;", false)
+								.variable(Opcodes.ASTORE, 7)
+								.instruction(Opcodes.ALOAD_2)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.AALOAD)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getLineNumber", "()I", false)
+								.variable(Opcodes.ISTORE, 8)
+								.instruction(Opcodes.ALOAD_2)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.AALOAD)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getFileName", "()Ljava/lang/String;", false)
+								.variable(Opcodes.ASTORE, 9)
+								.instruction(Opcodes.ALOAD_2)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.AALOAD)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "isNativeMethod", "()Z", false)
+								.variable(Opcodes.ISTORE, 10)
+								.iinc(4, 1)
+								.jump(Opcodes.GOTO, m4)
+								.mark(m2)
+								.instruction(Opcodes.ALOAD_1)
+								.instruction(Opcodes.ARRAYLENGTH)
+								.instruction(Opcodes.ALOAD_2)
+								.instruction(Opcodes.ARRAYLENGTH)
+								.jump(Opcodes.IF_ICMPGE, m4)
+								.mark(m3)
+								.instruction(Opcodes.ALOAD_1)
+								.instruction(Opcodes.ARRAYLENGTH)
+								.variable(Opcodes.ILOAD, 5)
+								.instruction(Opcodes.ISUB)
+								.instruction(Opcodes.ALOAD_2)
+								.instruction(Opcodes.ARRAYLENGTH)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.ISUB)
+								.jump(Opcodes.IF_ICMPGE, m4)
+								.iinc(4, 1)
+								.variable(Opcodes.ALOAD, 6)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(Class.class), "getTypeName", "()Ljava/lang/String;", false)
+								.instruction(Opcodes.ALOAD_2)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.AALOAD)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getClassName", "()Ljava/lang/String;", false)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(String.class), "equals", "(Ljava/lang/Object;)Z", false)
+								.jump(Opcodes.IFEQ, m3)
+								.instruction(Opcodes.ALOAD_2)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.AALOAD)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getMethodName", "()Ljava/lang/String;", false)
+								.variable(Opcodes.ASTORE, 7)
+								.instruction(Opcodes.ALOAD_2)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.AALOAD)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getLineNumber", "()I", false)
+								.variable(Opcodes.ISTORE, 8)
+								.instruction(Opcodes.ALOAD_2)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.AALOAD)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getFileName", "()Ljava/lang/String;", false)
+								.variable(Opcodes.ASTORE, 9)
+								.instruction(Opcodes.ALOAD_2)
+								.variable(Opcodes.ILOAD, 4)
+								.instruction(Opcodes.AALOAD)
+								.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "isNativeMethod", "()Z", false)
+								.variable(Opcodes.ISTORE, 10)
+								.iinc(4, 1)
+								.mark(m4)
+								.instruction(Opcodes.ALOAD_3)
+								.variable(Opcodes.ILOAD, 5)
+								.type(Opcodes.NEW, frameAccess)
+								.instruction(Opcodes.DUP)
+								.variable(Opcodes.ALOAD, 6)
+								.variable(Opcodes.ALOAD, 7)
+								.instruction(Opcodes.ACONST_NULL)
+								.instruction(Opcodes.ICONST_M1)
+								.variable(Opcodes.ILOAD, 8)
+								.variable(Opcodes.ALOAD, 9)
+								.variable(Opcodes.ILOAD, 10)
+								.method(Opcodes.INVOKESPECIAL, frameAccess, "<init>", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;IILjava/lang/String;Z)V", false)
+								.instruction(Opcodes.AASTORE)
+								.iinc(5, 1)
+								.jump(Opcodes.GOTO, m1)
+								.mark(m5)
+								.instruction(Opcodes.ALOAD_3)
+								.instruction(Opcodes.ARETURN)
+								.max(11, 11)
+							)
+						);
+				}
+				{
+					Marker m1 = new Marker();
+					Marker m2 = new Marker();
+					code.field(Opcodes.GETSTATIC, this.bytecode.name, (String) access[0], "L" + ((ClassWriter) access[1]).name + ";")
+						.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) access[1]).name, name, "()[L" + frameAccess + ";", true)
 						.instruction(Opcodes.ASTORE_1)
-						.instruction(Opcodes.ALOAD_1)
-						.instruction(Opcodes.ICONST_2)
-						.instruction(Opcodes.ALOAD_1)
-						.instruction(Opcodes.ARRAYLENGTH)
-						.method(Opcodes.INVOKESTATIC, Generator.type(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false)
-						.type(Opcodes.CHECKCAST, Generator.type(Class[].class))
-						.instruction(Opcodes.ASTORE_1) // class[]
-						.type(Opcodes.NEW, Generator.type(Throwable.class))
-						.instruction(Opcodes.DUP)
-						.method(Opcodes.INVOKESPECIAL, Generator.type(Throwable.class), "<init>", "()V", false)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(Throwable.class), "getStackTrace", MethodType.methodType(StackTraceElement[].class).toMethodDescriptorString(), false)
-						.instruction(Opcodes.ASTORE_2)
-						.instruction(Opcodes.ALOAD_2)
-						.instruction(Opcodes.ICONST_2)
-						.instruction(Opcodes.ALOAD_2)
-						.instruction(Opcodes.ARRAYLENGTH)
-						.method(Opcodes.INVOKESTATIC, Generator.type(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false)
-						.type(Opcodes.CHECKCAST, Generator.type(StackTraceElement[].class))
-						.instruction(Opcodes.ASTORE_2) // element[]
 						.instruction(Opcodes.ALOAD_1)
 						.instruction(Opcodes.ARRAYLENGTH)
 						.type(Opcodes.ANEWARRAY, Generator.type(StackFrame.class))
-						.instruction(Opcodes.ASTORE_3) // frame
+						.instruction(Opcodes.ASTORE_2)
 						.instruction(Opcodes.ICONST_0)
-						.variable(Opcodes.ISTORE, 4) // i
-						.instruction(Opcodes.ICONST_0)
-						.variable(Opcodes.ISTORE, 5) // j
+						.instruction(Opcodes.ISTORE_3)
 						.mark(m1)
-						.variable(Opcodes.ILOAD, 5)
+						.instruction(Opcodes.ILOAD_3)
 						.instruction(Opcodes.ALOAD_1)
 						.instruction(Opcodes.ARRAYLENGTH)
-						.jump(Opcodes.IF_ICMPGE, m5)
+						.jump(Opcodes.IF_ICMPGE, m2)
 						.instruction(Opcodes.ALOAD_1)
-						.variable(Opcodes.ILOAD, 5)
+						.instruction(Opcodes.ILOAD_3)
 						.instruction(Opcodes.AALOAD)
-						.variable(Opcodes.ASTORE, 6) // class
-						.instruction(Opcodes.ACONST_NULL)
-						.variable(Opcodes.ASTORE, 7) // method
-						.instruction(Opcodes.ICONST_M1)
-						.variable(Opcodes.ISTORE, 8) // line
-						.instruction(Opcodes.ACONST_NULL)
-						.variable(Opcodes.ASTORE, 9) // file
-						.instruction(Opcodes.ICONST_0)
-						.variable(Opcodes.ISTORE, 10) // native
-						.variable(Opcodes.ALOAD, 6)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(Class.class), "getTypeName", "()Ljava/lang/String;", false)
+						.variable(Opcodes.ASTORE, 4)
 						.instruction(Opcodes.ALOAD_2)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.AALOAD)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getClassName", "()Ljava/lang/String;", false)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(String.class), "equals", "(Ljava/lang/Object;)Z", false)
-						.jump(Opcodes.IFEQ, m2)
-						.instruction(Opcodes.ALOAD_2)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.AALOAD)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getMethodName", "()Ljava/lang/String;", false)
-						.variable(Opcodes.ASTORE, 7)
-						.instruction(Opcodes.ALOAD_2)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.AALOAD)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getLineNumber", "()I", false)
-						.variable(Opcodes.ISTORE, 8)
-						.instruction(Opcodes.ALOAD_2)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.AALOAD)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getFileName", "()Ljava/lang/String;", false)
-						.variable(Opcodes.ASTORE, 9)
-						.instruction(Opcodes.ALOAD_2)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.AALOAD)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "isNativeMethod", "()Z", false)
-						.variable(Opcodes.ISTORE, 10)
-						.iinc(4, 1)
-						.jump(Opcodes.GOTO, m4)
-						.mark(m2)
-						.instruction(Opcodes.ALOAD_1)
-						.instruction(Opcodes.ARRAYLENGTH)
-						.instruction(Opcodes.ALOAD_2)
-						.instruction(Opcodes.ARRAYLENGTH)
-						.jump(Opcodes.IF_ICMPGE, m4)
-						.mark(m3)
-						.instruction(Opcodes.ALOAD_1)
-						.instruction(Opcodes.ARRAYLENGTH)
-						.variable(Opcodes.ILOAD, 5)
-						.instruction(Opcodes.ISUB)
-						.instruction(Opcodes.ALOAD_2)
-						.instruction(Opcodes.ARRAYLENGTH)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.ISUB)
-						.jump(Opcodes.IF_ICMPGE, m4)
-						.iinc(4, 1)
-						.variable(Opcodes.ALOAD, 6)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(Class.class), "getTypeName", "()Ljava/lang/String;", false)
-						.instruction(Opcodes.ALOAD_2)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.AALOAD)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getClassName", "()Ljava/lang/String;", false)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(String.class), "equals", "(Ljava/lang/Object;)Z", false)
-						.jump(Opcodes.IFEQ, m3)
-						.instruction(Opcodes.ALOAD_2)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.AALOAD)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getMethodName", "()Ljava/lang/String;", false)
-						.variable(Opcodes.ASTORE, 7)
-						.instruction(Opcodes.ALOAD_2)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.AALOAD)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getLineNumber", "()I", false)
-						.variable(Opcodes.ISTORE, 8)
-						.instruction(Opcodes.ALOAD_2)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.AALOAD)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "getFileName", "()Ljava/lang/String;", false)
-						.variable(Opcodes.ASTORE, 9)
-						.instruction(Opcodes.ALOAD_2)
-						.variable(Opcodes.ILOAD, 4)
-						.instruction(Opcodes.AALOAD)
-						.method(Opcodes.INVOKEVIRTUAL, Generator.type(StackTraceElement.class), "isNativeMethod", "()Z", false)
-						.variable(Opcodes.ISTORE, 10)
-						.iinc(4, 1)
-						.mark(m4)
-						.instruction(Opcodes.ALOAD_3)
-						.variable(Opcodes.ILOAD, 5)
+						.instruction(Opcodes.ILOAD_3)
 						.type(Opcodes.NEW, Generator.type(StackFrame.class))
 						.instruction(Opcodes.DUP)
-						.variable(Opcodes.ALOAD, 6)
-						.variable(Opcodes.ALOAD, 7)
-						.instruction(Opcodes.ACONST_NULL)
-						.instruction(Opcodes.ICONST_M1)
-						.variable(Opcodes.ILOAD, 8)
-						.variable(Opcodes.ALOAD, 9)
-						.variable(Opcodes.ILOAD, 10)
-						.method(Opcodes.INVOKESPECIAL, Generator.type(StackFrame.class), "<init>", "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;IILjava/lang/String;Z)V", false)
+						.variable(Opcodes.ALOAD, 4)
+						.field(Opcodes.GETFIELD, frameAccess, f1, Generator.signature(Class.class))
+						.variable(Opcodes.ALOAD, 4)
+						.field(Opcodes.GETFIELD, frameAccess, f2, Generator.signature(String.class))
+						.variable(Opcodes.ALOAD, 4)
+						.field(Opcodes.GETFIELD, frameAccess, f3, Generator.signature(MethodType.class))
+						.variable(Opcodes.ALOAD, 4)
+						.field(Opcodes.GETFIELD, frameAccess, f4, Generator.signature(int.class))
+						.variable(Opcodes.ALOAD, 4)
+						.field(Opcodes.GETFIELD, frameAccess, f5, Generator.signature(int.class))
+						.variable(Opcodes.ALOAD, 4)
+						.field(Opcodes.GETFIELD, frameAccess, f6, Generator.signature(String.class))
+						.variable(Opcodes.ALOAD, 4)
+						.field(Opcodes.GETFIELD, frameAccess, f7, Generator.signature(boolean.class))
+						.method(
+							Opcodes.INVOKESPECIAL,
+							Generator.type(StackFrame.class),
+							"<init>",
+							MethodType.methodType(
+								void.class,
+								Class.class,
+								String.class,
+								MethodType.class,
+								int.class,
+								int.class,
+								String.class,
+								boolean.class
+							).toMethodDescriptorString(),
+							false
+						)
 						.instruction(Opcodes.AASTORE)
-						.iinc(5, 1)
+						.iinc(3, 1)
 						.jump(Opcodes.GOTO, m1)
-						.mark(m5)
-						.instruction(Opcodes.ALOAD_3)
+						.mark(m2)
+						.instruction(Opcodes.ALOAD_2)
 						.instruction(Opcodes.ARETURN)
-						.max(11, 11)
-					)
-				);
-
-				code.field(Opcodes.GETSTATIC, this.bytecode.name, (String) access[0], "L" + ((ClassWriter) access[1]).name + ";")
-					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) access[1]).name, name, MethodType.methodType(StackFrame[].class).toMethodDescriptorString(), true)
-					.instruction(Opcodes.ARETURN)
-					.max(1, 1);
+						.max(11, 5)
+						.attribute(new StackMapTableWriter()
+							.appendFrame(
+								m1,
+								Verification.objectVariable("[L" + frameAccess + ";"),
+								Verification.objectVariable(Generator.type(StackFrame[].class)),
+								Verification.integerVariable()
+							)
+							.chopFrame(m2, 1)
+						);
+				}
 			}
 			else
 			{
@@ -491,6 +643,10 @@ public class MagicAccessorBuilder
 					.method(Opcodes.INVOKEVIRTUAL, Generator.type(ArrayList.class), "remove", "(I)Ljava/lang/Object;", false)
 					.instruction(Opcodes.POP)
 					.instruction(Opcodes.ALOAD_1)
+					.instruction(Opcodes.ICONST_0)
+					.method(Opcodes.INVOKEVIRTUAL, Generator.type(ArrayList.class), "remove", "(I)Ljava/lang/Object;", false)
+					.instruction(Opcodes.POP)
+					.instruction(Opcodes.ALOAD_1)
 					.instruction(Opcodes.ALOAD_1)
 					.method(Opcodes.INVOKEVIRTUAL, "java/util/ArrayList", "size", "()I", false)
 					.type(Opcodes.ANEWARRAY, Generator.type(StackFrame.class))
@@ -532,12 +688,14 @@ public class MagicAccessorBuilder
 					.instruction(Opcodes.ASTORE_1)
 					.instruction(Opcodes.ALOAD_1)
 					.instruction(Opcodes.ARRAYLENGTH)
+					.instruction(Opcodes.ICONST_1)
+					.instruction(Opcodes.ISUB)
 					.type(Opcodes.ANEWARRAY, Generator.type(Class.class))
 					.instruction(Opcodes.ASTORE_2)
 					.instruction(Opcodes.ICONST_0)
 					.instruction(Opcodes.ISTORE_3)
 					.mark(m1)
-					.instruction(Opcodes.ALOAD_3)
+					.instruction(Opcodes.ILOAD_3)
 					.instruction(Opcodes.ALOAD_2)
 					.instruction(Opcodes.ARRAYLENGTH)
 					.jump(Opcodes.IF_ICMPGE, m2)
@@ -545,6 +703,8 @@ public class MagicAccessorBuilder
 					.instruction(Opcodes.ILOAD_3)
 					.instruction(Opcodes.ALOAD_1)
 					.instruction(Opcodes.ILOAD_3)
+					.instruction(Opcodes.ICONST_1)
+					.instruction(Opcodes.IADD)
 					.instruction(Opcodes.AALOAD)
 					.field(Opcodes.GETFIELD, Generator.type(StackFrame.class), "clazz", "Ljava/lang/Class;")
 					.instruction(Opcodes.AASTORE)
@@ -553,7 +713,11 @@ public class MagicAccessorBuilder
 					.mark(m2)
 					.instruction(Opcodes.ALOAD_2)
 					.instruction(Opcodes.ARETURN)
-					.max(4, 4)
+					.max(5, 4)
+					.attribute(new StackMapTableWriter()
+						.appendFrame(m1, Verification.objectVariable(Generator.type(StackFrame[].class)), Verification.objectVariable(Generator.type(Class[].class)), Verification.integerVariable())
+						.chopFrame(m2, 1)
+					)
 				)
 			);
 		}
@@ -658,6 +822,16 @@ public class MagicAccessorBuilder
 					.method(Opcodes.INVOKESPECIAL, Generator.type(NoSuchFieldException.class), "<init>", "(Ljava/lang/String;)V", false)
 					.instruction(Opcodes.ATHROW)
 					.max(4, 7)
+					.attribute(new StackMapTableWriter()
+						.appendFrame(
+							m1,
+							Verification.objectVariable(Generator.type(Field[].class)),
+							Verification.integerVariable(),
+							Verification.integerVariable()
+						)
+						.appendFrame(m2, Verification.objectVariable(Generator.type(Field.class)))
+						.chopFrame(m3, 2)
+					)
 				)
 			);
 		}
@@ -734,6 +908,15 @@ public class MagicAccessorBuilder
 					.method(Opcodes.INVOKESPECIAL, Generator.type(NoSuchMethodException.class), "<init>", MethodType.methodType(void.class, String.class).toMethodDescriptorString(), false)
 					.instruction(Opcodes.ATHROW)
 					.max(5, 9)
+					.attribute(new StackMapTableWriter()
+						.appendFrame(m1,
+							Verification.objectVariable(Generator.type(Method[].class)),
+							Verification.integerVariable(),
+							Verification.integerVariable()
+						)
+						.appendFrame(m2, Verification.objectVariable(Generator.type(Method.class)))
+						.chopFrame(m3, 2)
+					)
 				)
 			);
 		}
@@ -796,6 +979,16 @@ public class MagicAccessorBuilder
 					.method(Opcodes.INVOKESPECIAL, Generator.type(NoSuchMethodException.class), "<init>", "(Ljava/lang/String;)V", false)
 					.instruction(Opcodes.ATHROW)
 					.max(5, 7)
+					.attribute(new StackMapTableWriter()
+						.appendFrame(
+							m1,
+							Verification.objectVariable(Generator.type(Constructor[].class)),
+							Verification.integerVariable(),
+							Verification.integerVariable()
+						)
+						.appendFrame(m2, Verification.objectVariable(Generator.type(Constructor.class)))
+						.chopFrame(m3, 2)
+					)
 				)
 			);
 		}
@@ -819,7 +1012,7 @@ public class MagicAccessorBuilder
 					.instruction(Opcodes.ALOAD_1)
 				)
 			);
-			if (openJ9VM)
+			if (!openJ9VM)
 			{
 				code.instruction(Opcodes.ICONST_0);
 			}
@@ -928,7 +1121,7 @@ public class MagicAccessorBuilder
 			{
 				((ClassWriter) methodAccess[1]).method(new MethodWriter()
 					.set(
-						AccessFlag.PUBLIC | AccessFlag.ABSTRACT,
+						AccessFlag.PUBLIC,
 						newMethod,
 						MethodType.methodType(
 							Method.class,
@@ -996,7 +1189,8 @@ public class MagicAccessorBuilder
 								byte[].class,
 								byte[].class,
 								byte[].class
-							).toMethodDescriptorString(), false
+							).toMethodDescriptorString(),
+							false
 						)
 						.instruction(Opcodes.ARETURN)
 						.max(13, 12)
@@ -1040,7 +1234,7 @@ public class MagicAccessorBuilder
 					.variable(Opcodes.ILOAD, 5)
 					.instruction(Opcodes.ALOAD_3)
 					.instruction(Opcodes.ARRAYLENGTH)
-					.jump(Opcodes.IF_ICMPEQ, m4)
+					.jump(Opcodes.IF_ICMPGE, m4)
 					.variable(Opcodes.ALOAD, 4)
 					.instruction(Opcodes.ALOAD_2)
 					.instruction(Opcodes.ARRAYLENGTH)
@@ -1090,12 +1284,12 @@ public class MagicAccessorBuilder
 					.instruction(Opcodes.ALOAD_3)
 					.variable(Opcodes.ILOAD, 5)
 					.instruction(Opcodes.AALOAD)
-					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) ctrAccess[1]).name, "getAnnotationBytes", MethodType.methodType(byte[].class, Constructor.class).toMethodDescriptorString(), true)
+					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) ctrAccess[1]).name, getAnnotationBytes, MethodType.methodType(byte[].class, Constructor.class).toMethodDescriptorString(), true)
 					.field(Opcodes.GETSTATIC, this.bytecode.name, (String) ctrAccess[0], "L" + ((ClassWriter) ctrAccess[1]).name + ";")
 					.instruction(Opcodes.ALOAD_3)
 					.variable(Opcodes.ILOAD, 5)
 					.instruction(Opcodes.AALOAD)
-					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) ctrAccess[1]).name, "getRawParameterAnnotations", MethodType.methodType(byte[].class, Constructor.class).toMethodDescriptorString(), true)
+					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) ctrAccess[1]).name, getRawParameterAnnotations, MethodType.methodType(byte[].class, Constructor.class).toMethodDescriptorString(), true)
 					.instruction(Opcodes.ACONST_NULL)
 					.method(
 						Opcodes.INVOKEINTERFACE,
@@ -1114,15 +1308,79 @@ public class MagicAccessorBuilder
 							byte[].class,
 							byte[].class,
 							byte[].class
-						).toMethodDescriptorString(),
+						)
+						.toMethodDescriptorString(),
 						true
-					).instruction(Opcodes.AASTORE)
+					)
+					.instruction(Opcodes.AASTORE)
 					.iinc(5, 1)
 					.jump(Opcodes.GOTO, m1)
 					.mark(m4)
 					.variable(Opcodes.ALOAD, 4)
 					.instruction(Opcodes.ARETURN)
 					.max(16, 6)
+					.attribute(new StackMapTableWriter()
+						.fullFrame(
+							m1,
+							new Verification[]
+							{
+								Verification.objectVariable(this.bytecode.name),
+								Verification.objectVariable(Generator.type(Class.class)),
+								Verification.objectVariable(Generator.type(Method[].class)),
+								Verification.objectVariable(Generator.type(Constructor[].class)),
+								Verification.objectVariable(Generator.type(Method[].class)),
+								Verification.integerVariable()
+							},
+							new Verification[]
+							{
+							}
+
+						)
+						.fullFrame(
+							m2,
+							new Verification[]
+							{
+								Verification.objectVariable(this.bytecode.name),
+								Verification.objectVariable(Generator.type(Class.class)),
+								Verification.objectVariable(Generator.type(Method[].class)),
+								Verification.objectVariable(Generator.type(Constructor[].class)),
+								Verification.objectVariable(Generator.type(Method[].class)),
+								Verification.integerVariable()
+							},
+							new Verification[]
+							{
+								Verification.objectVariable(Generator.type(Method[].class)),
+								Verification.integerVariable(),
+								Verification.objectVariable(((ClassWriter) methodAccess[1]).name),
+								Verification.objectVariable(Generator.type(Class.class)),
+								Verification.objectVariable(Generator.type(String.class)),
+								Verification.objectVariable(Generator.type(Class[].class))
+							}
+						)
+						.fullFrame(
+							m3,
+							new Verification[]
+							{
+								Verification.objectVariable(this.bytecode.name),
+								Verification.objectVariable(Generator.type(Class.class)),
+								Verification.objectVariable(Generator.type(Method[].class)),
+								Verification.objectVariable(Generator.type(Constructor[].class)),
+								Verification.objectVariable(Generator.type(Method[].class)),
+								Verification.integerVariable()
+							},
+							new Verification[]
+							{
+								Verification.objectVariable(Generator.type(Method[].class)),
+								Verification.integerVariable(),
+								Verification.objectVariable(((ClassWriter) methodAccess[1]).name),
+								Verification.objectVariable(Generator.type(Class.class)),
+								Verification.objectVariable(Generator.type(String.class)),
+								Verification.objectVariable(Generator.type(Class[].class)),
+								Verification.objectVariable(Generator.type(Class.class))
+							}
+						)
+						.chopFrame(m4, 1)
+					)
 				)
 			);
 		}
@@ -1328,13 +1586,21 @@ public class MagicAccessorBuilder
 		return this.bytecode.toByteArray();
 	}
 
-	public void post(Unsafe unsafe, Class<?> c) throws Throwable
+	public void pre(Unsafe unsafe)
 	{
 		for (Map.Entry<Class<?>, Object[]> entry : this.access.entrySet())
 		{
 			Object[] access = entry.getValue();
 			byte[] code = ((ClassWriter) access[1]).toByteArray();
 			unsafe.defineClass(null, code, 0, code.length, null, null);
+		}
+	}
+
+	public void post(Unsafe unsafe, Class<?> c) throws Throwable
+	{
+		for (Map.Entry<Class<?>, Object[]> entry : this.access.entrySet())
+		{
+			Object[] access = entry.getValue();
 			unsafe.putObject(c, unsafe.staticFieldOffset(c.getDeclaredField((String) access[0])), unsafe.allocateInstance(unsafe.defineAnonymousClass(entry.getKey(), ((ClassWriter) access[2]).toByteArray(), null)));
 		}
 	}

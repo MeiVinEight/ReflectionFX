@@ -41,9 +41,9 @@ public class UnsafeBuilder
 
 		this.define = this.lookup.findVirtual(unsafeClass, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class)).bindTo(unsafe);
 
-		if (JavaVM.VERSION < Opcodes.version(17))
+		if (JavaVM.VERSION < Opcodes.version(16))
 		{
-			this.anonymous = this.lookup.findVirtual(unsafeClass, "defineAnonymousClass", MethodType.methodType(Class.class, Class.class, byte[].class, Object.class)).bindTo(unsafe);
+			this.anonymous = this.lookup.findVirtual(unsafeClass, "defineAnonymousClass", MethodType.methodType(Class.class, Class.class, byte[].class, Object[].class)).bindTo(unsafe);
 		}
 		else
 		{
@@ -295,7 +295,7 @@ public class UnsafeBuilder
 
 	private Class<?> defineAnonymous(Class<?> host, byte[] code) throws Throwable
 	{
-		if (JavaVM.VERSION < Opcodes.version(17))
+		if (JavaVM.VERSION < Opcodes.version(16))
 		{
 			return (Class<?>) this.anonymous.invoke(host, code, null);
 		}

@@ -383,7 +383,8 @@ public class ReflectionFactory
 				catch (Throwable t)
 				{
 					MagicAccessorBuilder builder = new MagicAccessorBuilder();
-					byte[] code = builder.build(openJ9VM);
+					byte[] code = builder.build(UNSAFE, openJ9VM);
+					builder.pre(UNSAFE);
 					c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 					builder.post(UNSAFE, c);
 				}
