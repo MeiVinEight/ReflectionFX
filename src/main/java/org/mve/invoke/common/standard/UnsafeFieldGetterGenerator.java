@@ -4,6 +4,7 @@ import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
+import org.mve.invoke.ReflectionAccessor;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 import org.mve.invoke.common.Generator;
@@ -31,7 +32,7 @@ public class UnsafeFieldGetterGenerator extends FieldGetterGenerator
 		code.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class));
 		if (statics)
 		{
-			code.field(Opcodes.GETSTATIC, classWriter.name, JavaVM.CONSTANT[4], Generator.signature(Class.class));
+			code.field(Opcodes.GETSTATIC, classWriter.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS], Generator.signature(Class.class));
 		}
 		else
 		{

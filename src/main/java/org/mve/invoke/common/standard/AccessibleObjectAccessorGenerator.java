@@ -4,6 +4,7 @@ import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
 import org.mve.asm.FieldWriter;
 import org.mve.invoke.MagicAccessor;
+import org.mve.invoke.ReflectionAccessor;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 import org.mve.invoke.common.Generator;
@@ -27,13 +28,13 @@ public abstract class AccessibleObjectAccessorGenerator extends AccessorGenerato
 	{
 		super.pregenerate(bytecode);
 		bytecode.field(new FieldWriter()
-			.set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.FINAL, JavaVM.CONSTANT[5], Generator.signature(AccessibleObject.class))
+			.set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.FINAL, JavaVM.CONSTANT[ReflectionAccessor.FIELD_OBJECTIVE], Generator.signature(AccessibleObject.class))
 		);
 	}
 
 	public void postgenerate(Class<?> generated)
 	{
 		super.postgenerate(generated);
-		UNSAFE.putObject(generated, UNSAFE.staticFieldOffset(ACCESSOR.getField(generated, JavaVM.CONSTANT[5])), this.accessibleObject);
+		UNSAFE.putObject(generated, UNSAFE.staticFieldOffset(ACCESSOR.getField(generated, JavaVM.CONSTANT[ReflectionAccessor.FIELD_OBJECTIVE])), this.accessibleObject);
 	}
 }

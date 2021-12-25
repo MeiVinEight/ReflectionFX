@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class PolymorphismFactory<T>
 {
@@ -160,7 +159,7 @@ public class PolymorphismFactory<T>
 			.set(
 				0x34,
 				0x21,
-				Generator.name(),
+				JavaVM.random(),
 				this.accessor.isInterface() ? "java/lang/Object" : Generator.type(this.accessor),
 				this.accessor.isInterface() ? new String[]{Generator.type(this.accessor)} : null
 			);
@@ -177,7 +176,7 @@ public class PolymorphismFactory<T>
 			Class<?> objective = entry.getKey();
 			List<PolymorphismGenerator> generators = entry.getValue();
 
-			String name = Generator.name();
+			String name = JavaVM.random();
 			Class<?> accessor;
 
 			{
@@ -203,8 +202,8 @@ public class PolymorphismFactory<T>
 					.set(
 						0x34,
 						AccessFlag.PUBLIC | AccessFlag.SUPER,
-						Generator.name(),
-						JavaVM.CONSTANT[0],
+						JavaVM.random(),
+						JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
 						new String[]{name}
 					);
 				for (PolymorphismGenerator generator : generators)

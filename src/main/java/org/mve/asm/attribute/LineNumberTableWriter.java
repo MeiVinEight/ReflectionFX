@@ -1,6 +1,7 @@
 package org.mve.asm.attribute;
 
 import org.mve.asm.ConstantPoolFinder;
+import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.file.attribute.Attribute;
 import org.mve.asm.file.attribute.AttributeLineNumberTable;
 import org.mve.asm.file.attribute.AttributeType;
@@ -11,16 +12,16 @@ import java.util.Arrays;
 
 public class LineNumberTableWriter implements AttributeWriter
 {
-	public int[] offset = new int[0];
+	public Marker[] offset = new Marker[0];
 	public int[] number = new int[0];
 
-	public LineNumberTableWriter line(int offset, int number)
+	public LineNumberTableWriter line(Marker offset, int number)
 	{
 		this.offset = Arrays.copyOf(this.offset, this.offset.length+1);
 		this.offset[this.offset.length-1] = offset;
 
 		this.number = Arrays.copyOf(this.number, this.number.length+1);
-		this.number[this.number.length-1] = offset;
+		this.number[this.number.length-1] = number;
 
 		return this;
 	}
@@ -33,7 +34,7 @@ public class LineNumberTableWriter implements AttributeWriter
 		for (int i=0; i<this.offset.length; i++)
 		{
 			LineNumber line = new LineNumber();
-			line.start = this.offset[i];
+			line.start = this.offset[i].address;
 			line.line = this.number[i];
 			table.line(line);
 		}

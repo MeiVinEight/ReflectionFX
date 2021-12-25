@@ -35,32 +35,53 @@ public class NativeMethodAccessorGenerator extends MethodAccessorGenerator
 		super.generate();
 		int modifiers = this.method.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
-		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString());
-		this.bytecode.method(mw);
-		Generator.inline(mw);
-		CodeWriter code = new CodeWriter();
-		mw.attribute(code);
-		Generator.merge(code, this.bytecode.name, this.argument);
-		code.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
-			.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[5], Generator.signature(AccessibleObject.class))
-			.type(Opcodes.CHECKCAST, Generator.type(Method.class));
-		if (statics)
-		{
-			code.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[4], Generator.signature(Class.class));
-		}
-		else
-		{
-			code.instruction(Opcodes.ALOAD_1)
-				.instruction(Opcodes.ICONST_0)
-				.instruction(Opcodes.AALOAD);
-		}
-		code.instruction(Opcodes.ALOAD_1)
-			.instruction(statics ? Opcodes.ICONST_0 : Opcodes.ICONST_1)
-			.instruction(Opcodes.ALOAD_1)
-			.instruction(Opcodes.ARRAYLENGTH)
-			.method(Opcodes.INVOKESTATIC, type(Arrays.class), "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false)
-			.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString(), true)
-			.instruction(Opcodes.ARETURN)
-			.max(6, 3);
+		this.bytecode.method(new MethodWriter()
+			.set(AccessFlag.PUBLIC, ReflectionAccessor.INVOKE, MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString())
+			.attribute(new CodeWriter()
+				.consume(c -> Generator.merge(c, this.bytecode.name, this.argument)) // 5
+				.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
+				.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_OBJECTIVE], Generator.signature(AccessibleObject.class))
+				.type(Opcodes.CHECKCAST, Generator.type(Method.class))
+				.consume(c ->
+				{
+					if (statics)
+					{
+						c.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS], Generator.signature(Class.class));
+					}
+					else
+					{
+						c.instruction(Opcodes.ALOAD_1)
+							.instruction(Opcodes.ICONST_0)
+							.instruction(Opcodes.AALOAD)
+							.instruction(Opcodes.ALOAD_1)
+							.instruction(Opcodes.ICONST_1)
+							.instruction(Opcodes.ALOAD_1)
+							.instruction(Opcodes.ARRAYLENGTH)
+							.method(
+								Opcodes.INVOKESTATIC,
+								Generator.type(Arrays.class),
+								"copyOfRange",
+								MethodType
+									.methodType(void.class, Object[].class, int.class, int.class)
+									.toMethodDescriptorString(),
+								false
+							)
+							.instruction(Opcodes.ASTORE_1);
+					}
+				})
+				.instruction(Opcodes.ALOAD_1)
+				.method(
+					Opcodes.INVOKEINTERFACE,
+					Generator.type(Unsafe.class),
+					"invoke",
+					MethodType
+						.methodType(Object.class, Method.class, Object.class, Object[].class)
+						.toMethodDescriptorString(),
+					true
+				)
+				.instruction(Opcodes.ARETURN)
+				.max(statics ? 5 : 6, 3)
+			)
+		);
 	}
 }

@@ -28,6 +28,7 @@ import org.mve.io.RandomAccessByteArray;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class CodeWriter implements AttributeWriter
 {
@@ -174,6 +175,12 @@ public class CodeWriter implements AttributeWriter
 		int i = this.attribute.length;
 		this.attribute = Arrays.copyOf(this.attribute, i+1);
 		this.attribute[i] = writer;
+		return this;
+	}
+
+	public CodeWriter consume(Consumer<CodeWriter> consumer)
+	{
+		consumer.accept(this);
 		return this;
 	}
 

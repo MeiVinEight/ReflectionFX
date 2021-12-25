@@ -1,6 +1,8 @@
 package org.mve.invoke;
 
+import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
+import org.mve.asm.Opcodes;
 import org.mve.invoke.common.JavaVM;
 import org.mve.invoke.common.polymorphism.PolymorphismConstructGenerator;
 import org.mve.invoke.common.polymorphism.PolymorphismFieldGenerator;
@@ -17,7 +19,6 @@ import org.mve.invoke.common.polymorphism.NativePolymorphismInstantiationGenerat
 import org.mve.invoke.common.polymorphism.NativePolymorphismMethodGenerator;
 
 import java.lang.reflect.Method;
-import java.util.UUID;
 
 public class MagicAccessFactory
 {
@@ -27,7 +28,14 @@ public class MagicAccessFactory
 	public static <T> T access(Class<T> accessor)
 	{
 		Method[] methods = ACCESSOR.getMethods(accessor);
-		ClassWriter writer = new ClassWriter().set(0x34, 0x21, Generator.name(), JavaVM.CONSTANT[0], new String[]{Generator.type(accessor)});
+		ClassWriter writer = new ClassWriter()
+			.set(
+				Opcodes.version(8),
+				AccessFlag.PUBLIC | AccessFlag.SUPER,
+				JavaVM.random(),
+				JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
+				new String[]{Generator.type(accessor)}
+			);
 		for (Method method : methods)
 		{
 			MagicAccess access = method.getDeclaredAnnotation(MagicAccess.class);

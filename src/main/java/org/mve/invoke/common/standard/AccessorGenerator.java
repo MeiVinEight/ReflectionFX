@@ -27,27 +27,27 @@ public abstract class AccessorGenerator extends Generator
 	{
 		this.target = target;
 		this.argument = argument;
-		this.bytecode.set(0x34, AccessFlag.PUBLIC | AccessFlag.SUPER, Generator.name(), JavaVM.CONSTANT[0], new String[]{});
+		this.bytecode.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.random(), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], new String[]{});
 		this.pregenerate(this.bytecode);
 	}
 
 	public void pregenerate(ClassWriter bytecode)
 	{
 		bytecode.field(new FieldWriter()
-			.set(AccessFlag.FINAL | AccessFlag.PRIVATE | AccessFlag.STATIC, JavaVM.CONSTANT[4], Generator.signature(Class.class))
+			.set(AccessFlag.FINAL | AccessFlag.PRIVATE | AccessFlag.STATIC, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS], Generator.signature(Class.class))
 		).field(new FieldWriter()
-			.set(AccessFlag.PRIVATE | AccessFlag.FINAL | AccessFlag.STATIC, JavaVM.CONSTANT[6], Generator.signature(Object[].class))
+			.set(AccessFlag.PRIVATE | AccessFlag.FINAL | AccessFlag.STATIC, JavaVM.CONSTANT[ReflectionAccessor.FIELD_WITH], Generator.signature(Object[].class))
 		).method(new MethodWriter()
 			.set(AccessFlag.PUBLIC, ReflectionAccessor.OBJECTIVE, MethodType.methodType(Class.class).toMethodDescriptorString())
 			.attribute(new CodeWriter()
-				.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[4], Generator.signature(Class.class))
+				.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS], Generator.signature(Class.class))
 				.instruction(Opcodes.ARETURN)
 				.max(1, 1)
 			)
 		).method(new MethodWriter()
 			.set(AccessFlag.PUBLIC, ReflectionAccessor.ARGUMENT, MethodType.methodType(Object[].class).toMethodDescriptorString())
 			.attribute(new CodeWriter()
-				.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[6], Generator.signature(Object[].class))
+				.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_WITH], Generator.signature(Object[].class))
 				.instruction(Opcodes.ARETURN)
 				.max(1, 1)
 			)
@@ -56,8 +56,8 @@ public abstract class AccessorGenerator extends Generator
 
 	public void postgenerate(Class<?> generated)
 	{
-		UNSAFE.putObject(generated, UNSAFE.staticFieldOffset(ACCESSOR.getField(generated, JavaVM.CONSTANT[4])), target);
-		UNSAFE.putObject(generated, UNSAFE.staticFieldOffset(ACCESSOR.getField(generated, JavaVM.CONSTANT[6])), this.argument);
+		UNSAFE.putObject(generated, UNSAFE.staticFieldOffset(ACCESSOR.getField(generated, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS])), target);
+		UNSAFE.putObject(generated, UNSAFE.staticFieldOffset(ACCESSOR.getField(generated, JavaVM.CONSTANT[ReflectionAccessor.FIELD_WITH])), this.argument);
 	}
 
 	public ClassWriter bytecode()

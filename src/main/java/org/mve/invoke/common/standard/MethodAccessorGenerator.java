@@ -35,7 +35,7 @@ public abstract class MethodAccessorGenerator extends AccessibleObjectAccessorGe
 		bytecode.method(new MethodWriter()
 			.set(AccessFlag.PUBLIC, MethodAccessor.METHOD, MethodType.methodType(Method.class).toMethodDescriptorString())
 			.attribute(new CodeWriter()
-				.field(Opcodes.GETSTATIC, bytecode.name, JavaVM.CONSTANT[5], Generator.signature(AccessibleObject.class))
+				.field(Opcodes.GETSTATIC, bytecode.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_OBJECTIVE], Generator.signature(AccessibleObject.class))
 				.type(Opcodes.CHECKCAST, Generator.type(Method.class))
 				.instruction(Opcodes.ARETURN)
 				.max(1, 1)
@@ -56,18 +56,20 @@ public abstract class MethodAccessorGenerator extends AccessibleObjectAccessorGe
 	@Override
 	public void generate()
 	{
-		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.WITH, MethodType.methodType(MethodAccessor.class, Object[].class).toMethodDescriptorString());
-		CodeWriter code = new CodeWriter();
-		Generator.merge(code, this.bytecode().name, argument);
-		code.field(Opcodes.GETSTATIC, this.bytecode().name, JavaVM.CONSTANT[5], Generator.signature(AccessibleObject.class))
-			.type(Opcodes.CHECKCAST, Generator.type(Method.class))
-			.number(Opcodes.BIPUSH, this.kind)
-			.instruction(Opcodes.ALOAD_1)
-			.method(Opcodes.INVOKESTATIC, Generator.type(Generator.class), JavaVM.CONSTANT[7], MethodType.methodType(MethodAccessor.class, Method.class, int.class, Object[].class).toMethodDescriptorString(), false)
-			.instruction(Opcodes.ARETURN)
-			.max(5, 3);
-		mw.attribute(code);
-		this.bytecode().method(mw);
+		this.bytecode()
+			.method(new MethodWriter()
+				.set(AccessFlag.PUBLIC, ReflectionAccessor.WITH, MethodType.methodType(MethodAccessor.class, Object[].class).toMethodDescriptorString())
+				.attribute(new CodeWriter()
+					.consume(c -> Generator.merge(c, this.bytecode().name, argument))
+					.field(Opcodes.GETSTATIC, this.bytecode().name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_OBJECTIVE], Generator.signature(AccessibleObject.class))
+					.type(Opcodes.CHECKCAST, Generator.type(Method.class))
+					.number(Opcodes.BIPUSH, this.kind)
+					.instruction(Opcodes.ALOAD_1)
+					.method(Opcodes.INVOKESTATIC, Generator.type(Generator.class), ReflectionAccessor.METHOD_GENERATE, MethodType.methodType(MethodAccessor.class, Method.class, int.class, Object[].class).toMethodDescriptorString(), false)
+					.instruction(Opcodes.ARETURN)
+					.max(5, 3)
+				)
+			);
 
 		super.generate();
 		Generator.with(this.bytecode(), MethodAccessor.class);

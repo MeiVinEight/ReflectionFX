@@ -3,6 +3,7 @@ package org.mve.asm;
 import org.mve.asm.attribute.AttributeWriter;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 public class MethodWriter
 {
@@ -42,6 +43,12 @@ public class MethodWriter
 		int i = this.attribute.length;
 		this.attribute = Arrays.copyOf(this.attribute, i+1);
 		this.attribute[i] = writer;
+		return this;
+	}
+
+	public MethodWriter consume(Consumer<MethodWriter> consumer)
+	{
+		consumer.accept(this);
 		return this;
 	}
 

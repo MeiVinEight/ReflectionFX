@@ -212,10 +212,12 @@ public class ReflectionFactory
 			generator = new MagicAllocatorGenerator(target, new Object[0]);
 		}
 		generator.generate();
-		
+
 		ClassWriter bytecode = generator.bytecode();
-		Class<?> c = Generator.defineAnonymous(access ? target : ReflectionFactory.class, bytecode.toByteArray());
+		byte[] code = bytecode.toByteArray();
+		Class<?> c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 		generator.postgenerate(c);
+
 		generated = (ReflectionAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_ALLOCATOR.put(target, generated);
 		return generated;
@@ -271,7 +273,7 @@ public class ReflectionFactory
 			{
 				try
 				{
-					Class.forName(JavaVM.CONSTANT[0].replace('/', '.'));
+					Class.forName(JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC].replace('/', '.'));
 				}
 				catch (Throwable t)
 				{
@@ -279,7 +281,7 @@ public class ReflectionFactory
 					MethodHandle usfDefineClass = TRUSTED_LOOKUP.findVirtual(usfClass, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class));
 					MethodHandle theUnsafe = TRUSTED_LOOKUP.findStaticGetter(usfClass, "theUnsafe", usfClass);
 					byte[] code = new ClassWriter()
-						.set(0x34, 0x21, JavaVM.CONSTANT[0], mai, null)
+						.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], mai, null)
 						.method(new MethodWriter()
 							.set(AccessFlag.PUBLIC, "<init>", "()V")
 							.attribute(new CodeWriter()
@@ -378,7 +380,7 @@ public class ReflectionFactory
 				Class<?> c;
 				try
 				{
-					c = Class.forName("org.mve.invoke.ReflectionMagicAccessor");
+					c = Class.forName(MagicAccessorBuilder.CLASS_NAME.replace('/', '.'));
 				}
 				catch (Throwable t)
 				{

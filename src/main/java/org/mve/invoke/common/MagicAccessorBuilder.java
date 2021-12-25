@@ -34,13 +34,20 @@ import java.util.Set;
 
 public class MagicAccessorBuilder
 {
+	public static final String CLASS_NAME = "org/mve/invoke/ReflectionMagicAccessor";
 	private final Map<Class<?>, Object[]> access = new HashMap<>();
 	private final ClassWriter bytecode;
 
 	public MagicAccessorBuilder()
 	{
 		this.bytecode = new ClassWriter()
-			.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, "org/mve/invoke/ReflectionMagicAccessor", JavaVM.CONSTANT[0], new String[]{Generator.type(MagicAccessor.class)});
+			.set(
+				Opcodes.version(8),
+				AccessFlag.PUBLIC | AccessFlag.SUPER,
+				CLASS_NAME,
+				JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
+				new String[]{Generator.type(MagicAccessor.class)}
+			);
 	}
 
 	public byte[] build(Unsafe unsafe, boolean openJ9VM) throws Throwable
@@ -66,7 +73,7 @@ public class MagicAccessorBuilder
 			this.prepare(AccessibleObject.class);
 			Object[] access = this.access.get(AccessibleObject.class);
 
-			String name = Generator.name();
+			String name = JavaVM.random();
 			((ClassWriter)access[1]).method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, MethodType.methodType(void.class, AccessibleObject.class, boolean.class).toMethodDescriptorString())
 			);
@@ -98,7 +105,7 @@ public class MagicAccessorBuilder
 			this.prepare(Class.class);
 			Object[] access = this.access.get(Class.class);
 
-			String name = Generator.name();
+			String name = JavaVM.random();
 			((ClassWriter)access[1]).method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, MethodType.methodType(Class.class, Class.class, String.class).toMethodDescriptorString())
 			);
@@ -153,7 +160,7 @@ public class MagicAccessorBuilder
 			this.prepare(Class.class);
 			Object[] access = this.access.get(Class.class);
 
-			String name = Generator.name();
+			String name = JavaVM.random();
 			((ClassWriter) access[1]).method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString())
 			);
@@ -229,14 +236,14 @@ public class MagicAccessorBuilder
 				this.prepare(SecurityManager.class);
 				Object[] access = this.access.get(SecurityManager.class);
 
-				String frameAccess = Generator.name();
-				String f1 = Generator.name();
-				String f2 = Generator.name();
-				String f3 = Generator.name();
-				String f4 = Generator.name();
-				String f5 = Generator.name();
-				String f6 = Generator.name();
-				String f7 = Generator.name();
+				String frameAccess = JavaVM.random();
+				String f1 = JavaVM.random();
+				String f2 = JavaVM.random();
+				String f3 = JavaVM.random();
+				String f4 = JavaVM.random();
+				String f5 = JavaVM.random();
+				String f6 = JavaVM.random();
+				String f7 = JavaVM.random();
 
 				{
 					ClassWriter frame = new ClassWriter()
@@ -310,7 +317,7 @@ public class MagicAccessorBuilder
 					unsafe.defineClass(null, classcode, 0, classcode.length, null, null);
 				}
 
-				String name = Generator.name();
+				String name = JavaVM.random();
 				{
 					Marker m1 = new Marker();
 					Marker m2 = new Marker();
@@ -1000,7 +1007,7 @@ public class MagicAccessorBuilder
 			this.prepare(Class.class);
 			Object[] access = this.access.get(Class.class);
 
-			String name = Generator.name();
+			String name = JavaVM.random();
 			((ClassWriter) access[1]).method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString())
 			);
@@ -1044,12 +1051,12 @@ public class MagicAccessorBuilder
 			Object[] ctrAccess = this.access.get(Constructor.class);
 			Object[] methodAccess = this.access.get(Method.class);
 
-			String getMethods = Generator.name();
-			String getSlot = Generator.name();
-			String getSignature = Generator.name();
-			String getAnnotationBytes = Generator.name();
-			String getRawParameterAnnotations = Generator.name();
-			String newMethod = Generator.name();
+			String getMethods = JavaVM.random();
+			String getSlot = JavaVM.random();
+			String getSignature = JavaVM.random();
+			String getAnnotationBytes = JavaVM.random();
+			String getRawParameterAnnotations = JavaVM.random();
+			String newMethod = JavaVM.random();
 
 			{
 				((ClassWriter) classAccess[1]).method(new MethodWriter()
@@ -1121,7 +1128,7 @@ public class MagicAccessorBuilder
 			{
 				((ClassWriter) methodAccess[1]).method(new MethodWriter()
 					.set(
-						AccessFlag.PUBLIC,
+						AccessFlag.PUBLIC | AccessFlag.ABSTRACT,
 						newMethod,
 						MethodType.methodType(
 							Method.class,
@@ -1142,7 +1149,7 @@ public class MagicAccessorBuilder
 
 				((ClassWriter) methodAccess[2]).method(new MethodWriter()
 					.set(
-						AccessFlag.PUBLIC | AccessFlag.ABSTRACT,
+						AccessFlag.PUBLIC,
 						newMethod,
 						MethodType.methodType(
 							Method.class,
@@ -1391,9 +1398,9 @@ public class MagicAccessorBuilder
 		{
 			this.prepare(Constructor.class);
 
-			Object[] access = this.access.get(Constructor.class);
+			Object[] access = this.access.get(Class.class);
 
-			String name = Generator.name();
+			String name = JavaVM.random();
 
 			((ClassWriter) access[1]).method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString())
@@ -1448,7 +1455,7 @@ public class MagicAccessorBuilder
 
 			Object[] access = this.access.get(Object.class);
 
-			String name = Generator.name();
+			String name = JavaVM.random();
 			((ClassWriter) access[1]).method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, MethodType.methodType(void.class, Object.class).toMethodDescriptorString())
 			);
@@ -1610,12 +1617,12 @@ public class MagicAccessorBuilder
 		if (this.access.get(into) == null)
 		{
 			Object[] access = new Object[]{
-				Generator.name(),
+				JavaVM.random(),
 				new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, Generator.name(), Generator.type(Object.class), null),
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null),
 				new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, Generator.name(), JavaVM.CONSTANT[0], new String[1]),
-				Generator.name()
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.random(), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], new String[1]),
+				JavaVM.random()
 			};
 			((ClassWriter)access[2]).interfaces[0] = ((ClassWriter)access[1]).name;
 

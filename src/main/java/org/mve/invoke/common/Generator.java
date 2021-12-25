@@ -25,18 +25,10 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.security.SecureRandom;
-import java.util.UUID;
 
 public abstract class Generator
 {
-	private static final SecureRandom R = new SecureRandom();
 	public static Unsafe UNSAFE = ReflectionFactory.UNSAFE;
-
-	public static String name()
-	{
-		return UUID.randomUUID().toString().toUpperCase();
-	}
 
 	public static boolean anonymous(Class<?> cls)
 	{
@@ -51,15 +43,15 @@ public abstract class Generator
 	public static void inline(MethodWriter mw)
 	{
 		mw.attribute(new RuntimeVisibleAnnotationWriter()
-			.annotation(new Annotation().type(JavaVM.CONSTANT[1]))
-			.annotation(new Annotation().type(JavaVM.CONSTANT[2]))
-			.annotation(new Annotation().type(JavaVM.CONSTANT[3]))
+			.annotation(new Annotation().type(JavaVM.CONSTANT[JavaVM.CONSTANT_HIDDEN]))
+			.annotation(new Annotation().type(JavaVM.CONSTANT[JavaVM.CONSTANT_INLINE]))
+			.annotation(new Annotation().type(JavaVM.CONSTANT[JavaVM.CONSTANT_COMPILED]))
 		);
 	}
 
 	public static String type(Class<?> clazz)
 	{
-		if (clazz.isArray())
+		if (clazz.isArray() || clazz.isPrimitive())
 		{
 			return signature(clazz);
 		}
@@ -88,6 +80,7 @@ public abstract class Generator
 
 	public static void unwarp(Class<?> c, CodeWriter code)
 	{
+		code.type(Opcodes.CHECKCAST, Generator.type(Number.class));
 		if (c == byte.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "byteValue", "()B", false);
 		else if (c == short.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "shortValue", "()S", false);
 		else if (c == int.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "intValue", "()I", false);
@@ -292,7 +285,7 @@ public abstract class Generator
 			.instruction(Opcodes.IADD)
 			.type(Opcodes.ANEWARRAY, Generator.type(Object.class))
 			.instruction(Opcodes.ASTORE_2)
-			.field(Opcodes.GETSTATIC, name, JavaVM.CONSTANT[6], Generator.signature(Object[].class))
+			.field(Opcodes.GETSTATIC, name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_WITH], Generator.signature(Object[].class))
 			.instruction(Opcodes.ICONST_0)
 			.instruction(Opcodes.ALOAD_2)
 			.instruction(Opcodes.ICONST_0)
@@ -338,9 +331,8 @@ public abstract class Generator
 		generator.generate();
 
 		ClassWriter bytecode = generator.bytecode();
-		Class<?> clazz = method.getDeclaringClass();
-		boolean access = Generator.checkAccessible(clazz.getClassLoader());
-		Class<?> c = defineAnonymous(access ? clazz : ReflectionFactory.class, bytecode.toByteArray());
+		byte[] code = bytecode.toByteArray();
+		Class<?> c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 		generator.postgenerate(c);
 
 		return (MethodAccessor<T>) UNSAFE.allocateInstance(c);
@@ -356,8 +348,10 @@ public abstract class Generator
 		generator.generate();
 
 		ClassWriter bytecode = generator.bytecode();
-		Class<?> c = defineAnonymous(acc ? clazz : ReflectionFactory.class, bytecode.toByteArray());
+		byte[] code = bytecode.toByteArray();
+		Class<?> c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 		generator.postgenerate(c);
+
 		return  (FieldAccessor<T>) UNSAFE.allocateInstance(c);
 	}
 
@@ -379,8 +373,10 @@ public abstract class Generator
 		generator.generate();
 
 		ClassWriter bytecode = generator.bytecode();
-		Class<?> c = defineAnonymous(access ? clazz : ReflectionFactory.class, bytecode.toByteArray());
+		byte[] code = bytecode.toByteArray();
+		Class<?> c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 		generator.postgenerate(c);
+
 		return  (ConstructorAccessor<T>) UNSAFE.allocateInstance(c);
 	}
 }

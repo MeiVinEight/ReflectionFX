@@ -33,7 +33,7 @@ public abstract class ConstructorAccessorGenerator extends AccessibleObjectAcces
 		bytecode.method(new MethodWriter()
 			.set(AccessFlag.PUBLIC, ConstructorAccessor.CONSTRUCTOR, MethodType.methodType(Constructor.class).toMethodDescriptorString())
 			.attribute(new CodeWriter()
-				.field(Opcodes.GETSTATIC, bytecode.name, JavaVM.CONSTANT[5], Generator.signature(AccessibleObject.class))
+				.field(Opcodes.GETSTATIC, bytecode.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_OBJECTIVE], Generator.signature(AccessibleObject.class))
 				.type(Opcodes.CHECKCAST, Generator.type(Constructor.class))
 				.instruction(Opcodes.ARETURN)
 				.max(1, 1)
@@ -52,10 +52,10 @@ public abstract class ConstructorAccessorGenerator extends AccessibleObjectAcces
 		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, ReflectionAccessor.WITH, MethodType.methodType(ConstructorAccessor.class, Object[].class).toMethodDescriptorString());
 		CodeWriter code = new CodeWriter();
 		Generator.merge(code, this.bytecode().name, argument);
-		code.field(Opcodes.GETSTATIC, this.bytecode().name, JavaVM.CONSTANT[5], Generator.signature(AccessibleObject.class))
+		code.field(Opcodes.GETSTATIC, this.bytecode().name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_OBJECTIVE], Generator.signature(AccessibleObject.class))
 			.type(Opcodes.CHECKCAST, Generator.type(Constructor.class))
 			.instruction(Opcodes.ALOAD_1)
-			.method(Opcodes.INVOKESTATIC, Generator.type(Generator.class), JavaVM.CONSTANT[7], MethodType.methodType(ConstructorAccessor.class, Constructor.class, Object[].class).toMethodDescriptorString(), false)
+			.method(Opcodes.INVOKESTATIC, Generator.type(Generator.class), ReflectionAccessor.METHOD_GENERATE, MethodType.methodType(ConstructorAccessor.class, Constructor.class, Object[].class).toMethodDescriptorString(), false)
 			.instruction(Opcodes.ARETURN)
 			.max(5, 3);
 		mw.attribute(code);
