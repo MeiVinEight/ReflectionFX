@@ -80,7 +80,18 @@ public abstract class Generator
 
 	public static void unwarp(Class<?> c, CodeWriter code)
 	{
-		code.type(Opcodes.CHECKCAST, Generator.type(Number.class));
+		if (c == boolean.class)
+		{
+			code.type(Opcodes.CHECKCAST, Generator.type(Boolean.class));
+		}
+		else if (c == char.class)
+		{
+			code.type(Opcodes.CHECKCAST, Generator.type(Character.class));
+		}
+		else
+		{
+			code.type(Opcodes.CHECKCAST, Generator.type(Number.class));
+		}
 		if (c == byte.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "byteValue", "()B", false);
 		else if (c == short.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "shortValue", "()S", false);
 		else if (c == int.class) code.method(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "intValue", "()I", false);
