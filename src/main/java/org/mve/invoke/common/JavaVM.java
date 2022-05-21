@@ -49,7 +49,7 @@ public class JavaVM
 			VERSION = new DataInputStream(in).readUnsignedShort();
 			in.close();
 
-			CONSTANT[0] = /*"java/lang/MagicAccessorFactory"*/"java/lang/Object";
+			CONSTANT[0] = "java/lang/MagicAccessorFactory" /* "java/lang/Object" */;
 			CONSTANT[1] = VERSION < Opcodes.version(13) ? "Ljava/lang/invoke/LambdaForm$Hidden;" : "Ljdk/internal/vm/annotation/Hidden;";
 			CONSTANT[2] = VERSION == Opcodes.version(8) ? "Ljava/lang/invoke/ForceInline;" : "Ljdk/internal/vm/annotation/ForceInline;";
 			CONSTANT[3] = "Ljava/lang/invoke/LambdaForm$Compiled;";

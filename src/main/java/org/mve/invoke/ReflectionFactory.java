@@ -269,6 +269,7 @@ public class ReflectionFactory
 
 			/*
 			 * MagicAccessFactory
+			 * Will be deprecated when JEP 416 comes
 			 */
 			{
 				try
