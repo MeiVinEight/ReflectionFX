@@ -34,9 +34,9 @@ public abstract class AccessorGenerator extends Generator
 	public void pregenerate(ClassWriter bytecode)
 	{
 		bytecode.field(new FieldWriter()
-			.set(AccessFlag.FINAL | AccessFlag.PRIVATE | AccessFlag.STATIC, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS], Generator.signature(Class.class))
+			.set(AccessFlag.PUBLIC | AccessFlag.FINAL | AccessFlag.STATIC, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS], Generator.signature(Class.class))
 		).field(new FieldWriter()
-			.set(AccessFlag.PRIVATE | AccessFlag.FINAL | AccessFlag.STATIC, JavaVM.CONSTANT[ReflectionAccessor.FIELD_WITH], Generator.signature(Object[].class))
+			.set(AccessFlag.PUBLIC | AccessFlag.FINAL | AccessFlag.STATIC, JavaVM.CONSTANT[ReflectionAccessor.FIELD_WITH], Generator.signature(Object[].class))
 		).method(new MethodWriter()
 			.set(AccessFlag.PUBLIC, ReflectionAccessor.OBJECTIVE, MethodType.methodType(Class.class).toMethodDescriptorString())
 			.attribute(new CodeWriter()
