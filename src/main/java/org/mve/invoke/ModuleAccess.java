@@ -147,20 +147,15 @@ public class ModuleAccess extends ClassLoader
 				 */
 				Class<?> JLA;
 				Class<?> shared;
-				switch (JavaVM.VERSION)
+				try
 				{
-					case 53:
-					case 54:
-					{
-						JLA = Class.forName("jdk.internal.misc.JavaLangAccess");
-						shared = Class.forName("jdk.internal.misc.SharedSecrets");
-						break;
-					}
-					default:
-					{
-						JLA = Class.forName("jdk.internal.access.JavaLangAccess");
-						shared = Class.forName("jdk.internal.access.SharedSecrets");
-					}
+					JLA = Class.forName("jdk.internal.access.JavaLangAccess");
+					shared = Class.forName("jdk.internal.access.SharedSecrets");
+				}
+				catch(ClassNotFoundException ignored)
+				{
+					JLA = Class.forName("jdk.internal.misc.JavaLangAccess");
+					shared = Class.forName("jdk.internal.misc.SharedSecrets");
 				}
 
 				// Use proxy to force access the package of JavaLangAccess in the module of the proxy object.
