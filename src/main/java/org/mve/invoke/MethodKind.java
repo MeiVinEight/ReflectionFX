@@ -28,4 +28,20 @@ public class MethodKind
 	{
 		return this.type;
 	}
+
+	public static MethodKind match(MethodKind[] pattern, Class<?> clazz)
+	{
+		for (MethodKind kind : pattern)
+		{
+			try
+			{
+				clazz.getDeclaredMethod(kind.name(), kind.type().parameterArray());
+				return kind;
+			}
+			catch (NoSuchMethodException ignored)
+			{
+			}
+		}
+		return new MethodKind("", void.class);
+	}
 }

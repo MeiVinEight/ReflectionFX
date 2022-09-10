@@ -227,8 +227,6 @@ public class ReflectionFactory
 	{
 		try
 		{
-			boolean openJ9VM = JavaVM.VENDOR.equals("Eclipse OpenJ9");
-
 			/*
 			 * MagicAccessorImpl
 			 */
@@ -258,11 +256,14 @@ public class ReflectionFactory
 				Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
 				long off = usf.staticFieldOffset(field);
 				MethodHandles.Lookup lookup = TRUSTED_LOOKUP = (MethodHandles.Lookup) usf.getObjectVolatile(MethodHandles.Lookup.class, off);
-				if (openJ9VM)
+				try
 				{
 					@SuppressWarnings("all")
 					Field accClass = MethodHandles.Lookup.class.getDeclaredField("accessClass");
 					usf.putObject(TRUSTED_LOOKUP, usf.objectFieldOffset(accClass), Class.forName(mai.replace('/', '.')));
+				}
+				catch (NoSuchFieldException ignored)
+				{
 				}
 				DEFINE = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
 			}
@@ -386,10 +387,10 @@ public class ReflectionFactory
 				catch (Throwable t)
 				{
 					MagicAccessorBuilder builder = new MagicAccessorBuilder();
-					byte[] code = builder.build(UNSAFE, openJ9VM);
-					builder.pre(UNSAFE);
+					byte[] code = builder.build(UNSAFE);
+					builder.prebuild(UNSAFE);
 					c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
-					builder.post(UNSAFE, c);
+					builder.postbuild(UNSAFE, c);
 				}
 				ACCESSOR = (MagicAccessor) UNSAFE.allocateInstance(c);
 			}

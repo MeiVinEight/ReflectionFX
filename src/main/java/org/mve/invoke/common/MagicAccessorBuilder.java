@@ -11,6 +11,8 @@ import org.mve.asm.attribute.StackMapTableWriter;
 import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.attribute.code.stack.verification.Verification;
 import org.mve.invoke.MagicAccessor;
+import org.mve.invoke.MethodKind;
+import org.mve.invoke.ModuleAccess;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.StackFrame;
 import org.mve.invoke.Unsafe;
@@ -50,7 +52,7 @@ public class MagicAccessorBuilder
 			);
 	}
 
-	public byte[] build(Unsafe unsafe, boolean openJ9VM) throws Throwable
+	public byte[] build(Unsafe unsafe) throws Throwable
 	{
 		/*
 		 * int version()
@@ -102,107 +104,58 @@ public class MagicAccessorBuilder
 
 		// Class<?> forName(String name);
 		{
-			this.prepare(Class.class);
-			Object[] access = this.access.get(Class.class);
-
-			String name = JavaVM.random();
-			((ClassWriter)access[1]).method(new MethodWriter()
-				.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, MethodType.methodType(Class.class, Class.class, String.class).toMethodDescriptorString())
-			);
-
 			this.bytecode.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.FINAL, "forName", MethodType.methodType(Class.class, String.class).toMethodDescriptorString())
 				.attribute(new CodeWriter()
-					.field(Opcodes.GETSTATIC, this.bytecode.name, (String) access[0], "L" + ((ClassWriter) access[1]).name + ";")
-					.instruction(Opcodes.ALOAD_0)
-					.method(Opcodes.INVOKEVIRTUAL, this.bytecode.name, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
 					.instruction(Opcodes.ALOAD_1)
-					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) access[1]).name, name, MethodType.methodType(Class.class, Class.class, String.class).toMethodDescriptorString(), true)
+					.instruction(Opcodes.ICONST_0)
+					.instruction(Opcodes.ALOAD_0)
+					.method(
+						Opcodes.INVOKEINTERFACE,
+						this.bytecode.name,
+						"getCallerClass",
+						MethodType.methodType(Class.class).toMethodDescriptorString(),
+						true
+					)
+					.method(
+						Opcodes.INVOKEVIRTUAL,
+						Generator.type(Class.class),
+						"getClassLoader",
+						MethodType.methodType(ClassLoader.class).toMethodDescriptorString(),
+						false
+					)
+					.method(
+						Opcodes.INVOKESTATIC,
+						Generator.type(Class.class),
+						"forName",
+						MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(),
+						false
+					)
 					.instruction(Opcodes.ARETURN)
 					.max(3, 2)
 				)
 			);
-			if (openJ9VM)
-			{
-				((ClassWriter)access[2]).method(new MethodWriter()
-					.set(AccessFlag.PUBLIC, name, MethodType.methodType(Class.class, Class.class, String.class).toMethodDescriptorString())
-					.attribute(new CodeWriter()
-						.instruction(Opcodes.ALOAD_2)
-						.instruction(Opcodes.ICONST_1)
-						.instruction(Opcodes.ALOAD_1)
-						.field(Opcodes.GETFIELD, Generator.type(Class.class), "classLoader", Generator.signature(ClassLoader.class))
-						.method(Opcodes.INVOKESTATIC, Generator.type(Class.class), "forNameImpl", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(), false)
-						.instruction(Opcodes.ARETURN)
-						.max(3, 3)
-					)
-				);
-			}
-			else
-			{
-				((ClassWriter)access[2]).method(new MethodWriter()
-					.set(AccessFlag.PUBLIC, name, MethodType.methodType(Class.class, Class.class, String.class).toMethodDescriptorString())
-					.attribute(new CodeWriter()
-						.instruction(Opcodes.ALOAD_2)
-						.instruction(Opcodes.ICONST_1)
-						.instruction(Opcodes.ALOAD_1)
-						.field(Opcodes.GETFIELD, Generator.type(Class.class), "classLoader", Generator.signature(ClassLoader.class))
-						.instruction(Opcodes.ALOAD_1)
-						.method(Opcodes.INVOKESTATIC, Generator.type(Class.class), "forName0", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), false)
-						.instruction(Opcodes.ARETURN)
-						.max(4, 3)
-					)
-				);
-			}
 		}
 
 		// Class<?> forName(String name, boolean initialize, ClassLoader loader);
 		{
-			this.prepare(Class.class);
-			Object[] access = this.access.get(Class.class);
-
-			String name = JavaVM.random();
-			((ClassWriter) access[1]).method(new MethodWriter()
-				.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString())
-			);
-
 			this.bytecode.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.FINAL, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString())
 				.attribute(new CodeWriter()
-					.field(Opcodes.GETSTATIC, this.bytecode.name, (String) access[0], "L" + ((ClassWriter) access[1]).name + ";")
 					.instruction(Opcodes.ALOAD_1)
 					.instruction(Opcodes.ILOAD_2)
 					.instruction(Opcodes.ALOAD_3)
-					.instruction(Opcodes.ALOAD_0)
-					.method(Opcodes.INVOKEVIRTUAL, this.bytecode.name, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
-					.method(Opcodes.INVOKEINTERFACE, ((ClassWriter) access[1]).name, name, MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), true)
+					.method(
+						Opcodes.INVOKESTATIC,
+						Generator.type(Class.class),
+						"forName",
+						MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(),
+						false
+					)
 					.instruction(Opcodes.ARETURN)
-					.max(5, 4)
+					.max(3, 4)
 				)
 			);
-			CodeWriter code;
-			((ClassWriter) access[2]).method(new MethodWriter()
-				.set(AccessFlag.PUBLIC, name, MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString())
-				.attribute(code = new CodeWriter())
-			);
-			if (openJ9VM)
-			{
-				code.instruction(Opcodes.ALOAD_1)
-					.instruction(Opcodes.ILOAD_2)
-					.instruction(Opcodes.ALOAD_3)
-					.method(Opcodes.INVOKESTATIC, Generator.type(Class.class), "forNameImpl", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(), false)
-					.instruction(Opcodes.ARETURN)
-					.max(3, 5);
-			}
-			else
-			{
-				code.instruction(Opcodes.ALOAD_1)
-					.instruction(Opcodes.ILOAD_2)
-					.instruction(Opcodes.ALOAD_3)
-					.variable(Opcodes.ALOAD, 4)
-					.method(Opcodes.INVOKESTATIC, Generator.type(Class.class), "forName0", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class, Class.class).toMethodDescriptorString(), false)
-					.instruction(Opcodes.ARETURN)
-					.max(4, 5);
-			}
 		}
 
 		// Class<?> defineClass(ClassLoader loader, byte[] code);
@@ -1015,17 +968,13 @@ public class MagicAccessorBuilder
 			CodeWriter code;
 			((ClassWriter) access[2]).method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, name, MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString())
-				.attribute(code = new CodeWriter()
-					.instruction(Opcodes.ALOAD_1)
-				)
+				.attribute(code = new CodeWriter())
 			);
-			if (!openJ9VM)
-			{
-				code.instruction(Opcodes.ICONST_0);
-			}
-			code.method(Opcodes.INVOKEVIRTUAL, Generator.type(Class.class), openJ9VM ? "getDeclaredFieldsImpl" : "getDeclaredFields0", MethodType.methodType(Field[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false)
-				.instruction(Opcodes.ARETURN)
-				.max(2, 2);
+			MethodKind[] pattern = {
+				new MethodKind("getDeclaredFields0", Field[].class, boolean.class),
+				new MethodKind("getDeclaredFieldsImpl", Field[].class)
+			};
+			this.generateGetDeclared(code, pattern);
 
 			this.bytecode.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "getFields", MethodType.methodType(Field[].class, Class.class).toMethodDescriptorString())
@@ -1066,17 +1015,13 @@ public class MagicAccessorBuilder
 				CodeWriter code;
 				((ClassWriter) classAccess[2]).method(new MethodWriter()
 					.set(AccessFlag.PUBLIC, getMethods, MethodType.methodType(Method[].class, Class.class).toMethodDescriptorString())
-					.attribute(code = new CodeWriter()
-						.instruction(Opcodes.ALOAD_1)
-					)
+					.attribute(code = new CodeWriter())
 				);
-				if (!openJ9VM)
-				{
-					code.instruction(Opcodes.ICONST_0);
-				}
-				code.method(Opcodes.INVOKEVIRTUAL, Generator.type(Class.class), openJ9VM ? "getDeclaredMethodsImpl" :"getDeclaredMethods0", MethodType.methodType(Method[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false)
-					.instruction(Opcodes.ARETURN)
-					.max(openJ9VM ? 1 : 2, 2);
+				MethodKind[] pattern = {
+					new MethodKind("getDeclaredMethods0", Field[].class, boolean.class),
+					new MethodKind("getDeclaredMethodsImpl", Field[].class)
+				};
+				this.generateGetDeclared(code, pattern);
 			}
 
 			{
@@ -1409,17 +1354,13 @@ public class MagicAccessorBuilder
 			CodeWriter code;
 			((ClassWriter) access[2]).method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, name, MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString())
-				.attribute(code = new CodeWriter()
-					.instruction(Opcodes.ALOAD_1)
-				)
+				.attribute(code = new CodeWriter())
 			);
-			if (!openJ9VM)
-			{
-				code.instruction(Opcodes.ICONST_0);
-			}
-			code.method(Opcodes.INVOKEVIRTUAL, Generator.type(Class.class), openJ9VM ? "getDeclaredConstructorsImpl" :"getDeclaredConstructors0", MethodType.methodType(Constructor[].class, openJ9VM ? new Class<?>[0] : new Class<?>[]{boolean.class}).toMethodDescriptorString(), false)
-				.instruction(Opcodes.ARETURN)
-				.max(openJ9VM ? 1 : 2, 2);
+			MethodKind[] pattern = {
+				new MethodKind("getDeclaredConstructors0", Constructor[].class, boolean.class),
+				new MethodKind("getDeclaredConstructorsImpl", Constructor[].class)
+			};
+			this.generateGetDeclared(code, pattern);
 
 			this.bytecode.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, "getConstructors", MethodType.methodType(Constructor[].class, Class.class).toMethodDescriptorString())
@@ -1547,24 +1488,6 @@ public class MagicAccessorBuilder
 				MethodHandles.Lookup lookup = ReflectionFactory.TRUSTED_LOOKUP;
 				try
 				{
-					Class.forName("java.lang.J9VMInternals");
-					openJ9VM = true;
-				}
-				catch (Throwable t)
-				{
-					openJ9VM = false;
-				}
-
-				if (openJ9VM)
-				{
-					pid = (int) (long) lookup.findVirtual(
-						Class.forName("com.ibm.lang.management.internal.ExtendedRuntimeMXBeanImpl"),
-						"getProcessIDImpl",
-						MethodType.methodType(long.class)
-					).invoke(ManagementFactory.getRuntimeMXBean());
-				}
-				else
-				{
 					pid = (int) lookup.findVirtual(
 						Class.forName("sun.management.VMManagementImpl"),
 						"getProcessId",
@@ -1576,6 +1499,14 @@ public class MagicAccessorBuilder
 							Class.forName("sun.management.VMManagement")
 						).invoke(ManagementFactory.getRuntimeMXBean())
 					);
+				}
+				catch (Throwable ignored)
+				{
+					pid = (int) (long) lookup.findVirtual(
+						Class.forName("com.ibm.lang.management.internal.ExtendedRuntimeMXBeanImpl"),
+						"getProcessIDImpl",
+						MethodType.methodType(long.class)
+					).invoke(ManagementFactory.getRuntimeMXBean());
 				}
 			}
 
@@ -1593,7 +1524,23 @@ public class MagicAccessorBuilder
 		return this.bytecode.toByteArray();
 	}
 
-	public void pre(Unsafe unsafe)
+	private void generateGetDeclared(CodeWriter code, MethodKind[] pattern)
+	{
+		MethodKind target = MethodKind.match(pattern, Class.class);
+		code.instruction(Opcodes.ALOAD_1)
+			.consume(codeWriter ->
+			{
+				if (target.type().parameterCount() == 1)
+				{
+					codeWriter.instruction(Opcodes.ICONST_0);
+				}
+			})
+			.method(Opcodes.INVOKEVIRTUAL, Generator.type(Class.class), target.name(), target.type().toMethodDescriptorString(), false)
+			.instruction(Opcodes.ARETURN)
+			.max(2, 2);
+	}
+
+	public void prebuild(Unsafe unsafe)
 	{
 		for (Map.Entry<Class<?>, Object[]> entry : this.access.entrySet())
 		{
@@ -1603,7 +1550,7 @@ public class MagicAccessorBuilder
 		}
 	}
 
-	public void post(Unsafe unsafe, Class<?> c) throws Throwable
+	public void postbuild(Unsafe unsafe, Class<?> c) throws Throwable
 	{
 		for (Map.Entry<Class<?>, Object[]> entry : this.access.entrySet())
 		{
