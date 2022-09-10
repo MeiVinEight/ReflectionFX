@@ -59,7 +59,7 @@ public class MagicMethodAccessorGenerator extends MethodAccessorGenerator
 			.set(
 				Opcodes.version(8),
 				AccessFlag.PUBLIC | AccessFlag.SUPER,
-				JavaVM.random(),
+				JavaVM.randomAnonymous(this.method.getDeclaringClass()),
 				JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
 				new String[]{abstractAccess.name}
 			)

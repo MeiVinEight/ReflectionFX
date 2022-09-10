@@ -22,7 +22,18 @@ public class JavaVM
 
 	public static String random()
 	{
-		return UUID.randomUUID().toString().toUpperCase();
+		return 'Z' + UUID.randomUUID().toString().toUpperCase().replaceAll("-", "");
+	}
+
+	public static String randomAnonymous(Class<?> clazz)
+	{
+		String anonymousName = JavaVM.random();
+		String packageName;
+		if (clazz.getPackage() != null && (packageName = clazz.getPackage().getName()).length() != 0)
+		{
+			anonymousName = packageName.replace('.', '/') + '/' + anonymousName;
+		}
+		return anonymousName;
 	}
 
 	public static void exception(Throwable t)

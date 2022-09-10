@@ -32,7 +32,7 @@ public class MagicAccessFactory
 			.set(
 				Opcodes.version(8),
 				AccessFlag.PUBLIC | AccessFlag.SUPER,
-				JavaVM.random(),
+				JavaVM.randomAnonymous(accessor),
 				JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
 				new String[]{Generator.type(accessor)}
 			);

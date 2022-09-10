@@ -1621,7 +1621,7 @@ public class MagicAccessorBuilder
 				new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null),
 				new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.random(), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], new String[1]),
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(into), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], new String[0]),
 				JavaVM.random()
 			};
 			((ClassWriter)access[2]).interfaces[0] = ((ClassWriter)access[1]).name;

@@ -53,7 +53,7 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 			.set(
 				Opcodes.version(8),
 				AccessFlag.PUBLIC | AccessFlag.SUPER,
-				JavaVM.random(),
+				JavaVM.randomAnonymous(this.constructor.getDeclaringClass()),
 				JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
 				new String[]{abstractAccess.name}
 			)

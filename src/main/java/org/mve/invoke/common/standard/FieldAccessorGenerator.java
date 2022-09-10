@@ -116,7 +116,7 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 				.set(
 					Opcodes.version(8),
 					AccessFlag.PUBLIC,
-					JavaVM.random(),
+					JavaVM.randomAnonymous(this.field.getDeclaringClass()),
 					JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
 					new String[]{((ClassWriter) this.access[1]).name}
 				)

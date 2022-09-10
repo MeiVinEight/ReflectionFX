@@ -159,7 +159,7 @@ public class PolymorphismFactory<T>
 			.set(
 				0x34,
 				0x21,
-				JavaVM.random(),
+				JavaVM.randomAnonymous(this.accessor),
 				this.accessor.isInterface() ? "java/lang/Object" : Generator.type(this.accessor),
 				this.accessor.isInterface() ? new String[]{Generator.type(this.accessor)} : null
 			);
@@ -202,7 +202,7 @@ public class PolymorphismFactory<T>
 					.set(
 						0x34,
 						AccessFlag.PUBLIC | AccessFlag.SUPER,
-						JavaVM.random(),
+						JavaVM.randomAnonymous(objective),
 						JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
 						new String[]{name}
 					);
