@@ -1571,7 +1571,7 @@ public class MagicAccessorBuilder
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(into), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], new String[0]),
 				JavaVM.random()
 			};
-			((ClassWriter)access[2]).interfaces[0] = ((ClassWriter)access[1]).name;
+			((ClassWriter)access[2]).interfaces(((ClassWriter)access[1]).name);
 
 			this.access.put(into, access);
 			this.bytecode.field(new FieldWriter().set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, (String) access[0], "L" + ((ClassWriter)access[1]).name + ";"));

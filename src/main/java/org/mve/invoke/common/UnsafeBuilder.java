@@ -381,7 +381,7 @@ public class UnsafeBuilder
 				this.bytecode.field(bridge);
 
 				abstractAccessWriter.method(new MethodWriter()
-					.set(AccessFlag.PUBLIC, "defineAnonymousClass", MethodType.methodType(Class.class, Class.class, byte[].class, Object[].class).toMethodDescriptorString())
+					.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, "defineAnonymousClass", MethodType.methodType(Class.class, Class.class, byte[].class, Object[].class).toMethodDescriptorString())
 				);
 
 				MethodKind[] pattern = {
@@ -761,7 +761,7 @@ public class UnsafeBuilder
 		}
 		cw.method(nonstatic ? (abstracts ? Opcodes.INVOKEINTERFACE :Opcodes.INVOKEVIRTUAL) : Opcodes.INVOKESTATIC, finall, into, MethodType.methodType(argument[0], Arrays.copyOfRange(argument, 1, argument.length)).toMethodDescriptorString(), abstracts);
 		Generator.returner(argument[0], cw);
-		cw.max(Math.max(stack, Generator.typeSize(argument[0])), stack);
+		cw.max(Math.max(stack, Generator.typeSize(argument[0])), stack + 1);
 
 		mw.attribute(cw);
 		bytecode.method(mw);
