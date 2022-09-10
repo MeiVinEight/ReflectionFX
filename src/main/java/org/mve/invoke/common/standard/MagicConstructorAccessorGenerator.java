@@ -6,6 +6,7 @@ import org.mve.asm.FieldWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
+import org.mve.invoke.ModuleAccess;
 import org.mve.invoke.ReflectionAccessor;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.common.Generator;
@@ -94,7 +95,8 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 
 		{
 			byte[] code = abstractAccess.toByteArray();
-			Generator.UNSAFE.defineClass(null, code, 0, code.length, null, null);
+			Class<?> intf = Generator.UNSAFE.defineClass(null, code, 0, code.length, null, null);
+			ModuleAccess.read(ModuleAccess.module(this.constructor.getDeclaringClass()), ModuleAccess.module(intf));
 			Class<?> c = Generator.UNSAFE.defineAnonymousClass(this.constructor.getDeclaringClass(), access.toByteArray(), null);
 			this.access[1] = Generator.UNSAFE.allocateInstance(c);
 		}

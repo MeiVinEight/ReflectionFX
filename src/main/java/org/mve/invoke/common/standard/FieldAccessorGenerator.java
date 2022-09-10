@@ -9,6 +9,7 @@ import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.StackMapTableWriter;
 import org.mve.asm.attribute.code.Marker;
 import org.mve.invoke.FieldAccessor;
+import org.mve.invoke.ModuleAccess;
 import org.mve.invoke.ReflectionAccessor;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.common.Generator;
@@ -140,7 +141,8 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 				);
 
 			byte[] code = ((ClassWriter) this.access[1]).toByteArray();
-			Generator.UNSAFE.defineClass(null, code, 0, code.length, null, null);
+			Class<?> intf = Generator.UNSAFE.defineClass(null, code, 0, code.length, null, null);
+			ModuleAccess.read(ModuleAccess.module(this.field.getDeclaringClass()), ModuleAccess.module(intf));
 			code = ((ClassWriter) this.access[2]).toByteArray();
 			Class<?> c = Generator.UNSAFE.defineAnonymousClass(this.field.getDeclaringClass(), code, null);
 			this.access[3] = Generator.UNSAFE.allocateInstance(c);

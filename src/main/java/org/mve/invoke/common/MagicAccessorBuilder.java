@@ -1546,7 +1546,8 @@ public class MagicAccessorBuilder
 		{
 			Object[] access = entry.getValue();
 			byte[] code = ((ClassWriter) access[1]).toByteArray();
-			unsafe.defineClass(null, code, 0, code.length, null, null);
+			Class<?> intf = unsafe.defineClass(null, code, 0, code.length, null, null);
+			ModuleAccess.read(ModuleAccess.module(entry.getKey()), ModuleAccess.module(intf));
 		}
 	}
 

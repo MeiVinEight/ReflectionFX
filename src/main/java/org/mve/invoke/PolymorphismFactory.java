@@ -195,6 +195,7 @@ public class PolymorphismFactory<T>
 				}
 				byte[] code = bridge.toByteArray();
 				accessor = UNSAFE.defineClass(name, code, 0, code.length, null, null);
+				ModuleAccess.read(ModuleAccess.module(objective), ModuleAccess.module(accessor));
 			}
 
 			{
