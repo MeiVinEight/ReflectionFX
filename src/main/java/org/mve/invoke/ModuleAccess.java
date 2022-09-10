@@ -22,22 +22,24 @@ public class ModuleAccess extends ClassLoader
 	 * to open a package to another module.<br/>
 	 * It looks like:
 	 * <blockquote><pre>
-	 * public static void accessible(
+	 * public static void export(
 	 *     Object module,
 	 *     Object packageName,
-	 *     Object open)
+	 *     Object target)
 	 * {
-	 *     SharedSecrets.getJavaLangAccess().addOpens(
+	 *     SharedSecrets.getJavaLangAccess().addExports(
 	 *         (Module)module,
 	 *         (String)packageName,
-	 *         (Module)open
+	 *         (Module)target
 	 *     );
 	 * }</pre></blockquote>
 	 * This used {@link java.lang.reflect.Proxy} to force access
 	 * JavaLangAccess and SharedSecrets.<br/>
 	 * This field is null in Java 8.
 	 */
-	public static final MethodHandle ACCESSIBLE;
+	public static final MethodHandle EXPORT;
+	public static final MethodHandle OPEN;
+	public static final MethodHandle READ;
 
 	public ModuleAccess()
 	{
@@ -58,19 +60,49 @@ public class ModuleAccess extends ClassLoader
 		return clazz;
 	}
 
-	/**
-	 * A wrapper method of {@link ModuleAccess#ACCESSIBLE} without any exception.
-	 * @param module The module of the class you want to access.
-	 * @param packageName The package of the class you want to access.
-	 * @param open The module of your class
-	 */
-	public static void accessible(Object module, Object packageName, Object open)
+	public static void export(Object module, Object packageName, Object target)
 	{
-		if (ModuleAccess.ACCESSIBLE != null)
+		if (ModuleAccess.EXPORT != null)
 		{
 			try
 			{
-				ModuleAccess.ACCESSIBLE.invokeExact(module, packageName, open);
+				ModuleAccess.EXPORT.invokeExact(module, packageName, target);
+			}
+			catch (Throwable t)
+			{
+				JavaVM.exception(t);
+			}
+		}
+	}
+
+	/**
+	 * A wrapper method of {@link ModuleAccess#OPEN} without any exception.
+	 * @param module The module of the class you want to access.
+	 * @param packageName The package of the class you want to access.
+	 * @param target The module of your class
+	 */
+	public static void open(Object module, Object packageName, Object target)
+	{
+		if (ModuleAccess.OPEN != null)
+		{
+			try
+			{
+				ModuleAccess.OPEN.invokeExact(module, packageName, target);
+			}
+			catch (Throwable t)
+			{
+				JavaVM.exception(t);
+			}
+		}
+	}
+
+	public static void read(Object module, Object target)
+	{
+		if (ModuleAccess.READ != null)
+		{
+			try
+			{
+				ModuleAccess.READ.invokeExact(module, target);
 			}
 			catch (Throwable t)
 			{
@@ -81,7 +113,9 @@ public class ModuleAccess extends ClassLoader
 
 	static
 	{
-		MethodHandle accessible = null;
+		MethodHandle export = null;
+		MethodHandle open = null;
+		MethodHandle read = null;
 		try
 		{
 			// Only Java 9+ has Module
@@ -128,9 +162,19 @@ public class ModuleAccess extends ClassLoader
 				 *
 				 * public class Bridge
 				 * {
-				 *     public static void accessible(Object module, Object packageName, Object open)
+				 *     public static void export(Object module, Object packageName, Object open)
+				 *     {
+				 *         SharedSecrets.getJavaLangAccess().addExports((Module)module, (String)packageName, (Module)open);
+				 *     }
+				 *
+				 *     public static void open(Object module, Object packageName, Object open)
 				 *     {
 				 *         SharedSecrets.getJavaLangAccess().addOpens((Module)module, (String)packageName, (Module)open);
+				 *     }
+				 *
+				 *     public static void read(Object module, Object packageName, Object open)
+				 *     {
+				 *         SharedSecrets.getJavaLangAccess().addReads((Module)module, (String)packageName, (Module)open);
 				 *     }
 				 *
 				 *     static
@@ -194,7 +238,7 @@ public class ModuleAccess extends ClassLoader
 					.method(new MethodWriter()
 						.set(
 							AccessFlag.PUBLIC | AccessFlag.STATIC,
-							"accessible",
+							"open",
 							"(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V"
 						)
 						.attribute(new CodeWriter()
@@ -222,14 +266,85 @@ public class ModuleAccess extends ClassLoader
 							.max(4, 3)
 						)
 					)
+					.method(new MethodWriter()
+						.set(
+							AccessFlag.PUBLIC | AccessFlag.STATIC,
+							"export",
+							"(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V"
+						)
+						.attribute(new CodeWriter()
+							.method(
+								Opcodes.INVOKESTATIC,
+								shared.getTypeName().replace('.', '/'),
+								"getJavaLangAccess",
+								MethodType.methodType(JLA).toMethodDescriptorString(),
+								false
+							)
+							.instruction(Opcodes.ALOAD_0)
+							.type(Opcodes.CHECKCAST, "java/lang/Module")
+							.instruction(Opcodes.ALOAD_1)
+							.type(Opcodes.CHECKCAST, "java/lang/String")
+							.instruction(Opcodes.ALOAD_2)
+							.type(Opcodes.CHECKCAST, "java/lang/Module")
+							.method(
+								Opcodes.INVOKEINTERFACE,
+								JLA.getTypeName().replace('.', '/'),
+								"addExports",
+								"(Ljava/lang/Module;Ljava/lang/String;Ljava/lang/Module;)V",
+								true
+							)
+							.instruction(Opcodes.RETURN)
+							.max(4, 3)
+						)
+					)
+					.method(new MethodWriter()
+						.set(
+							AccessFlag.PUBLIC | AccessFlag.STATIC,
+							"read",
+							"(Ljava/lang/Object;Ljava/lang/Object;)V"
+						)
+						.attribute(new CodeWriter()
+							.method(
+								Opcodes.INVOKESTATIC,
+								shared.getTypeName().replace('.', '/'),
+								"getJavaLangAccess",
+								MethodType.methodType(JLA).toMethodDescriptorString(),
+								false
+							)
+							.instruction(Opcodes.ALOAD_0)
+							.type(Opcodes.CHECKCAST, "java/lang/Module")
+							.instruction(Opcodes.ALOAD_1)
+							.type(Opcodes.CHECKCAST, "java/lang/Module")
+							.method(
+								Opcodes.INVOKEINTERFACE,
+								JLA.getTypeName().replace('.', '/'),
+								"addReads",
+								"(Ljava/lang/Module;Ljava/lang/Module;)V",
+								true
+							)
+							.instruction(Opcodes.RETURN)
+							.max(3, 2)
+						)
+					)
 					.toByteArray();
 				Class<?> clazz = access.loading(code);
 
-				// Use MethodHandle to invoke this method.
-				accessible = MethodHandles.lookup().findStatic(
+				// Use MethodHandle to invoke methods.
+				MethodHandles.Lookup lookup = MethodHandles.lookup();
+				export = lookup.findStatic(
 					clazz,
-					"accessible",
+					"export",
 					MethodType.methodType(void.class, Object.class, Object.class, Object.class)
+				);
+				open = lookup.findStatic(
+					clazz,
+					"open",
+					MethodType.methodType(void.class, Object.class, Object.class, Object.class)
+				);
+				read = lookup.findStatic(
+					clazz,
+					"read",
+					MethodType.methodType(void.class, Object.class, Object.class)
 				);
 			}
 		}
@@ -237,6 +352,8 @@ public class ModuleAccess extends ClassLoader
 		{
 			JavaVM.exception(t);
 		}
-		ACCESSIBLE = accessible;
+		EXPORT = export;
+		OPEN = open;
+		READ = read;
 	}
 }
