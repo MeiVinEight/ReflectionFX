@@ -37,6 +37,7 @@ public class ModuleAccess extends ClassLoader
 	 * JavaLangAccess and SharedSecrets.<br/>
 	 * This field is null in Java 8.
 	 */
+	public static final MethodHandle MODULE;
 	public static final MethodHandle EXPORT;
 	public static final MethodHandle OPEN;
 	public static final MethodHandle READ;
@@ -58,6 +59,22 @@ public class ModuleAccess extends ClassLoader
 			e.printStackTrace();
 		}
 		return clazz;
+	}
+
+	public static Object module(Class<?> clazz)
+	{
+		if (ModuleAccess.MODULE != null)
+		{
+			try
+			{
+				return ModuleAccess.MODULE.invoke(clazz);
+			}
+			catch (Throwable t)
+			{
+				JavaVM.exception(t);
+			}
+		}
+		return null;
 	}
 
 	public static void export(Object module, Object packageName, Object target)
@@ -116,6 +133,7 @@ public class ModuleAccess extends ClassLoader
 		MethodHandle export = null;
 		MethodHandle open = null;
 		MethodHandle read = null;
+		MethodHandle module = null;
 		try
 		{
 			// Only Java 9+ has Module
@@ -331,6 +349,8 @@ public class ModuleAccess extends ClassLoader
 
 				// Use MethodHandle to invoke methods.
 				MethodHandles.Lookup lookup = MethodHandles.lookup();
+				Class<?> moduleClass = Class.forName("java.lang.Module");
+				module = lookup.findVirtual(Class.class, "getModule", MethodType.methodType(moduleClass));
 				export = lookup.findStatic(
 					clazz,
 					"export",
@@ -352,6 +372,7 @@ public class ModuleAccess extends ClassLoader
 		{
 			JavaVM.exception(t);
 		}
+		MODULE = module;
 		EXPORT = export;
 		OPEN = open;
 		READ = read;
