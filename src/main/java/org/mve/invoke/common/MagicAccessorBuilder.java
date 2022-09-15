@@ -971,8 +971,8 @@ public class MagicAccessorBuilder
 				.attribute(code = new CodeWriter())
 			);
 			MethodKind[] pattern = {
-				new MethodKind("getDeclaredFields0", Field[].class, boolean.class),
-				new MethodKind("getDeclaredFieldsImpl", Field[].class)
+				new MethodKind(Class.class, "getDeclaredFields0", Field[].class, boolean.class),
+				new MethodKind(Class.class, "getDeclaredFieldsImpl", Field[].class)
 			};
 			this.generateGetDeclared(code, pattern);
 
@@ -1018,8 +1018,8 @@ public class MagicAccessorBuilder
 					.attribute(code = new CodeWriter())
 				);
 				MethodKind[] pattern = {
-					new MethodKind("getDeclaredMethods0", Field[].class, boolean.class),
-					new MethodKind("getDeclaredMethodsImpl", Field[].class)
+					new MethodKind(Class.class, "getDeclaredMethods0", Method[].class, boolean.class),
+					new MethodKind(Class.class, "getDeclaredMethodsImpl", Method[].class)
 				};
 				this.generateGetDeclared(code, pattern);
 			}
@@ -1357,8 +1357,8 @@ public class MagicAccessorBuilder
 				.attribute(code = new CodeWriter())
 			);
 			MethodKind[] pattern = {
-				new MethodKind("getDeclaredConstructors0", Constructor[].class, boolean.class),
-				new MethodKind("getDeclaredConstructorsImpl", Constructor[].class)
+				new MethodKind(Class.class, "getDeclaredConstructors0", Constructor[].class, boolean.class),
+				new MethodKind(Class.class, "getDeclaredConstructorsImpl", Constructor[].class)
 			};
 			this.generateGetDeclared(code, pattern);
 
@@ -1526,7 +1526,7 @@ public class MagicAccessorBuilder
 
 	private void generateGetDeclared(CodeWriter code, MethodKind[] pattern)
 	{
-		MethodKind target = MethodKind.match(pattern, Class.class);
+		MethodKind target = MethodKind.getMethod(pattern);
 		code.instruction(Opcodes.ALOAD_1)
 			.consume(codeWriter ->
 			{

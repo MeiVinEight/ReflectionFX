@@ -1,11 +1,13 @@
 package org.mve.invoke.common;
 
 import org.mve.asm.Opcodes;
+import org.mve.invoke.MethodKind;
 
 import java.io.DataInputStream;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.UUID;
 
@@ -45,6 +47,38 @@ public class JavaVM
 	public static <T extends Throwable> void thrown(Throwable t) throws T
 	{
 		throw (T) t;
+	}
+
+	public static Class<?> forName(String[] pattern)
+	{
+		for (String name : pattern)
+		{
+			try
+			{
+				return Class.forName(name);
+			}
+			catch (ClassNotFoundException ignored)
+			{
+			}
+		}
+		JavaVM.thrown(new ClassNotFoundException());
+		throw new UnknownError();
+	}
+
+	public static Method getMethod(MethodKind[] pattern)
+	{
+		for (MethodKind kind : pattern)
+		{
+			try
+			{
+				return kind.clazz().getDeclaredMethod(kind.name(), kind.type().parameterArray());
+			}
+			catch (NoSuchMethodException ignored)
+			{
+			}
+		}
+		JavaVM.thrown(new NoSuchMethodException());
+		throw new UnknownError();
 	}
 
 	static

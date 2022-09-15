@@ -386,10 +386,10 @@ public class UnsafeBuilder
 				);
 
 				MethodKind[] pattern = {
-					new MethodKind("defineClass0", Class.class, ClassLoader.class, Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class, boolean.class, int.class, Object.class),
-					new MethodKind("defineClassInternal", Class.class, Class.class, String.class, byte[].class, ProtectionDomain.class, boolean.class, int.class, Object.class)
+					new MethodKind(ClassLoader.class, "defineClass0", Class.class, ClassLoader.class, Class.class, String.class, byte[].class, int.class, int.class, ProtectionDomain.class, boolean.class, int.class, Object.class),
+					new MethodKind(ClassLoader.class, "defineClassInternal", Class.class, Class.class, String.class, byte[].class, ProtectionDomain.class, boolean.class, int.class, Object.class)
 				};
-				MethodKind target = MethodKind.match(pattern, ClassLoader.class);
+				MethodKind target = MethodKind.getMethod(pattern);
 				String constant = JavaVM.random();
 				Marker m1 = new Marker();
 				Marker m2 = new Marker();
