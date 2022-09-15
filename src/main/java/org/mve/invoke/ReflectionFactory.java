@@ -99,7 +99,7 @@ public class ReflectionFactory
 	{
 		String className = "org/mve/invoke/Thrower";
 		ClassWriter cw = new ClassWriter()
-			.set(0x34, 0x21, className, "java/lang/Object", new String[]{Generator.type(ReflectionAccessor.class)})
+			.set(0x34, 0x21, className, "java/lang/Object", Generator.type(ReflectionAccessor.class))
 			.attribute(new SourceWriter("Thrower.java"))
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
@@ -119,7 +119,7 @@ public class ReflectionFactory
 	{
 		String className = "org/mve/invoke/ConstantValue";
 		ClassWriter cw = new ClassWriter()
-			.set(0x34, AccessFlag.PUBLIC | AccessFlag.FINAL | AccessFlag.SUPER, className, "java/lang/Object", new String[]{Generator.type(ReflectionAccessor.class)})
+			.set(0x34, AccessFlag.PUBLIC | AccessFlag.FINAL | AccessFlag.SUPER, className, "java/lang/Object", Generator.type(ReflectionAccessor.class))
 			.attribute(new SourceWriter("ConstantValue.java"))
 			.field(new FieldWriter()
 				.set(AccessFlag.PRIVATE | AccessFlag.FINAL, "0", "Ljava/lang/Object;")
@@ -310,7 +310,7 @@ public class ReflectionFactory
 				catch (Throwable t)
 				{
 					ClassWriter cw = new ClassWriter();
-					cw.set(52, AccessFlag.SUPER | AccessFlag.PUBLIC, "org/mve/invoke/MethodHandleInvoker", "java/lang/Object", new String[]{"org/mve/invoke/ReflectionAccessor"});
+					cw.set(52, AccessFlag.SUPER | AccessFlag.PUBLIC, "org/mve/invoke/MethodHandleInvoker", "java/lang/Object", "org/mve/invoke/ReflectionAccessor");
 					/*
 					 * MethodHandleInvoker();
 					 */

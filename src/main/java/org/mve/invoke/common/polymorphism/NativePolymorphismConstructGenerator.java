@@ -39,11 +39,7 @@ public class NativePolymorphismConstructGenerator extends PolymorphismConstructG
 		{
 			code.instruction(Opcodes.DUP)
 				.number(Opcodes.BIPUSH, args++);
-			if (Generator.integer(parameterType)) code.variable(Opcodes.ILOAD, local);
-			else if (parameterType == long.class) code.variable(Opcodes.LLOAD, local);
-			else if (parameterType == float.class) code.variable(Opcodes.FLOAD, local);
-			else if (parameterType == double.class) code.variable(Opcodes.DLOAD, local);
-			else code.variable(Opcodes.ALOAD, local);
+			Generator.load(parameterType, code, local);
 			local += Generator.typeSize(parameterType);
 			Generator.warp(parameterType, code);
 			code.instruction(Opcodes.AASTORE);

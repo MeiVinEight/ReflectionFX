@@ -34,7 +34,7 @@ public class MagicAccessFactory
 				AccessFlag.PUBLIC | AccessFlag.SUPER,
 				JavaVM.randomAnonymous(accessor),
 				JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
-				new String[]{Generator.type(accessor)}
+				Generator.type(accessor)
 			);
 		for (Method method : methods)
 		{

@@ -135,7 +135,7 @@ public class UnsafeBuilder
 				ClassWriter abstractAccessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null);
 				ClassWriter accessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], new String[]{abstractAccessWriter.name});
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], abstractAccessWriter.name);
 				FieldWriter bridge = new FieldWriter()
 					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, JavaVM.random(), "L" + abstractAccessWriter.name + ";");
 				this.bytecode.field(bridge);
@@ -242,7 +242,7 @@ public class UnsafeBuilder
 				ClassWriter abstractAccessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null);
 				ClassWriter accessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], new String[]{abstractAccessWriter.name});
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], abstractAccessWriter.name);
 				FieldWriter bridge = new FieldWriter()
 					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, JavaVM.random(), "L" + abstractAccessWriter.name + ";");
 				this.bytecode.field(bridge);
@@ -273,7 +273,7 @@ public class UnsafeBuilder
 				ClassWriter abstractAccessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null);
 				ClassWriter accessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], new String[]{abstractAccessWriter.name});
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], abstractAccessWriter.name);
 				FieldWriter bridge = new FieldWriter()
 					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, JavaVM.random(), "L" + abstractAccessWriter.name + ";");
 				FieldWriter access = new FieldWriter()
@@ -375,7 +375,7 @@ public class UnsafeBuilder
 				ClassWriter abstractAccessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null);
 				ClassWriter accessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], new String[]{abstractAccessWriter.name});
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], abstractAccessWriter.name);
 				FieldWriter bridge = new FieldWriter()
 					.set(AccessFlag.PUBLIC | AccessFlag.STATIC | AccessFlag.FINAL, JavaVM.random(), "L" + abstractAccessWriter.name + ";");
 				this.bytecode.field(bridge);

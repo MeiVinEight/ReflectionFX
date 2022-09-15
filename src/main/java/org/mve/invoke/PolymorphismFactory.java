@@ -185,8 +185,7 @@ public class PolymorphismFactory<T>
 						0x34,
 						AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT,
 						name,
-						"java/lang/Object",
-						null
+						"java/lang/Object"
 					);
 				List<MethodKind> kinds = this.kinds.get(objective);
 				for (MethodKind kind : kinds)
@@ -205,7 +204,7 @@ public class PolymorphismFactory<T>
 						AccessFlag.PUBLIC | AccessFlag.SUPER,
 						JavaVM.randomAnonymous(objective),
 						JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
-						new String[]{name}
+						name
 					);
 				for (PolymorphismGenerator generator : generators)
 				{

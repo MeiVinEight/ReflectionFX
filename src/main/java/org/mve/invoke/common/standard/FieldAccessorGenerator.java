@@ -119,7 +119,7 @@ public class FieldAccessorGenerator extends AccessibleObjectAccessorGenerator
 					AccessFlag.PUBLIC,
 					JavaVM.randomAnonymous(this.field.getDeclaringClass()),
 					JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
-					new String[]{((ClassWriter) this.access[1]).name}
+					((ClassWriter) this.access[1]).name
 				)
 				.method(new MethodWriter()
 					.set(

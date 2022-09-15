@@ -204,8 +204,7 @@ public class ModuleAccess extends ClassLoader
 						Opcodes.version(8),
 						AccessFlag.PUBLIC | AccessFlag.STATIC,
 						className,
-						"java/lang/Object",
-						new String[0]
+						"java/lang/Object"
 					)
 					.method(new MethodWriter()
 						.set(AccessFlag.STATIC, "<clinit>", "()V")

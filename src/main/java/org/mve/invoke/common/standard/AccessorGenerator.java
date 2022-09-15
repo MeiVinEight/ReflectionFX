@@ -27,7 +27,7 @@ public abstract class AccessorGenerator extends Generator
 	{
 		this.target = target;
 		this.argument = argument;
-		this.bytecode.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.random(), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], new String[]{});
+		this.bytecode.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.random(), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC]);
 		this.pregenerate(this.bytecode);
 	}
 

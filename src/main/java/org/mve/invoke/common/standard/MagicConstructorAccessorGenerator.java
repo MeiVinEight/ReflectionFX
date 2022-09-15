@@ -56,7 +56,7 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 				AccessFlag.PUBLIC | AccessFlag.SUPER,
 				JavaVM.randomAnonymous(this.constructor.getDeclaringClass()),
 				JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
-				new String[]{abstractAccess.name}
+				abstractAccess.name
 			)
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC, name, MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString())

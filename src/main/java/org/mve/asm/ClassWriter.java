@@ -19,7 +19,7 @@ public class ClassWriter
 	public MethodWriter[] method = new MethodWriter[0];
 	public AttributeWriter[] attribute = new AttributeWriter[0];
 
-	public ClassWriter set(int major, int accessFlag, String name, String superName, String[] interfaces)
+	public ClassWriter set(int major, int accessFlag, String name, String superName, String... interfaces)
 	{
 		this.major = major;
 		this.access = accessFlag;
