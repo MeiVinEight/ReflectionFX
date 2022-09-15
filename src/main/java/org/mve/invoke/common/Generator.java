@@ -201,28 +201,28 @@ public abstract class Generator
 
 	public static void unsafeput(Class<?> type, CodeWriter code)
 	{
-		if (type == byte.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putByte", "(Ljava/lang/Object;JB)V", true);
-		else if (type == short.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putShort", "(Ljava/lang/Object;JS)V", true);
-		else if (type == int.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putInt", "(Ljava/lang/Object;JI)V", true);
-		else if (type == long.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putLong", "(Ljava/lang/Object;JJ)V", true);
-		else if (type == float.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putFloat", "(Ljava/lang/Object;JF)V", true);
-		else if (type == double.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putDouble", "(Ljava/lang/Object;JD)V", true);
-		else if (type == boolean.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putBoolean", "(Ljava/lang/Object;JZ)V", true);
-		else if (type == char.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putChar", "(Ljava/lang/Object;JC)V", true);
-		else code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "putObject", "(Ljava/lang/Object;JLjava/lang/Object;)V", true);
+		if (type == byte.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "putByte", "(Ljava/lang/Object;JB)V", false);
+		else if (type == short.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "putShort", "(Ljava/lang/Object;JS)V", false);
+		else if (type == int.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "putInt", "(Ljava/lang/Object;JI)V", false);
+		else if (type == long.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "putLong", "(Ljava/lang/Object;JJ)V", false);
+		else if (type == float.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "putFloat", "(Ljava/lang/Object;JF)V", false);
+		else if (type == double.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "putDouble", "(Ljava/lang/Object;JD)V", false);
+		else if (type == boolean.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "putBoolean", "(Ljava/lang/Object;JZ)V", false);
+		else if (type == char.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "putChar", "(Ljava/lang/Object;JC)V", false);
+		else code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "putObject", "(Ljava/lang/Object;JLjava/lang/Object;)V", false);
 	}
 
 	public static void unsafeget(Class<?> type, CodeWriter code)
 	{
-		if (type == byte.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getByte", "(Ljava/lang/Object;J)B", true);
-		else if (type == short.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getShort", "(Ljava/lang/Object;J)S", true);
-		else if (type == int.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getInt", "(Ljava/lang/Object;J)I", true);
-		else if (type == long.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getLong", "(Ljava/lang/Object;J)J", true);
-		else if (type == float.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getFloat", "(Ljava/lang/Object;J)F", true);
-		else if (type == double.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getDouble", "(Ljava/lang/Object;J)D", true);
-		else if (type == boolean.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getBoolean", "(Ljava/lang/Object;J)Z", true);
-		else if (type == char.class) code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getChar", "(Ljava/lang/Object;J)C", true);
-		else code.method(Opcodes.INVOKEINTERFACE, type(Unsafe.class), "getObject", "(Ljava/lang/Object;J)Ljava/lang/Object;", true);
+		if (type == byte.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "getByte", "(Ljava/lang/Object;J)B", false);
+		else if (type == short.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "getShort", "(Ljava/lang/Object;J)S", false);
+		else if (type == int.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "getInt", "(Ljava/lang/Object;J)I", false);
+		else if (type == long.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "getLong", "(Ljava/lang/Object;J)J", false);
+		else if (type == float.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "getFloat", "(Ljava/lang/Object;J)F", false);
+		else if (type == double.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "getDouble", "(Ljava/lang/Object;J)D", false);
+		else if (type == boolean.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "getBoolean", "(Ljava/lang/Object;J)Z", false);
+		else if (type == char.class) code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "getChar", "(Ljava/lang/Object;J)C", false);
+		else code.method(Opcodes.INVOKEVIRTUAL, type(Unsafe.class), "getObject", "(Ljava/lang/Object;J)Ljava/lang/Object;", false);
 	}
 
 	public static boolean integer(Class<?> type)

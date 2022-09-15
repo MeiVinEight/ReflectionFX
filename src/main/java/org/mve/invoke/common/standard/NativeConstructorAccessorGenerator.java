@@ -40,7 +40,7 @@ public class NativeConstructorAccessorGenerator extends ConstructorAccessorGener
 			.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_OBJECTIVE], Generator.signature(AccessibleObject.class))
 			.type(Opcodes.CHECKCAST, Generator.type(Constructor.class))
 			.instruction(Opcodes.ALOAD_1)
-			.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), true)
+			.method(Opcodes.INVOKEVIRTUAL, Generator.type(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), false)
 			.instruction(Opcodes.ARETURN)
 			.max(3, 3);
 	}

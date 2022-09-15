@@ -44,7 +44,7 @@ public class NativePolymorphismConstructGenerator extends PolymorphismConstructG
 			Generator.warp(parameterType, code);
 			code.instruction(Opcodes.AASTORE);
 		}
-		code.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), true)
+		code.method(Opcodes.INVOKEVIRTUAL, Generator.type(Unsafe.class), "construct", MethodType.methodType(Object.class, Constructor.class, Object[].class).toMethodDescriptorString(), false)
 			.instruction(Opcodes.ARETURN)
 			.max(parameters.length == 0 ? 3 : 7, local);
 	}

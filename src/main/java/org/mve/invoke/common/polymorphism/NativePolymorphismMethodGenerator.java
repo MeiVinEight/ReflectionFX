@@ -53,7 +53,7 @@ public class NativePolymorphismMethodGenerator extends PolymorphismMethodGenerat
 			Generator.warp(parameterType, code);
 			code.instruction(Opcodes.AASTORE);
 		}
-		code.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString(), true);
+		code.method(Opcodes.INVOKEVIRTUAL, Generator.type(Unsafe.class), "invoke", MethodType.methodType(Object.class, Method.class, Object.class, Object[].class).toMethodDescriptorString(), false);
 		Class<?> returnType = this.invocation().type().returnType();
 		if (returnType == void.class)
 		{

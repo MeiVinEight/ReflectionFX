@@ -71,13 +71,11 @@ public class NativeMethodAccessorGenerator extends MethodAccessorGenerator
 				})
 				.instruction(Opcodes.ALOAD_1)
 				.method(
-					Opcodes.INVOKEINTERFACE,
+					Opcodes.INVOKEVIRTUAL,
 					Generator.type(Unsafe.class),
 					"invoke",
-					MethodType
-						.methodType(Object.class, Method.class, Object.class, Object[].class)
-						.toMethodDescriptorString(),
-					true
+					"(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
+					false
 				)
 				.instruction(Opcodes.ARETURN)
 				.max(statics ? 5 : 6, 3)

@@ -27,7 +27,7 @@ public class NativePolymorphismInstantiationGenerator extends PolymorphismInstan
 			.attribute(new CodeWriter()
 				.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
 				.field(Opcodes.GETSTATIC, bytecode.name, "0", Generator.signature(Class.class))
-				.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "allocateInstance", MethodType.methodType(Object.class, Class.class).toMethodDescriptorString(), true)
+				.method(Opcodes.INVOKEVIRTUAL, Generator.type(Unsafe.class), "allocateInstance", MethodType.methodType(Object.class, Class.class).toMethodDescriptorString(), false)
 				.instruction(Opcodes.ARETURN)
 				.max(3, 1 + Generator.parameterSize(implementation().type().parameterArray()))
 			);

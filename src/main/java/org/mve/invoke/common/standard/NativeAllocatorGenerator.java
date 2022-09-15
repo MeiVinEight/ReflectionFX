@@ -31,7 +31,7 @@ public class NativeAllocatorGenerator extends AllocatorGenerator
 			.attribute(new CodeWriter()
 				.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
 				.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS], Generator.signature(Class.class))
-				.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "allocateInstance", MethodType.methodType(Object.class, Class.class).toMethodDescriptorString(), true)
+				.method(Opcodes.INVOKEVIRTUAL, Generator.type(Unsafe.class), "allocateInstance", MethodType.methodType(Object.class, Class.class).toMethodDescriptorString(), false)
 				.instruction(Opcodes.ARETURN)
 				.max(1, 2)
 			);
@@ -43,7 +43,7 @@ public class NativeAllocatorGenerator extends AllocatorGenerator
 		.attribute(new CodeWriter()
 			.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
 			.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS], Generator.signature(Class.class))
-			.method(Opcodes.INVOKEINTERFACE, Generator.type(Unsafe.class), "allocateInstance", MethodType.methodType(Object.class, Class.class).toMethodDescriptorString(), true)
+			.method(Opcodes.INVOKEVIRTUAL, Generator.type(Unsafe.class), "allocateInstance", MethodType.methodType(Object.class, Class.class).toMethodDescriptorString(), false)
 			.instruction(Opcodes.ARETURN)
 			.max(1, 1)
 		);

@@ -10,6 +10,7 @@ import org.mve.asm.attribute.StackMapTableWriter;
 import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.attribute.code.stack.verification.Verification;
 import org.mve.invoke.MethodKind;
+import org.mve.invoke.Unsafe;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -63,7 +64,7 @@ public class UnsafeBuilder
 			this.bootstrap = bscl;
 		}
 		this.lookup = lookup;
-		this.bytecode = new ClassWriter().set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, name, "java/lang/Object", new String[]{"org/mve/invoke/Unsafe"});
+		this.bytecode = new ClassWriter().set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, name, Generator.type(Unsafe.class));
 
 		Class<?> unsafeClass = Class.forName(JavaVM.VERSION > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
 		Object unsafe = this.lookup.findStaticGetter(unsafeClass, "theUnsafe", unsafeClass).invoke();
