@@ -200,7 +200,7 @@ public class MagicAccessorBuilder
 
 				{
 					ClassWriter frame = new ClassWriter()
-						.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, frameAccess, Generator.type(Object.class), null)
+						.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, frameAccess, Generator.type(Object.class))
 						.field(new FieldWriter()
 							.set(AccessFlag.PUBLIC, f1, Generator.signature(Class.class))
 						)
@@ -1567,7 +1567,7 @@ public class MagicAccessorBuilder
 			Object[] access = new Object[]{
 				JavaVM.random(),
 				new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null),
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class)),
 				new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(into), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC]),
 				JavaVM.random()

@@ -44,8 +44,7 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 				Opcodes.version(8),
 				AccessFlag.PUBLIC | AccessFlag.ABSTRACT | AccessFlag.INTERFACE,
 				JavaVM.random(),
-				Generator.type(Object.class),
-				null
+				Generator.type(Object.class)
 			)
 			.method(new MethodWriter()
 				.set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, name, MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString())

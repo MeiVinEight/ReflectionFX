@@ -283,7 +283,7 @@ public class ReflectionFactory
 					MethodHandle usfDefineClass = TRUSTED_LOOKUP.findVirtual(usfClass, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class));
 					MethodHandle theUnsafe = TRUSTED_LOOKUP.findStaticGetter(usfClass, "theUnsafe", usfClass);
 					byte[] code = new ClassWriter()
-						.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], mai, null)
+						.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], mai)
 						.method(new MethodWriter()
 							.set(AccessFlag.PUBLIC, "<init>", "()V")
 							.attribute(new CodeWriter()

@@ -133,7 +133,7 @@ public class UnsafeBuilder
 			{
 				Class<?> finall = Class.forName(JavaVM.VERSION == 0x34 ? "sun.reflect.NativeMethodAccessorImpl" : "jdk.internal.reflect.NativeMethodAccessorImpl");
 				ClassWriter abstractAccessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null);
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class));
 				ClassWriter accessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], abstractAccessWriter.name);
 				FieldWriter bridge = new FieldWriter()
@@ -240,7 +240,7 @@ public class UnsafeBuilder
 			{
 				Class<?> finall = Class.forName(JavaVM.VERSION <= 0x34 ? "sun.reflect.NativeConstructorAccessorImpl" : "jdk.internal.reflect.NativeConstructorAccessorImpl");
 				ClassWriter abstractAccessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null);
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class));
 				ClassWriter accessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], abstractAccessWriter.name);
 				FieldWriter bridge = new FieldWriter()
@@ -271,7 +271,7 @@ public class UnsafeBuilder
 				Class<?> finall = Class.forName(JavaVM.VERSION > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
 				String unsafeType = Generator.type(finall);
 				ClassWriter abstractAccessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null);
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class));
 				ClassWriter accessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], abstractAccessWriter.name);
 				FieldWriter bridge = new FieldWriter()
@@ -373,7 +373,7 @@ public class UnsafeBuilder
 			{
 				Class<?> finall = ClassLoader.class;
 				ClassWriter abstractAccessWriter = new ClassWriter()
-					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class), null);
+					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.INTERFACE | AccessFlag.ABSTRACT, JavaVM.random(), Generator.type(Object.class));
 				ClassWriter accessWriter = new ClassWriter()
 					.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.randomAnonymous(finall), JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], abstractAccessWriter.name);
 				FieldWriter bridge = new FieldWriter()
