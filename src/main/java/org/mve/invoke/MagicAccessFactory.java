@@ -22,12 +22,9 @@ import java.lang.reflect.Method;
 
 public class MagicAccessFactory
 {
-	private static final Unsafe UNSAFE = ReflectionFactory.UNSAFE;
-	private static final MagicAccessor ACCESSOR = ReflectionFactory.ACCESSOR;
-
 	public static <T> T access(Class<T> accessor)
 	{
-		Method[] methods = ACCESSOR.getMethods(accessor);
+		Method[] methods = MagicAccessor.accessor.getMethods(accessor);
 		ClassWriter writer = new ClassWriter()
 			.set(
 				Opcodes.version(8),
@@ -127,8 +124,8 @@ public class MagicAccessFactory
 
 		byte[] classcode = writer.toByteArray();
 		@SuppressWarnings("unchecked")
-		T val = (T) UNSAFE.allocateInstance(ReflectionFactory.UNSAFE.defineAnonymousClass(accessor, classcode, null));
-		ACCESSOR.initialize(val);
+		T val = (T) Unsafe.unsafe.allocateInstance(Unsafe.unsafe.defineAnonymousClass(accessor, classcode, null));
+		MagicAccessor.accessor.initialize(val);
 		return val;
 	}
 }

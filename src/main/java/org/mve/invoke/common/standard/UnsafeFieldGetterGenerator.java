@@ -5,7 +5,6 @@ import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.invoke.ReflectionAccessor;
-import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 import org.mve.invoke.common.Generator;
 import org.mve.invoke.common.JavaVM;
@@ -26,10 +25,10 @@ public class UnsafeFieldGetterGenerator extends FieldGetterGenerator
 		Field field = this.getField();
 		int modifiers = field.getModifiers();
 		boolean statics = Modifier.isStatic(modifiers);
-		long off = statics ? ReflectionFactory.UNSAFE.staticFieldOffset(field) : ReflectionFactory.UNSAFE.objectFieldOffset(field);
+		long off = statics ? Unsafe.unsafe.staticFieldOffset(field) : Unsafe.unsafe.objectFieldOffset(field);
 		CodeWriter code = new CodeWriter();
 		method.attribute(code);
-		code.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class));
+		code.field(Opcodes.GETSTATIC, Generator.type(Unsafe.class), "unsafe", Generator.signature(Unsafe.class));
 		if (statics)
 		{
 			code.field(Opcodes.GETSTATIC, classWriter.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS], Generator.signature(Class.class));

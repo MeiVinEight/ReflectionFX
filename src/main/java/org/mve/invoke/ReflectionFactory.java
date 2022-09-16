@@ -12,7 +12,6 @@ import org.mve.invoke.common.standard.AllocatorGenerator;
 import org.mve.invoke.common.standard.MagicAllocatorGenerator;
 import org.mve.invoke.common.standard.NativeAllocatorGenerator;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -23,19 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings({"unchecked", "unused"})
 public class ReflectionFactory
 {
-	/**
-	 * A wrapper of Unsafe
-	 * Includes Unsafe for Java 8 and above
-	 */
-	public static final Unsafe UNSAFE = Unsafe.unsafe;
-
-	/**
-	 * The root lookup in jdk
-	 * It can find any instruction regardless of access rights
-	 */
-	public static final MethodHandles.Lookup TRUSTED_LOOKUP = Unsafe.TRUSTED_LOOKUP;
-
-	public static final MagicAccessor ACCESSOR = MagicAccessor.accessor;
 	public static final int
 		KIND_INVOKE_VIRTUAL		= 0,
 		KIND_INVOKE_SPECIAL		= 1,
@@ -52,7 +38,7 @@ public class ReflectionFactory
 
 	public static <T> MethodAccessor<T> access(Class<?> target, String name, MethodType type, int kind)
 	{
-		return generic(ACCESSOR.getMethod(target, name, type.returnType(), type.parameterArray()), kind);
+		return generic(MagicAccessor.accessor.getMethod(target, name, type.returnType(), type.parameterArray()), kind);
 	}
 
 	public static <T> MethodAccessor<T> access(Method method, int kind)
@@ -62,7 +48,7 @@ public class ReflectionFactory
 
 	public static <T> FieldAccessor<T> access(Class<?> target, String name)
 	{
-		return generic(ACCESSOR.getField(target, name));
+		return generic(MagicAccessor.accessor.getField(target, name));
 	}
 
 	public static <T> FieldAccessor<T> access(Field field)
@@ -72,7 +58,7 @@ public class ReflectionFactory
 
 	public static <T> ConstructorAccessor<T> access(Class<?> target, MethodType type)
 	{
-		return generic(ACCESSOR.getConstructor(target, type.parameterArray()));
+		return generic(MagicAccessor.accessor.getConstructor(target, type.parameterArray()));
 	}
 
 	public static <T> ConstructorAccessor<T> access(Constructor<?> constructor)
@@ -102,7 +88,7 @@ public class ReflectionFactory
 					.max(2, 2)
 				)
 			);
-		return (ReflectionAccessor<Void>) UNSAFE.allocateInstance(Generator.defineAnonymous(ReflectionFactory.class, cw.toByteArray()));
+		return (ReflectionAccessor<Void>) Unsafe.unsafe.allocateInstance(Generator.defineAnonymous(ReflectionFactory.class, cw.toByteArray()));
 	}
 
 	public static <T> ReflectionAccessor<T> constant(T value)
@@ -135,7 +121,7 @@ public class ReflectionFactory
 					.max(1, 2)
 				)
 			);
-		return ACCESSOR.construct(Generator.defineAnonymous(ReflectionFactory.class, cw.toByteArray()), new Class[]{Object.class}, new Object[]{value});
+		return MagicAccessor.accessor.construct(Generator.defineAnonymous(ReflectionFactory.class, cw.toByteArray()), new Class[]{Object.class}, new Object[]{value});
 	}
 
 	public static <T> EnumHelper<T> enumHelper(Class<?> target)
@@ -158,7 +144,7 @@ public class ReflectionFactory
 
 	private static <T> FieldAccessor<T> generic(Field target)
 	{
-		UNSAFE.ensureClassInitialized(target.getDeclaringClass());
+		Unsafe.unsafe.ensureClassInitialized(target.getDeclaringClass());
 		FieldAccessor<T> generated = (FieldAccessor<T>) GENERATED_FIELD_ACCESSOR.get(target);
 		if (generated != null)
 		{
@@ -205,10 +191,10 @@ public class ReflectionFactory
 
 		ClassWriter bytecode = generator.bytecode();
 		byte[] code = bytecode.toByteArray();
-		Class<?> c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
+		Class<?> c = Unsafe.unsafe.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 		generator.postgenerate(c);
 
-		generated = (ReflectionAccessor<T>) UNSAFE.allocateInstance(c);
+		generated = (ReflectionAccessor<T>) Unsafe.unsafe.allocateInstance(c);
 		GENERATED_ALLOCATOR.put(target, generated);
 		return generated;
 	}

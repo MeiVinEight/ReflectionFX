@@ -4,7 +4,7 @@ import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.invoke.ReflectionFactory;
+import org.mve.invoke.MagicAccessor;
 import org.mve.invoke.common.Generator;
 
 import java.lang.reflect.Field;
@@ -27,13 +27,13 @@ public class MagicFieldGetterGenerator extends FieldGetterGenerator
 		method.attribute(code);
 		if (statics)
 		{
-			code.field(Opcodes.GETSTATIC, Generator.type(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.signature(field.getType()))
+			code.field(Opcodes.GETSTATIC, Generator.type(field.getDeclaringClass()), MagicAccessor.accessor.getName(field), Generator.signature(field.getType()))
 				.max(Generator.typeSize(field.getType()), 1);
 		}
 		else
 		{
 			code.instruction(Opcodes.ALOAD_1)
-				.field(Opcodes.GETFIELD, Generator.type(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.signature(field.getType()))
+				.field(Opcodes.GETFIELD, Generator.type(field.getDeclaringClass()), MagicAccessor.accessor.getName(field), Generator.signature(field.getType()))
 				.max(Generator.typeSize(field.getType()), 2);
 		}
 		Generator.returner(field.getType(), code);

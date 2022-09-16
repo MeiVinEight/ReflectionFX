@@ -8,7 +8,6 @@ import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.invoke.MagicAccessor;
 import org.mve.invoke.ReflectionAccessor;
-import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 import org.mve.invoke.common.Generator;
 import org.mve.invoke.common.JavaVM;
@@ -17,8 +16,6 @@ import java.lang.invoke.MethodType;
 
 public abstract class AccessorGenerator extends Generator
 {
-	private static final Unsafe UNSAFE = ReflectionFactory.UNSAFE;
-	private static final MagicAccessor ACCESSOR = ReflectionFactory.ACCESSOR;
 	private final ClassWriter bytecode = new ClassWriter();
 	private final Class<?> target;
 	private final Object[] argument;
@@ -56,8 +53,8 @@ public abstract class AccessorGenerator extends Generator
 
 	public void postgenerate(Class<?> generated)
 	{
-		UNSAFE.putObject(generated, UNSAFE.staticFieldOffset(ACCESSOR.getField(generated, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS])), target);
-		UNSAFE.putObject(generated, UNSAFE.staticFieldOffset(ACCESSOR.getField(generated, JavaVM.CONSTANT[ReflectionAccessor.FIELD_WITH])), this.argument);
+		Unsafe.unsafe.putObject(generated, Unsafe.unsafe.staticFieldOffset(MagicAccessor.accessor.getField(generated, JavaVM.CONSTANT[ReflectionAccessor.FIELD_CLASS])), target);
+		Unsafe.unsafe.putObject(generated, Unsafe.unsafe.staticFieldOffset(MagicAccessor.accessor.getField(generated, JavaVM.CONSTANT[ReflectionAccessor.FIELD_WITH])), this.argument);
 	}
 
 	public ClassWriter bytecode()

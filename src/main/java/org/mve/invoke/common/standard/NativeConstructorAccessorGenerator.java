@@ -6,7 +6,6 @@ import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.invoke.ReflectionAccessor;
-import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 import org.mve.invoke.common.Generator;
 import org.mve.invoke.common.JavaVM;
@@ -36,7 +35,7 @@ public class NativeConstructorAccessorGenerator extends ConstructorAccessorGener
 		CodeWriter code = new CodeWriter();
 		mw.attribute(code);
 		Generator.merge(code, this.bytecode.name, this.argument);
-		code.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
+		code.field(Opcodes.GETSTATIC, Generator.type(Unsafe.class), "unsafe", Generator.signature(Unsafe.class))
 			.field(Opcodes.GETSTATIC, this.bytecode.name, JavaVM.CONSTANT[ReflectionAccessor.FIELD_OBJECTIVE], Generator.signature(AccessibleObject.class))
 			.type(Opcodes.CHECKCAST, Generator.type(Constructor.class))
 			.instruction(Opcodes.ALOAD_1)

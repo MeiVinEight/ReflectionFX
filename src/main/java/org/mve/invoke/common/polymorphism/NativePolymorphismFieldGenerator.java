@@ -3,6 +3,7 @@ package org.mve.invoke.common.polymorphism;
 import org.mve.asm.AccessFlag;
 import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
+import org.mve.invoke.MagicAccessor;
 import org.mve.invoke.MethodKind;
 import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.common.Generator;
@@ -21,7 +22,7 @@ public class NativePolymorphismFieldGenerator extends PolymorphismFieldGenerator
 	@Override
 	public void generate(ClassWriter bytecode)
 	{
-		Field field = ReflectionFactory.ACCESSOR.getField(this.getTarget(), this.operation());
+		Field field = MagicAccessor.accessor.getField(this.getTarget(), this.operation());
 		MethodWriter mw = new MethodWriter().set(AccessFlag.PUBLIC, implementation().name(), implementation().type().toMethodDescriptorString());
 		bytecode.method(mw);
 		Generator.inline(mw);

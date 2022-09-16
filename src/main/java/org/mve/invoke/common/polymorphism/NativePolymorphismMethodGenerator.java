@@ -29,7 +29,7 @@ public class NativePolymorphismMethodGenerator extends PolymorphismMethodGenerat
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
 		mw.attribute(code);
-		code.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
+		code.field(Opcodes.GETSTATIC, Generator.type(Unsafe.class), "unsafe", Generator.signature(Unsafe.class))
 			.field(Opcodes.GETSTATIC, bytecode.name, this.invocation().name().concat(this.invocation().type().toMethodDescriptorString()), Generator.signature(Method.class));
 		if (statics)
 		{

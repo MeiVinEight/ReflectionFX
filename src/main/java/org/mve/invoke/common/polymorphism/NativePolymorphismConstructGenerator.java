@@ -6,7 +6,6 @@ import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.invoke.MethodKind;
-import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 import org.mve.invoke.common.Generator;
 
@@ -28,7 +27,7 @@ public class NativePolymorphismConstructGenerator extends PolymorphismConstructG
 		Generator.inline(mw);
 		CodeWriter code = new CodeWriter();
 		mw.attribute(code);
-		code.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
+		code.field(Opcodes.GETSTATIC, Generator.type(Unsafe.class), "unsafe", Generator.signature(Unsafe.class))
 			.field(Opcodes.GETSTATIC, bytecode.name, "<init>".concat(MethodType.methodType(void.class, invocation().type().parameterArray()).toMethodDescriptorString()), Generator.signature(Constructor.class))
 			.number(Opcodes.BIPUSH, invocation().type().parameterArray().length)
 			.type(Opcodes.ANEWARRAY, Generator.type(Class.class));

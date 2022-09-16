@@ -10,7 +10,6 @@ import org.mve.asm.attribute.annotation.Annotation;
 import org.mve.asm.attribute.code.Marker;
 import org.mve.asm.constant.Type;
 import org.mve.invoke.MagicAccessor;
-import org.mve.invoke.ReflectionFactory;
 import org.mve.invoke.Unsafe;
 import org.mve.invoke.common.Generator;
 import org.mve.invoke.common.JavaVM;
@@ -23,8 +22,6 @@ import java.util.Map;
 
 public class PolymorphismEnumHelperGenerator extends PolymorphismGenerator
 {
-	private static final Unsafe UNSAFE = ReflectionFactory.UNSAFE;
-	private static final MagicAccessor ACCESSOR = ReflectionFactory.ACCESSOR;
 	private final Class<?> target = this.getTarget();
 
 	public PolymorphismEnumHelperGenerator(Class<?> target)
@@ -38,20 +35,20 @@ public class PolymorphismEnumHelperGenerator extends PolymorphismGenerator
 		String values;
 		FIND:
 		{
-			Field[] fields = ReflectionFactory.ACCESSOR.getFields(getTarget());
+			Field[] fields = MagicAccessor.accessor.getFields(getTarget());
 			for (Field field : fields)
 			{
 				int modifier = field.getModifiers();
 				if (Modifier.isPrivate(modifier) && Modifier.isStatic(modifier) && Modifier.isFinal(modifier) && field.getType().isArray() && field.getType().getComponentType() == this.target)
 				{
-					values = ReflectionFactory.ACCESSOR.getName(field);
+					values = MagicAccessor.accessor.getName(field);
 					break FIND;
 				}
 			}
-			ReflectionFactory.ACCESSOR.throwException(new NoSuchFieldException("private static final ".concat(getTarget().getName()).concat("[]")));
+			MagicAccessor.accessor.throwException(new NoSuchFieldException("private static final ".concat(getTarget().getName()).concat("[]")));
 			return;
 		}
-		long offset = UNSAFE.staticFieldOffset(ACCESSOR.getField(this.target, values));
+		long offset = Unsafe.unsafe.staticFieldOffset(MagicAccessor.accessor.getField(this.target, values));
 		Marker m1 = new Marker();
 		bytecode
 			.method(new MethodWriter()
@@ -167,7 +164,7 @@ public class PolymorphismEnumHelperGenerator extends PolymorphismGenerator
 				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_0)
 					.method(Opcodes.INVOKESPECIAL, bytecode.name, "clearEnumConstants", "()V", false)
-					.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
+					.field(Opcodes.GETSTATIC, Generator.type(Unsafe.class), "unsafe", Generator.signature(Unsafe.class))
 					.constant(Opcodes.LDC_W, new Type(target))
 					.constant(Opcodes.LDC2_W, offset)
 					.instruction(Opcodes.ALOAD_1)
@@ -187,7 +184,7 @@ public class PolymorphismEnumHelperGenerator extends PolymorphismGenerator
 				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_0)
 					.method(Opcodes.INVOKESPECIAL, bytecode.name, "clearEnumConstants", "()V", false)
-					.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
+					.field(Opcodes.GETSTATIC, Generator.type(Unsafe.class), "unsafe", Generator.signature(Unsafe.class))
 					.constant(Opcodes.LDC_W, new Type(target))
 					.constant(Opcodes.LDC2_W, offset)
 					.instruction(Opcodes.ALOAD_1)
@@ -223,7 +220,7 @@ public class PolymorphismEnumHelperGenerator extends PolymorphismGenerator
 					.instruction(Opcodes.ISUB)
 					.instruction(Opcodes.ALOAD_1)
 					.instruction(Opcodes.AASTORE)
-					.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
+					.field(Opcodes.GETSTATIC, Generator.type(Unsafe.class), "unsafe", Generator.signature(Unsafe.class))
 					.constant(new Type(target))
 					.constant(offset)
 					.instruction(Opcodes.ALOAD_2)
@@ -259,7 +256,7 @@ public class PolymorphismEnumHelperGenerator extends PolymorphismGenerator
 					.instruction(Opcodes.ISUB)
 					.instruction(Opcodes.ALOAD_1)
 					.instruction(Opcodes.AASTORE)
-					.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
+					.field(Opcodes.GETSTATIC, Generator.type(Unsafe.class), "unsafe", Generator.signature(Unsafe.class))
 					.constant(new Type(target))
 					.constant(offset)
 					.instruction(Opcodes.ALOAD_2)
@@ -279,7 +276,7 @@ public class PolymorphismEnumHelperGenerator extends PolymorphismGenerator
 				.attribute(new CodeWriter()
 					.instruction(Opcodes.ALOAD_0)
 					.method(Opcodes.INVOKESPECIAL, bytecode.name, "clearEnumConstants", "()V", false)
-					.field(Opcodes.GETSTATIC, Generator.type(ReflectionFactory.class), "UNSAFE", Generator.signature(Unsafe.class))
+					.field(Opcodes.GETSTATIC, Generator.type(Unsafe.class), "unsafe", Generator.signature(Unsafe.class))
 					.constant(Opcodes.LDC_W, new Type(target))
 					.constant(Opcodes.LDC2_W, offset)
 					.field(Opcodes.GETSTATIC, Generator.type(target), values, "[".concat(Generator.signature(target)))

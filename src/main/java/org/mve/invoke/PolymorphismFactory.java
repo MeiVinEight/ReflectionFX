@@ -27,8 +27,6 @@ import java.util.Map;
 
 public class PolymorphismFactory<T>
 {
-	private static final Unsafe UNSAFE = ReflectionFactory.UNSAFE;
-	private static final MagicAccessor ACCESSOR = ReflectionFactory.ACCESSOR;
 	private final Class<T> accessor;
 	private final Map<MethodKind, String> names = new HashMap<>();
 	private final Map<MethodKind, Class<?>> objectives = new HashMap<>();
@@ -143,9 +141,9 @@ public class PolymorphismFactory<T>
 		this.check(kinds, objective, "construct", Object.class, String.class, int.class);
 		this.check(kinds, objective, "construct", objective, String.class, int.class);
 		this.check(kinds, objective, "values", Object[].class);
-		this.check(kinds, objective, "values", ACCESSOR.forName("[" + Generator.signature(objective).replace('/', '.')));
+		this.check(kinds, objective, "values", MagicAccessor.accessor.forName("[" + Generator.signature(objective).replace('/', '.')));
 		this.check(kinds, objective, "values", void.class, Object[].class);
-		this.check(kinds, objective, "values", void.class, ACCESSOR.forName("[" + Generator.signature(objective).replace('/', '.')));
+		this.check(kinds, objective, "values", void.class, MagicAccessor.accessor.forName("[" + Generator.signature(objective).replace('/', '.')));
 		this.check(kinds, objective, "add", void.class, Object.class);
 		this.check(kinds, objective, "add", void.class, objective);
 		this.check(kinds, objective, "remove", void.class, int.class);
@@ -193,7 +191,7 @@ public class PolymorphismFactory<T>
 					bridge.method(new MethodWriter().set(AccessFlag.PUBLIC | AccessFlag.ABSTRACT, kind.name(), kind.type().toMethodDescriptorString()));
 				}
 				byte[] code = bridge.toByteArray();
-				accessor = UNSAFE.defineClass(name, code, 0, code.length, null, null);
+				accessor = Unsafe.unsafe.defineClass(name, code, 0, code.length, null, null);
 				ModuleAccess.read(ModuleAccess.module(objective), ModuleAccess.module(accessor));
 			}
 
@@ -211,7 +209,7 @@ public class PolymorphismFactory<T>
 					generator.generate(invoke);
 				}
 				byte[] code = invoke.toByteArray();
-				implement.put(hex(cid), UNSAFE.allocateInstance(UNSAFE.defineAnonymousClass(objective, code, null)));
+				implement.put(hex(cid), Unsafe.unsafe.allocateInstance(Unsafe.unsafe.defineAnonymousClass(objective, code, null)));
 			}
 
 			accessors.put(objective, accessor);
@@ -254,14 +252,14 @@ public class PolymorphismFactory<T>
 		}
 
 		byte[] code = cw.toByteArray();
-		Class<?> c = UNSAFE.defineAnonymousClass(this.accessor, code, null);
+		Class<?> c = Unsafe.unsafe.defineAnonymousClass(this.accessor, code, null);
 		for (Map.Entry<String, Object> entry : implement.entrySet())
 		{
 			String name = entry.getKey();
 			Object field = entry.getValue();
-			UNSAFE.putObject(c, UNSAFE.staticFieldOffset(ACCESSOR.getField(c, name)), field);
+			Unsafe.unsafe.putObject(c, Unsafe.unsafe.staticFieldOffset(MagicAccessor.accessor.getField(c, name)), field);
 		}
-		Object o = UNSAFE.allocateInstance(c);
+		Object o = Unsafe.unsafe.allocateInstance(c);
 
 		@SuppressWarnings("unchecked")
 		T val = (T) o;
@@ -283,7 +281,7 @@ public class PolymorphismFactory<T>
 	{
 		try
 		{
-			if (ACCESSOR.getMethod(this.accessor, name, returnType, parameterTypes) != null)
+			if (MagicAccessor.accessor.getMethod(this.accessor, name, returnType, parameterTypes) != null)
 			{
 				MethodKind kind = new MethodKind(name, returnType, parameterTypes);
 				this.names.put(kind, kind.name());

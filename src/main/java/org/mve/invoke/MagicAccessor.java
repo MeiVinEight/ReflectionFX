@@ -169,7 +169,7 @@ public abstract class MagicAccessor
 						.instruction(Opcodes.ALOAD_1)
 						.instruction(Opcodes.ICONST_0)
 						.instruction(Opcodes.ALOAD_0)
-						.method(Opcodes.INVOKEINTERFACE, bytecode.name, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), true)
+						.method(Opcodes.INVOKEVIRTUAL, bytecode.name, "getCallerClass", MethodType.methodType(Class.class).toMethodDescriptorString(), false)
 						.method(Opcodes.INVOKEVIRTUAL, Generator.type(Class.class), "getClassLoader", MethodType.methodType(ClassLoader.class).toMethodDescriptorString(), false)
 						.method(Opcodes.INVOKESTATIC, Generator.type(Class.class), "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class).toMethodDescriptorString(), false)
 						.instruction(Opcodes.ARETURN)
@@ -1482,7 +1482,7 @@ public abstract class MagicAccessor
 				ModuleAccess.read(ModuleAccess.module(entry.getKey()), ModuleAccess.module(intf));
 			}
 			byte[] code = bytecode.toByteArray();
-			Class<?> c = unsafe.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
+			Class<?> c = unsafe.defineClass(null, code, 0, code.length, MagicAccessor.class.getClassLoader(), null);
 			for (Map.Entry<Class<?>, Object[]> entry : classAccessor.entrySet())
 			{
 				Object[] access = entry.getValue();

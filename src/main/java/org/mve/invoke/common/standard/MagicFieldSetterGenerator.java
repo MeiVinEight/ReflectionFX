@@ -4,7 +4,7 @@ import org.mve.asm.ClassWriter;
 import org.mve.asm.MethodWriter;
 import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
-import org.mve.invoke.ReflectionFactory;
+import org.mve.invoke.MagicAccessor;
 import org.mve.invoke.common.Generator;
 
 import java.lang.reflect.Field;
@@ -57,7 +57,7 @@ public class MagicFieldSetterGenerator extends FieldSetterGenerator
 		}
 
 		code.instruction(load)
-			.field(statics ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD, Generator.type(field.getDeclaringClass()), ReflectionFactory.ACCESSOR.getName(field), Generator.signature(field.getType()))
+			.field(statics ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD, Generator.type(field.getDeclaringClass()), MagicAccessor.accessor.getName(field), Generator.signature(field.getType()))
 			.instruction(Opcodes.RETURN)
 			.max((statics ? 0 : 1) + Generator.typeSize(field.getType()), (statics ? 1 : 2) + Generator.typeSize(field.getType()));
 	}
