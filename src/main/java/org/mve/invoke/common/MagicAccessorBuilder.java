@@ -47,7 +47,6 @@ public class MagicAccessorBuilder
 				Opcodes.version(8),
 				AccessFlag.PUBLIC | AccessFlag.SUPER,
 				CLASS_NAME,
-				JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
 				Generator.type(MagicAccessor.class)
 			);
 	}
