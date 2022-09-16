@@ -8,8 +8,6 @@ import org.mve.asm.Opcodes;
 import org.mve.asm.attribute.CodeWriter;
 import org.mve.asm.attribute.SourceWriter;
 import org.mve.invoke.common.Generator;
-import org.mve.invoke.common.JavaVM;
-import org.mve.invoke.common.MagicAccessorBuilder;
 import org.mve.invoke.common.standard.AllocatorGenerator;
 import org.mve.invoke.common.standard.MagicAllocatorGenerator;
 import org.mve.invoke.common.standard.NativeAllocatorGenerator;
@@ -37,7 +35,7 @@ public class ReflectionFactory
 	 */
 	public static final MethodHandles.Lookup TRUSTED_LOOKUP = Unsafe.TRUSTED_LOOKUP;
 
-	public static final MagicAccessor ACCESSOR;
+	public static final MagicAccessor ACCESSOR = MagicAccessor.accessor;
 	public static final int
 		KIND_INVOKE_VIRTUAL		= 0,
 		KIND_INVOKE_SPECIAL		= 1,
@@ -213,36 +211,5 @@ public class ReflectionFactory
 		generated = (ReflectionAccessor<T>) UNSAFE.allocateInstance(c);
 		GENERATED_ALLOCATOR.put(target, generated);
 		return generated;
-	}
-
-	static
-	{
-		try
-		{
-			/*
-			 * accessor
-			 */
-			{
-				Class<?> c;
-				try
-				{
-					c = Class.forName(MagicAccessorBuilder.CLASS_NAME.replace('/', '.'));
-				}
-				catch (Throwable t)
-				{
-					MagicAccessorBuilder builder = new MagicAccessorBuilder();
-					byte[] code = builder.build(UNSAFE);
-					builder.prebuild(UNSAFE);
-					c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
-					builder.postbuild(UNSAFE, c);
-				}
-				ACCESSOR = (MagicAccessor) UNSAFE.allocateInstance(c);
-			}
-		}
-		catch (Throwable t)
-		{
-			JavaVM.exception(t);
-			throw new RuntimeException();
-		}
 	}
 }
