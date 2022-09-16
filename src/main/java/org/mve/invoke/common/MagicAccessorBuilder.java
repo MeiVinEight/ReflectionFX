@@ -543,33 +543,87 @@ public class MagicAccessorBuilder
 					.set(AccessFlag.PRIVATE | AccessFlag.STATIC | AccessFlag.SYNTHETIC, "frame$lambda$0", "(Ljava/util/ArrayList;Ljava/lang/StackWalker$StackFrame;)V")
 					.attribute(new CodeWriter()
 						.instruction(Opcodes.ALOAD_0)
-						.instruction(Opcodes.ALOAD_1)
-						.type(Opcodes.CHECKCAST, "java/lang/StackFrameInfo")
-						.instruction(Opcodes.ASTORE_1)
 						.type(Opcodes.NEW, Generator.type(StackFrame.class))
 						.instruction(Opcodes.DUP)
 						.instruction(Opcodes.ALOAD_1)
-						.field(Opcodes.GETFIELD, "java/lang/StackFrameInfo", "memberName", "Ljava/lang/Object;")
-						.type(Opcodes.CHECKCAST, "java/lang/invoke/MemberName")
-						.field(Opcodes.GETFIELD, "java/lang/invoke/MemberName", "clazz", "Ljava/lang/Class;")
+						.method(
+							Opcodes.INVOKEINTERFACE,
+							"java/lang/StackWalker$StackFrame",
+							"getDeclaringClass",
+							"()Ljava/lang/Class;",
+							true
+						)
 						.instruction(Opcodes.ALOAD_1)
-						.field(Opcodes.GETFIELD, "java/lang/StackFrameInfo", "memberName", "Ljava/lang/Object;")
-						.type(Opcodes.CHECKCAST, "java/lang/invoke/MemberName")
-						.method(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MemberName", "getName", "()Ljava/lang/String;", false)
+						.method(
+							Opcodes.INVOKEINTERFACE,
+							"java/lang/StackWalker$StackFrame",
+							"getMethodName",
+							"()Ljava/lang/String;",
+							true
+						)
 						.instruction(Opcodes.ALOAD_1)
-						.field(Opcodes.GETFIELD, "java/lang/StackFrameInfo", "memberName", "Ljava/lang/Object;")
-						.type(Opcodes.CHECKCAST, "java/lang/invoke/MemberName")
-						.method(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MemberName", "getMethodType", "()Ljava/lang/invoke/MethodType;", false)
+						.method(
+							Opcodes.INVOKEINTERFACE,
+							"java/lang/StackWalker$StackFrame",
+							"getMethodType",
+							"()Ljava/lang/invoke/MethodType;",
+							true
+						)
 						.instruction(Opcodes.ALOAD_1)
-						.method(Opcodes.INVOKEINTERFACE, "java/lang/StackWalker$StackFrame", "getByteCodeIndex", "()I", true)
+						.method(
+							Opcodes.INVOKEINTERFACE,
+							"java/lang/StackWalker$StackFrame",
+							"getByteCodeIndex",
+							"()I",
+							true
+						)
 						.instruction(Opcodes.ALOAD_1)
-						.method(Opcodes.INVOKEINTERFACE, "java/lang/StackWalker$StackFrame", "getLineNumber", "()I", true)
+						.method(
+							Opcodes.INVOKEINTERFACE,
+							"java/lang/StackWalker$StackFrame",
+							"getLineNumber",
+							"()I",
+							true
+						)
 						.instruction(Opcodes.ALOAD_1)
-						.method(Opcodes.INVOKEINTERFACE, "java/lang/StackWalker$StackFrame", "getFileName", "()Ljava/lang/String;", true)
+						.method(
+							Opcodes.INVOKEINTERFACE,
+							"java/lang/StackWalker$StackFrame",
+							"getFileName",
+							"()Ljava/lang/String;",
+							true
+						)
 						.instruction(Opcodes.ALOAD_1)
-						.method(Opcodes.INVOKEINTERFACE, "java/lang/StackWalker$StackFrame", "isNativeMethod", "()Z", true)
-						.method(Opcodes.INVOKESPECIAL, Generator.type(StackFrame.class), "<init>", MethodType.methodType(void.class, Class.class, String.class, MethodType.class, int.class, int.class, String.class, boolean.class).toMethodDescriptorString(), false)
-						.method(Opcodes.INVOKEVIRTUAL, "java/util/ArrayList", "add", "(Ljava/lang/Object;)Z", false)
+						.method(
+							Opcodes.INVOKEINTERFACE,
+							"java/lang/StackWalker$StackFrame",
+							"isNativeMethod",
+							"()Z",
+							true
+						)
+						.method(
+							Opcodes.INVOKESPECIAL,
+							Generator.type(StackFrame.class),
+							"<init>",
+							MethodType.methodType(
+								void.class,
+								Class.class,
+								String.class,
+								MethodType.class,
+								int.class,
+								int.class,
+								String.class,
+								boolean.class
+							).toMethodDescriptorString(),
+							false
+						)
+						.method(
+							Opcodes.INVOKEVIRTUAL,
+							"java/util/ArrayList",
+							"add",
+							"(Ljava/lang/Object;)Z",
+							false
+						)
 						.instruction(Opcodes.POP)
 						.instruction(Opcodes.RETURN)
 						.max(10, 2)
@@ -598,10 +652,6 @@ public class MagicAccessorBuilder
 					.instruction(Opcodes.ALOAD_1)
 					.dynamic(marker, "accept", "(Ljava/util/ArrayList;)Ljava/util/function/Consumer;", false)
 					.method(Opcodes.INVOKEVIRTUAL, "java/lang/StackWalker", "forEach", "(Ljava/util/function/Consumer;)V", false)
-					.instruction(Opcodes.ALOAD_1)
-					.instruction(Opcodes.ICONST_0)
-					.method(Opcodes.INVOKEVIRTUAL, Generator.type(ArrayList.class), "remove", "(I)Ljava/lang/Object;", false)
-					.instruction(Opcodes.POP)
 					.instruction(Opcodes.ALOAD_1)
 					.instruction(Opcodes.ICONST_0)
 					.method(Opcodes.INVOKEVIRTUAL, Generator.type(ArrayList.class), "remove", "(I)Ljava/lang/Object;", false)
