@@ -18,6 +18,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.management.ManagementFactory;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -1376,6 +1377,16 @@ public abstract class MagicAccessor
 			 */
 			{
 				MethodHandles.Lookup lookup = Unsafe.TRUSTED_LOOKUP;
+				// clear reflection data
+				try
+				{
+					MethodHandle reflectionData = lookup.findSetter(Class.class, "reflectionData", SoftReference.class);
+					reflectionData.invoke(Method.class, null);
+					reflectionData.invoke(Field.class, null);
+				}
+				catch (Throwable ignored)
+				{
+				}
 				Class<?> classReflection = JavaVM.forName(new String[]{
 					"jdk.internal.reflect.Reflection",
 					"sun.reflect.Reflection"
