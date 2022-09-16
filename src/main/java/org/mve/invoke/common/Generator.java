@@ -28,8 +28,6 @@ import java.lang.reflect.Method;
 
 public abstract class Generator
 {
-	public static Unsafe UNSAFE = ReflectionFactory.UNSAFE;
-
 	public static boolean anonymous(Class<?> cls)
 	{
 		return cls.getName().contains("/");
@@ -37,7 +35,7 @@ public abstract class Generator
 
 	public static Class<?> defineAnonymous(Class<?> host, byte[] code)
 	{
-		return UNSAFE.defineAnonymousClass(host, code, null);
+		return Unsafe.unsafe.defineAnonymousClass(host, code, null);
 	}
 
 	public static void inline(MethodWriter mw)
@@ -343,10 +341,10 @@ public abstract class Generator
 
 		ClassWriter bytecode = generator.bytecode();
 		byte[] code = bytecode.toByteArray();
-		Class<?> c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
+		Class<?> c = Unsafe.unsafe.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 		generator.postgenerate(c);
 
-		return (MethodAccessor<T>) UNSAFE.allocateInstance(c);
+		return (MethodAccessor<T>) Unsafe.unsafe.allocateInstance(c);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -360,10 +358,10 @@ public abstract class Generator
 
 		ClassWriter bytecode = generator.bytecode();
 		byte[] code = bytecode.toByteArray();
-		Class<?> c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
+		Class<?> c = Unsafe.unsafe.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 		generator.postgenerate(c);
 
-		return  (FieldAccessor<T>) UNSAFE.allocateInstance(c);
+		return  (FieldAccessor<T>) Unsafe.unsafe.allocateInstance(c);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -385,9 +383,9 @@ public abstract class Generator
 
 		ClassWriter bytecode = generator.bytecode();
 		byte[] code = bytecode.toByteArray();
-		Class<?> c = UNSAFE.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
+		Class<?> c = Unsafe.unsafe.defineClass(null, code, 0, code.length, ReflectionFactory.class.getClassLoader(), null);
 		generator.postgenerate(c);
 
-		return  (ConstructorAccessor<T>) UNSAFE.allocateInstance(c);
+		return  (ConstructorAccessor<T>) Unsafe.unsafe.allocateInstance(c);
 	}
 }

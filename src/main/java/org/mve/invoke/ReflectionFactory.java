@@ -10,18 +10,15 @@ import org.mve.asm.attribute.SourceWriter;
 import org.mve.invoke.common.Generator;
 import org.mve.invoke.common.JavaVM;
 import org.mve.invoke.common.MagicAccessorBuilder;
-import org.mve.invoke.common.UnsafeBuilder;
 import org.mve.invoke.common.standard.AllocatorGenerator;
 import org.mve.invoke.common.standard.MagicAllocatorGenerator;
 import org.mve.invoke.common.standard.NativeAllocatorGenerator;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.security.ProtectionDomain;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,18 +29,13 @@ public class ReflectionFactory
 	 * A wrapper of Unsafe
 	 * Includes Unsafe for Java 8 and above
 	 */
-	public static final Unsafe UNSAFE;
+	public static final Unsafe UNSAFE = Unsafe.unsafe;
 
 	/**
 	 * The root lookup in jdk
 	 * It can find any instruction regardless of access rights
 	 */
-	public static final MethodHandles.Lookup TRUSTED_LOOKUP;
-
-	/**
-	 * Call MethodHandle without any exception thrown
-	 */
-	public static final ReflectionAccessor<Object> METHOD_HANDLE_INVOKER;
+	public static final MethodHandles.Lookup TRUSTED_LOOKUP = Unsafe.TRUSTED_LOOKUP;
 
 	public static final MagicAccessor ACCESSOR;
 	public static final int
@@ -227,154 +219,6 @@ public class ReflectionFactory
 	{
 		try
 		{
-			/*
-			 * MagicAccessorImpl
-			 */
-			String mai;
-			{
-				if (JavaVM.VERSION <= 0X34) mai = "sun/reflect/MagicAccessorImpl";
-				else mai = "jdk/internal/reflect/MagicAccessorImpl";
-			}
-
-			final MethodHandle DEFINE;
-
-			/*
-			 * Unsafe
-			 */
-			sun.misc.Unsafe usf;
-			{
-				Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-				field.setAccessible(true);
-				usf = (sun.misc.Unsafe) field.get(null);
-			}
-
-			/*
-			 * trusted lookup
-			 */
-			{
-				MethodHandles.lookup();
-				Field field = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-				long off = usf.staticFieldOffset(field);
-				MethodHandles.Lookup lookup = TRUSTED_LOOKUP = (MethodHandles.Lookup) usf.getObjectVolatile(MethodHandles.Lookup.class, off);
-				try
-				{
-					@SuppressWarnings("all")
-					Field accClass = MethodHandles.Lookup.class.getDeclaredField("accessClass");
-					usf.putObject(TRUSTED_LOOKUP, usf.objectFieldOffset(accClass), Class.forName(mai.replace('/', '.')));
-				}
-				catch (NoSuchFieldException ignored)
-				{
-				}
-				DEFINE = lookup.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class));
-			}
-
-			/*
-			 * MagicAccessFactory
-			 * Will be deprecated when JEP 416 comes
-			 */
-			{
-				try
-				{
-					Class.forName(JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC].replace('/', '.'));
-				}
-				catch (Throwable t)
-				{
-					Class<?> usfClass = Class.forName(JavaVM.VERSION > 0x34 ? "jdk.internal.misc.Unsafe" : "sun.misc.Unsafe");
-					MethodHandle usfDefineClass = TRUSTED_LOOKUP.findVirtual(usfClass, "defineClass", MethodType.methodType(Class.class, String.class, byte[].class, int.class, int.class, ClassLoader.class, ProtectionDomain.class));
-					MethodHandle theUnsafe = TRUSTED_LOOKUP.findStaticGetter(usfClass, "theUnsafe", usfClass);
-					byte[] code = new ClassWriter()
-						.set(Opcodes.version(8), AccessFlag.PUBLIC | AccessFlag.SUPER, JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC], mai)
-						.method(new MethodWriter()
-							.set(AccessFlag.PUBLIC, "<init>", "()V")
-							.attribute(new CodeWriter()
-								.instruction(Opcodes.ALOAD_0)
-								.method(Opcodes.INVOKESPECIAL, mai, "<init>", "()V", false)
-								.instruction(Opcodes.RETURN)
-								.max(1, 1)
-							)
-						)
-						.toByteArray();
-					usfDefineClass.invoke(theUnsafe.invoke(), null, code, 0, code.length, null, null);
-				}
-			}
-
-			/*
-			 * Method Handle Invoker
-			 */
-			{
-				Class<?> handleInvoker;
-				try
-				{
-					handleInvoker = Class.forName("org.mve.invoke.MethodHandleInvoker");
-				}
-				catch (Throwable t)
-				{
-					ClassWriter cw = new ClassWriter();
-					cw.set(52, AccessFlag.SUPER | AccessFlag.PUBLIC, "org/mve/invoke/MethodHandleInvoker", "java/lang/Object", "org/mve/invoke/ReflectionAccessor");
-					/*
-					 * MethodHandleInvoker();
-					 */
-					{
-						cw.method(new MethodWriter()
-							.set(AccessFlag.PUBLIC, "<init>", "()V")
-							.attribute(new CodeWriter()
-								.instruction(Opcodes.ALOAD_0)
-								.method(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
-								.instruction(Opcodes.RETURN)
-								.max(1, 1)
-							)
-						);
-					}
-					/*
-					 * Object invoke(Object...);
-					 */
-					{
-						cw.method(new MethodWriter()
-							.set(AccessFlag.PUBLIC | AccessFlag.VARARGS, "invoke", "([Ljava/lang/Object;)Ljava/lang/Object;")
-							.attribute(new CodeWriter()
-								.instruction(Opcodes.ALOAD_1)
-								.instruction(Opcodes.ICONST_0)
-								.instruction(Opcodes.AALOAD)
-								.type(Opcodes.CHECKCAST, "java/lang/invoke/MethodHandle")
-								.instruction(Opcodes.ALOAD_1)
-								.instruction(Opcodes.ICONST_1)
-								.instruction(Opcodes.ALOAD_1)
-								.instruction(Opcodes.ARRAYLENGTH)
-								.method(Opcodes.INVOKESTATIC, "java/util/Arrays", "copyOfRange", MethodType.methodType(Object[].class, Object[].class, int.class, int.class).toMethodDescriptorString(), false)
-								.method(Opcodes.INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeWithArguments", MethodType.methodType(Object.class, Object[].class).toMethodDescriptorString(), false)
-								.instruction(Opcodes.ARETURN)
-								.max(4, 2)
-							)
-						);
-					}
-					byte[] code = cw.toByteArray();
-					handleInvoker = (Class<?>) DEFINE.invoke(ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
-				}
-				METHOD_HANDLE_INVOKER = (ReflectionAccessor<Object>) handleInvoker.getDeclaredConstructor().newInstance();
-			}
-
-			/*
-			 * Unsafe wrapper
-			 */
-			{
-				String className = "org/mve/invoke/UnsafeWrapper";
-				Class<?> clazz;
-				try
-				{
-					clazz = Class.forName(className.replace('/', '.'));
-				}
-				catch (Throwable t)
-				{
-					UnsafeBuilder builder = new UnsafeBuilder(TRUSTED_LOOKUP);
-					byte[] code = builder.build();
-					clazz = (Class<?>) DEFINE.invoke(ReflectionFactory.class.getClassLoader(), null, code, 0, code.length);
-					builder.post(clazz);
-				}
-
-				UNSAFE = (Unsafe) usf.allocateInstance(clazz);
-				UNSAFE.putObject(Generator.class, UNSAFE.staticFieldOffset(Generator.class.getDeclaredField("UNSAFE")), UNSAFE);
-			}
-
 			/*
 			 * accessor
 			 */

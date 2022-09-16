@@ -9,6 +9,7 @@ import org.mve.asm.attribute.CodeWriter;
 import org.mve.invoke.ModuleAccess;
 import org.mve.invoke.ReflectionAccessor;
 import org.mve.invoke.ReflectionFactory;
+import org.mve.invoke.Unsafe;
 import org.mve.invoke.common.Generator;
 import org.mve.invoke.common.JavaVM;
 
@@ -94,10 +95,10 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 
 		{
 			byte[] code = abstractAccess.toByteArray();
-			Class<?> intf = Generator.UNSAFE.defineClass(null, code, 0, code.length, null, null);
+			Class<?> intf = Unsafe.unsafe.defineClass(null, code, 0, code.length, null, null);
 			ModuleAccess.read(ModuleAccess.module(this.constructor.getDeclaringClass()), ModuleAccess.module(intf));
-			Class<?> c = Generator.UNSAFE.defineAnonymousClass(this.constructor.getDeclaringClass(), access.toByteArray(), null);
-			this.access[1] = Generator.UNSAFE.allocateInstance(c);
+			Class<?> c = Unsafe.unsafe.defineAnonymousClass(this.constructor.getDeclaringClass(), access.toByteArray(), null);
+			this.access[1] = Unsafe.unsafe.allocateInstance(c);
 		}
 
 		this.bytecode
@@ -133,7 +134,7 @@ public class MagicConstructorAccessorGenerator extends ConstructorAccessorGenera
 	{
 		super.postgenerate(generated);
 		Field field = ReflectionFactory.ACCESSOR.getField(generated, (String) this.access[0]);
-		long offset = Generator.UNSAFE.staticFieldOffset(field);
-		Generator.UNSAFE.putObject(generated, offset, this.access[1]);
+		long offset = Unsafe.unsafe.staticFieldOffset(field);
+		Unsafe.unsafe.putObject(generated, offset, this.access[1]);
 	}
 }
