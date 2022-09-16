@@ -61,7 +61,7 @@ public class NativeMethodAccessorGenerator extends MethodAccessorGenerator
 								Generator.type(Arrays.class),
 								"copyOfRange",
 								MethodType
-									.methodType(void.class, Object[].class, int.class, int.class)
+									.methodType(Object[].class, Object[].class, int.class, int.class)
 									.toMethodDescriptorString(),
 								false
 							)
