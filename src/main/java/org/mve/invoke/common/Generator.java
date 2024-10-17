@@ -114,6 +114,20 @@ public abstract class Generator
 		else return type;
 	}
 
+	public static Class<?> typeUnwarp(Class<?> type)
+	{
+		if (type == Void.class) return void.class;
+		else if (type == Byte.class) return byte.class;
+		else if (type == Short.class) return short.class;
+		else if (type == Integer.class) return int.class;
+		else if (type == Long.class) return long.class;
+		else if (type == Float.class) return float.class;
+		else if (type == Double.class) return double.class;
+		else if (type == Boolean.class) return boolean.class;
+		else if (type == Character.class) return char.class;
+		else return type;
+	}
+
 	public static void returner(Class<?> type, CodeWriter code)
 	{
 		if (type == void.class)
