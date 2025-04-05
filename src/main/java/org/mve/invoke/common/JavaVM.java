@@ -9,6 +9,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class JavaVM
@@ -61,7 +62,7 @@ public class JavaVM
 			{
 			}
 		}
-		JavaVM.thrown(new ClassNotFoundException());
+		JavaVM.thrown(new ClassNotFoundException(Arrays.toString(pattern)));
 		throw new UnknownError();
 	}
 

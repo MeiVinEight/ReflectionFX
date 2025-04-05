@@ -178,12 +178,29 @@ public abstract class Unsafe
 			}
 			catch (ClassNotFoundException ignored)
 			{
+				String maf = "jdk/internal/reflect/MagicAccessorFactory";
 				byte[] code = new ClassWriter()
 					.set(
 						Opcodes.version(8),
 						AccessFlag.PUBLIC | AccessFlag.SUPER,
-						JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
+						maf,
 						mai
+					).method(new MethodWriter()
+						.set(AccessFlag.PUBLIC, "<init>", "()V")
+						.attribute(new CodeWriter()
+							.instruction(Opcodes.ALOAD_0)
+							.method(Opcodes.INVOKESPECIAL, mai, "<init>", "()V", false)
+							.instruction(Opcodes.RETURN)
+							.max(1, 1)
+						)
+					).toByteArray();
+				defineJIM.invoke(null, code, 0, code.length, null, null);
+				code = new ClassWriter()
+					.set(
+						Opcodes.version(8),
+						AccessFlag.PUBLIC | AccessFlag.SUPER,
+						JavaVM.CONSTANT[JavaVM.CONSTANT_MAGIC],
+						maf
 					)
 					.method(new MethodWriter()
 						.set(AccessFlag.PUBLIC, "<init>", "()V")
@@ -412,68 +429,80 @@ public abstract class Unsafe
 					};
 
 					{
-						Class<?> finall = JavaVM.forName(new String[]{
-							"jdk.internal.reflect.NativeMethodAccessorImpl",
-							"sun.reflect.NativeMethodAccessorImpl"
-						});
-						ClassWriter abstractWriter = new ClassWriter()
-							.set(classVersion, abstractAccess, JavaVM.random(), Generator.type(Object.class));
-						ClassWriter instanceWriter = new ClassWriter()
-							.set(classVersion, instanceAccess, JavaVM.randomAnonymous(finall), instanceSuper, abstractWriter.name);
-						FieldWriter bridge = new FieldWriter()
-							.set(bridgeAccess, JavaVM.random(), "L" + abstractWriter.name + ";");
-						bytecode.field(bridge);
+						try
+						{
+							Class<?> finall = JavaVM.forName(new String[]{
+								"jdk.internal.reflect.NativeMethodAccessorImpl",
+								"sun.reflect.NativeMethodAccessorImpl"
+							});
+							ClassWriter abstractWriter = new ClassWriter()
+								.set(classVersion, abstractAccess, JavaVM.random(), Generator.type(Object.class));
+							ClassWriter instanceWriter = new ClassWriter()
+								.set(classVersion, instanceAccess, JavaVM.randomAnonymous(finall), instanceSuper, abstractWriter.name);
+							FieldWriter bridge = new FieldWriter()
+								.set(bridgeAccess, JavaVM.random(), "L" + abstractWriter.name + ";");
+							bytecode.field(bridge);
 
-						generateInstance.accept(new Object[]{
-							bridge,
-							abstractWriter,
-							instanceWriter,
-							null,
-							Generator.type(finall),
-							"invoke",
-							"invoke0",
-							new Class[]{Object.class, Method.class, Object.class, Object[].class},
-							false,
-							false
-						});
+							generateInstance.accept(new Object[]{
+								bridge,
+								abstractWriter,
+								instanceWriter,
+								null,
+								Generator.type(finall),
+								"invoke",
+								"invoke0",
+								new Class[]{Object.class, Method.class, Object.class, Object[].class},
+								false,
+								false
+							});
 
-						byte[] code = abstractWriter.toByteArray();
-						Class<?> declare = (Class<?>) defineJIM.invoke(null, code, 0, code.length, null, null);
-						ModuleAccess.read(ModuleAccess.module(finall), ModuleAccess.module(declare));
-						code = instanceWriter.toByteArray();
-						bridgeMap.put(bridge.name, allocate.invoke(defineAnonymous.apply(new Object[]{finall, instanceWriter.name, code})));
+							byte[] code = abstractWriter.toByteArray();
+							Class<?> declare = (Class<?>) defineJIM.invoke(null, code, 0, code.length, null, null);
+							ModuleAccess.read(ModuleAccess.module(finall), ModuleAccess.module(declare));
+							code = instanceWriter.toByteArray();
+							bridgeMap.put(bridge.name, allocate.invoke(defineAnonymous.apply(new Object[]{finall, instanceWriter.name, code})));
+						}
+						catch (Throwable ignored111)
+						{
+						}
 					}
 					{
-						Class<?> finall = JavaVM.forName(new String[]{
-							"sun.reflect.NativeConstructorAccessorImpl",
-							"jdk.internal.reflect.NativeConstructorAccessorImpl"
-						});
-						ClassWriter abstractWriter = new ClassWriter()
-							.set(classVersion, abstractAccess, JavaVM.random(), Generator.type(Object.class));
-						ClassWriter instanceWriter = new ClassWriter()
-							.set(classVersion, instanceAccess, JavaVM.randomAnonymous(finall), instanceSuper, abstractWriter.name);
-						FieldWriter bridge = new FieldWriter()
-							.set(bridgeAccess, JavaVM.random(), "L" + abstractWriter.name + ";");
-						bytecode.field(bridge);
+						try
+						{
+							Class<?> finall = JavaVM.forName(new String[]{
+								"sun.reflect.NativeConstructorAccessorImpl",
+								"jdk.internal.reflect.NativeConstructorAccessorImpl"
+							});
+							ClassWriter abstractWriter = new ClassWriter()
+								.set(classVersion, abstractAccess, JavaVM.random(), Generator.type(Object.class));
+							ClassWriter instanceWriter = new ClassWriter()
+								.set(classVersion, instanceAccess, JavaVM.randomAnonymous(finall), instanceSuper, abstractWriter.name);
+							FieldWriter bridge = new FieldWriter()
+								.set(bridgeAccess, JavaVM.random(), "L" + abstractWriter.name + ";");
+							bytecode.field(bridge);
 
-						generateInstance.accept(new Object[]{
-							bridge,
-							abstractWriter,
-							instanceWriter,
-							null,
-							Generator.type(finall),
-							"newInstance",
-							"newInstance0",
-							new Class<?>[]{Object.class, Constructor.class, Object[].class},
-							false,
-							false
-						});
+							generateInstance.accept(new Object[]{
+								bridge,
+								abstractWriter,
+								instanceWriter,
+								null,
+								Generator.type(finall),
+								"newInstance",
+								"newInstance0",
+								new Class<?>[]{Object.class, Constructor.class, Object[].class},
+								false,
+								false
+							});
 
-						byte[] code = abstractWriter.toByteArray();
-						Class<?> declare = (Class<?>) defineJIM.invoke(null, code, 0, code.length, null, null);
-						ModuleAccess.read(ModuleAccess.module(finall), ModuleAccess.module(declare));
-						code = instanceWriter.toByteArray();
-						bridgeMap.put(bridge.name, allocate.invoke(defineAnonymous.apply(new Object[]{finall, instanceWriter.name, code})));
+							byte[] code = abstractWriter.toByteArray();
+							Class<?> declare = (Class<?>) defineJIM.invoke(null, code, 0, code.length, null, null);
+							ModuleAccess.read(ModuleAccess.module(finall), ModuleAccess.module(declare));
+							code = instanceWriter.toByteArray();
+							bridgeMap.put(bridge.name, allocate.invoke(defineAnonymous.apply(new Object[]{finall, instanceWriter.name, code})));
+						}
+						catch (Throwable ignored111)
+						{
+						}
 					}
 					{
 						Class<?> finall = unsafeJIM.getClass();
